@@ -1,2 +1,1 @@
-# CPA
- 
+# Capstone Projects Allocator

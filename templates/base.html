@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+		<title>{% block title %}Capstone Projects Allocator{% endblock %}</title>
+
+		{% load static %} <link href="{% static "css/theme.css" %}" rel="stylesheet" /> 
+		{% load static %} <link href="{% static "css/base.css" %}" rel="stylesheet" /> 
+        {% block extrastyle %}{% endblock %}
+	</head>
+	<body>
+        <div id="wrapper">
+            <header>{% block header %}{% endblock %}</header>
+            <main>{% block content %}{% endblock %}</main>
+        </div>
+	</body>
+</html>

@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% block title %}{{ block.super }} - {% endblock %} 
+{% block extrastyle %}{% load static %}<link rel='stylesheet' href='{% static 'css/registration/base.css' %}'> {% endblock %} 
+{% block header %}<h1>{% block heading %}{% endblock %}</h1>{% endblock %}

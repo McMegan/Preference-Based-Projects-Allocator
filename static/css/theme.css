@@ -1,0 +1,112 @@
+/* THEME: auto, dark, light */
+:root,
+html[data-theme] {
+	/* FROM DJANGO */
+	--primary: hsl(150, 40%, 25%);
+	--secondary: hsl(150, 30%, 41%);
+	--accent: hsl(50, 90%, 65%);
+	--primary-fg: hsl(0, 0%, 100%);
+
+	--body-bg: hsl(0deg, 0%, 90%);
+	--body-fg: hsl(0deg, 0%, 15%);
+	--body-quiet-color: hsl(0, 0%, 40%);
+	--body-loud-color: hsl(0, 0%, 0%);
+
+	--header-color: hsl(150, 20%, 95%);
+	--header-branding-color: hsl(150, 20%, 95%);
+	--header-bg: hsl(150, 20%, 40%);
+	--header-link-color: var(--primary-fg);
+	--header-link-hover-color: hsl(150, 20%, 75%);
+
+	--breadcrumbs-fg: hsl(200, 44%, 84%);
+	--breadcrumbs-link-fg: var(--body-bg);
+	--breadcrumbs-bg: hsl(150, 30%, 30%);
+
+	--link-fg: hsl(150, 30%, 50%);
+	--link-hover-color: hsl(120, 60%, 25%);
+	--link-selected-fg: hsl(180, 36%, 53%);
+
+	--hairline-color: hsl(0, 0%, 91%);
+	--border-color: hsl(0, 0%, 80%);
+
+	--error-fg: hsl(0, 70%, 43%);
+	--message-success-bg: hsl(120, 100%, 93%);
+	--message-warning-bg: hsl(60, 100%, 90%);
+	--message-error-bg: hsl(0, 100%, 97%);
+	--darkened-bg: hsl(0, 0%, 97%);
+	--selected-bg: hsl(0, 0%, 89%);
+	--selected-row: hsl(60, 100%, 90%);
+
+	--button-fg: hsl(0, 0%, 100%);
+	--button-bg: var(--primary);
+	--button-hover-bg: hsl(200, 37%, 55%);
+
+	--default-button-bg: var(--secondary);
+	--default-button-hover-bg: hsl(200, 53%, 26%);
+
+	--close-button-bg: hsl(0, 0%, 45%);
+	--close-button-hover-bg: hsl(0, 0%, 20%);
+	--delete-button-bg: hsl(0, 70%, 43%);
+	--delete-button-hover-bg: hsl(0, 77%, 36%);
+	--object-tools-fg: var(--button-fg);
+	--object-tools-bg: var(--close-button-bg);
+	--object-tools-hover-bg: var(--close-button-hover-bg);
+
+	/* FONT */
+	--font-family-primary: 'Open Sans', Roboto, 'Helvetica Neue', Arial, serif;
+
+	/* MY THEMES */
+	--popup-bg: hsl(0deg, 0%, 100%);
+
+	--form-field-bg: hsl(0, 0%, 95%);
+	--form-field-focused-bg: hsl(0, 0%, 93%);
+	--form-field-empty-fg: hsl(0, 0%, 45%);
+
+	--form-field-border: hsl(0, 0%, 90%);
+	--form-field-invalid-border: hsl(0, 80%, 60%);
+
+	--button-bg: hsl(150, 20%, 60%);
+	--button-fg: hsl(0, 0%, 100%);
+	--button-inactive-bg: hsl(0, 0%, 70%);
+	--button-focus-bg: hsl(150, 50%, 40%);
+	--button-focus-fg: var(--button-fg);
+
+	--button-secondary-bg: transparent;
+	--button-secondary-fg: hsl(150, 20%, 60%);
+	--button-secondary-inactive-bg: hsl(0, 0%, 70%);
+	--button-secondary-focus-bg: transparent;
+	--button-secondary-focus-fg: hsl(150, 50%, 40%);
+
+	--button-light-bg: hsl(0, 0%, 90%);
+	--button-light-focus-bg: hsl(0, 0%, 70%);
+	--button-light-fg: hsl(0, 0%, 30%);
+}
+html[data-theme='dark'] {
+	--primary-fg: hsl(0, 0%, 95%);
+
+	--body-fg: hsl(0, 0%, 90%);
+	--body-bg: hsl(0, 0%, 10%);
+	--body-quiet-color: hsl(0, 0%, 88%);
+	--body-loud-color: hsl(0, 0%, 100%);
+
+	--breadcrumbs-link-fg: hsl(0, 0%, 88%);
+
+	--link-fg: hsl(200, 55%, 70%);
+	--link-hover-color: hsl(175, 65%, 55%);
+	--link-selected-fg: hsl(215, 40%, 61%);
+
+	--hairline-color: hsl(0, 0%, 15%);
+	--border-color: hsl(0, 0%, 21%);
+
+	--error-fg: hsl(0, 70%, 63%);
+	--message-success-bg: hsl(135, 100%, 21%);
+	--message-warning-bg: hsl(33, 89%, 18%);
+	--message-error-bg: hsl(0, 83%, 19%);
+
+	--darkened-bg: hsl(0, 0%, 13%);
+	--selected-bg: hsl(0, 0%, 11%);
+	--selected-row: hsl(184, 100%, 11%);
+
+	--close-button-bg: hsl(0, 0%, 20%);
+	--close-button-hover-bg: hsl(0, 0%, 40%);
+}

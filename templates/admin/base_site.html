@@ -1,0 +1,8 @@
+{% extends 'admin/base.html' %} 
+{% block branding %} 
+    {% block extrastyle %}  
+        {% load static %} <link rel='stylesheet' href='{% static 'css/theme.css' %}'> 
+        {% load static %} <link rel='stylesheet' href='{% static 'css/admin/base_site.css' %}'> 
+    {% endblock %}
+    <h1 ="head">Capstone Projects Allocator - Admin</h1>
+{% endblock %}

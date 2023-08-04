@@ -1,0 +1,12 @@
+{% extends 'core/base.html' %}
+{% block content %}
+    <h2>Update Unit</h2>
+    <form method="post">
+        <div class="form-content">
+            {% csrf_token %} {{ form.as_div }}
+        </div>
+        <div class="form-buttons">
+            <input type="submit" value="Save">
+        </div>
+    </form>
+{% endblock %}

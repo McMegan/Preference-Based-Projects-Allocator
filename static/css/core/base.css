@@ -1,0 +1,52 @@
+/* Base CSS for Core Pages */
+
+/* HEADER */
+header {
+	display: grid;
+}
+
+/* HEADER - HEADING */
+header #header-heading {
+	padding: 25px 40px;
+	text-align: center;
+}
+
+/* HEADER - NAV */
+header nav {
+	padding: 15px 40px;
+
+	background: var(--breadcrumbs-bg);
+
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+
+	font-weight: 300;
+	font-size: 0.7rem;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+}
+header nav strong {
+	font-weight: 600;
+}
+header nav span {
+	margin-left: auto;
+}
+
+/* MAIN */
+main {
+	margin: 50px 40px;
+}
+
+/* UNITS */
+#unit-list {
+	display: grid;
+	gap: 20px;
+}
+.unit-detail {
+	background: var(--popup-bg);
+	border-radius: 5px;
+}
+.unit-header {
+    
+}

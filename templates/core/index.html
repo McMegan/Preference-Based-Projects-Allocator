@@ -1,0 +1,34 @@
+{% extends 'core/base.html' %}
+{% block content %}
+    {% if user.is_authenticated %}
+        {% if user.is_manager or user.is_student %}
+            <h2>{% if user.is_manager %}Managed {% endif %}{% if user.is_student %}Registered {% endif %}Units</h2>
+            <div id="unit-list">
+                {% for unit in object_list %}
+                    <div class="unit-detail">
+                        <a class="unit-header" href="/units/{{ unit.id }}/">{{ unit.code }}: {{ unit.name }}</a>
+                        <div class="unit-content">
+                            <div class="unit-year">Year: {{ unit.year }}</div>
+                            <div class="unit-semester">Semester: {{ unit.semester }}</div>
+                        </div>
+                        <div class="unit-controls">
+                            <a href="/units/{{ unit.id }}/">View</a>
+                            {% if user.is_manager %}
+                                <a class="controls-delete" href="/units/{{ unit.id }}/edit">Update</a>
+                                <a class="controls-delete" href="/units/{{ unit.id }}/delete">Delete</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="unit-none">No units.</div>
+                    {% if user.is_student %}<div>If you don't see your unit here, please contact your unit convenor.</div>{% endif %}
+                {% endfor %}
+            </div>
+            {% if user.is_manager %}
+                <div id="unit-buttons">
+                    <a href="{% url 'unit-new' %}">Add unit</a>
+                </div>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endblock %}

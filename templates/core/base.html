@@ -1,0 +1,15 @@
+{% extends 'base.html' %} 
+{% block extrastyle %}{% load static %}<link rel='stylesheet' href='{% static 'css/core/base.css' %}'> {% endblock %}
+{% block header %}
+    {% if user.is_authenticated %}
+        <a id="header-heading" href="{% url 'index' %}"><h1>Capstone Projects Allocator</h1></a>
+        <nav>
+            <a href="{% url 'index' %}">Home</a>
+
+            <span>Welcome, <strong>{{ user.username }}</strong>.</span>
+            <a href="{% url 'logout' %}">Log Out</a>
+            <a href="{% url 'password_change' %}">Change Password</a>
+            {% if user.is_staff %}<a href="{% url 'admin:index' %}"><strong>Admin Site</strong></a>{% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}

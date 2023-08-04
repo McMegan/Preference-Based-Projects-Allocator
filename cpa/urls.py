@@ -4,6 +4,7 @@ from django.urls import path, include
 
 admin.site.site_header = 'Capstone Projects Allocator - Admin'
 admin.site.site_title = 'Capstone Projects Allocator - Admin'
+admin.site.index_title = 'Site Administration'
 
 urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),

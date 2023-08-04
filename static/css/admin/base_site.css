@@ -1,4 +1,17 @@
 /* HEADER */
 #header {
-	padding: 25px 40px;
+	padding: 40px 40px 20px;
+	box-shadow: 0 0 15px var(--header-shadow);
+}
+
+#branding h1 a:link,
+#branding h1 a:visited {
+	color: var(---header-branding-color);
+}
+
+/* Section Headers */
+.module h2,
+.module caption,
+.inline-group h2 {
+	background: var(--primary);
 }

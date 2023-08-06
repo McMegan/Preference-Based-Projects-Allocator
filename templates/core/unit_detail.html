@@ -1,7 +1,25 @@
 {% extends 'core/base.html' %}
+{%load crispy_forms_tags %} 
+
 {% block content %}
-    <h2>{{ object.code }}: {{ object.name }}</h2>
-    <p>Manager: {{ object.manager }}</p>
-    <p>Year: {{ object.year }}</p>
-    <p>Semester: {{ object.semester }}</p>
+    <div class="mx-5 mb-4 mt-5">
+        <h2>{{ unit }}</h2>
+    </div>
+    <div class="m-5 d-flex gap-5 flex-wrap">
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Manager:</div>
+            <div>{{ object.manager }}</div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Year:</div>
+            <div>{{ object.year }}</div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Semester:</div>
+            <div>{{ object.semester }}</div>
+        </div>
+    </div>
+    <div class="m-5">
+        Project list / preference submission
+    </div>
 {% endblock %}

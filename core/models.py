@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser, Group
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from django.db.models import Count
+
 
 def ordinal(n: int) -> str:
     suffixes = ['st', 'nd', 'rd']

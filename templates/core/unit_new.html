@@ -3,7 +3,7 @@
 
 {% block content %}
     <div class="mx-5 mb-4 mt-5">
-        <h2>{{ unit }}</h2>
+        <h2>Add Unit</h2>
     </div>
     <div class="m-5">
         <form method="post">
@@ -11,9 +11,5 @@
                 {% csrf_token %} {% crispy form %}
             </div>
         </form>
-    </div>
-    <div class="m-5 d-flex gap-2 my-4">
-       <a href="{% url 'unit-students' unit.id %}" class="btn btn-secondary">Students ({{ unit.students_count }})</a>
-       <a class="btn btn-secondary">Projects ({{ unit.projects_count }})</a>
     </div>
 {% endblock %}

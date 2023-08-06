@@ -1,0 +1,43 @@
+{% extends 'core/base.html' %}
+{% block content %}
+    <div class="mx-4 mb-4 mt-5">
+        <a class="text-decoration-none" href="/units/{{ unit.id }}/edit"><h2>{{ unit.code }}: {{ unit.name }} - Student List</h2></a>
+    </div>
+    <div class="m-4 d-flex gap-5 flex-wrap">
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">No. Students:</div>
+            <div>{{ object_list.count }}</div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">...:</div>
+            <div>...</div>
+        </div>
+    </div>
+    <div class="m-4 d-flex gap-2">
+        <a class="btn btn-primary" href="{% url 'unit-new' %}">Upload student list</a>
+        <a class="btn btn-secondary" href="{% url 'unit-new' %}">Add student</a>
+    </div>
+    <table class="table table-striped ">
+        <thead>
+            <tr>
+                <th scope="col">Username</th>
+                <th scope="col">Name</th>
+                <th scope="col">Submitted Preferences?</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in object_list %}
+                <tr>
+                    <th scope="row">{{ student.username }}</th>
+                    <td>{{ student.full_name }}</td>
+                    <td>{{ student }}</td>
+                    <td class="d-flex gap-2 justify-content-end">
+                        <a class="btn btn-primary btn-sm" href="{% url 'unit-new' %}">View</a>
+                        <a class="btn btn-danger btn-sm" href="{% url 'unit-students-new' unit.id %}">Remove</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

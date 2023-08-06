@@ -1,58 +1,11 @@
-/* Base CSS for Core Pages */
-
-/* HEADER */
-#header {
-	display: grid;
+.preference_submission_timeframe {
 }
-
-/* HEADER - HEADING */
-#header #header-heading {
-	padding: 25px 40px;
-	text-align: center;
+.preference_submission_timeframe input:first-of-type {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+	border-bottom: 0;
 }
-
-/* HEADER - NAV */
-#header nav {
-	padding: 15px 40px;
-
-	background: var(--breadcrumbs-bg);
-
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10px;
-
-	font-weight: 300;
-	font-size: 0.7rem;
-	letter-spacing: 0.5px;
-	text-transform: uppercase;
-}
-#header nav strong {
-	font-weight: 600;
-}
-#header nav span {
-	margin-left: auto;
-}
-
-/* MAIN */
-#main {
-	margin: 50px 40px;
-}
-
-/* UNITS */
-#unit-list {
-	display: grid;
-	gap: 20px;
-
-	display: flex;
-	flex-wrap: wrap;
-}
-.unit-detail {
-	flex-basis: 300px;
-
-	background: var(--popup-bg);
-	border-radius: 5px;
-
-	padding: 10px;
-}
-.unit-header {
+.preference_submission_timeframe input:last-of-type {
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
 }

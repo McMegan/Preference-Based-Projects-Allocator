@@ -3,12 +3,12 @@
     {% comment %} <div class="mx-4 mb-4 mt-5">
         <h2>Units</h2>
     </div> {% endcomment %}
-    <div class="m-3 row row-cols-1 row-cols-md-2 g-4">
+    <div class="my-3 row row-cols-1 row-cols-md-2 g-4">
         {% for unit in object_list %}
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <a class="text-decoration-none" href="{% if user.is_manager %}{% url 'unit-edit' unit.id %}{% else %}{% url 'unit-detail' unit.id %}{% endif %}"><h5 class="card-title">{{ unit.code }}: {{ unit.name }}</h5></a>
+                        <a class="text-decoration-none" href="{% url 'unit-detail' unit.id %}"><h5 class="card-title">{{ unit.code }}: {{ unit.name }}</h5></a>
                         <h6 class="card-subtitle text-body-secondary">{{ unit.year }}, {{ unit.semester }}</h6>
                     </div>
                     {% if user.is_manager %}

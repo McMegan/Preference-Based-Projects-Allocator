@@ -2,7 +2,7 @@
 {% block content %}
     <div class="mb-4 mt-5">
         <h2>Student List</h2>
-        <a class="text-decoration-none" href="{% url 'unit-detail' unit.id %}"><h3>{{ unit.code }}: {{ unit.name }}</h3></a>
+        <a class="text-decoration-none" href="{% url 'manager-unit-detail' unit.id %}"><h3>{{ unit.code }}: {{ unit.name }}</h3></a>
     </div>
     <div class="my-4 d-flex gap-5 flex-wrap">
         <div class="d-flex gap-3">
@@ -15,8 +15,8 @@
         </div>
     </div>
     <div class="my-4 d-flex gap-2">
-        <a class="btn btn-primary" href="{% url 'unit-new' %}">Upload student list</a>
-        <a class="btn btn-secondary" href="{% url 'unit-new' %}">Add student</a>
+        <a class="btn btn-primary" href="{% url 'manager-unit-new' %}">Upload student list</a>
+        <a class="btn btn-secondary" href="{% url 'manager-unit-new' %}">Add student</a>
     </div>
     <table class="table table-striped ">
         <thead>
@@ -34,8 +34,8 @@
                     <td>{{ student.full_name }}</td>
                     <td>{{ student }}</td>
                     <td class="d-flex gap-2 justify-content-end">
-                        <a class="btn btn-primary btn-sm" href="{% url 'unit-new' %}">View</a>
-                        <a class="btn btn-danger btn-sm" href="{% url 'unit-students-new' unit.id %}">Remove</a>
+                        <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-new' %}">View</a>
+                        <a class="btn btn-danger btn-sm" href="{% url 'manager-unit-students-new' unit.id %}">Remove</a>
                     </td>
                 </tr>
             {% endfor %}

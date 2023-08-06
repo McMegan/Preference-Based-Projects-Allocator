@@ -2,24 +2,38 @@
 {%load crispy_forms_tags %} 
 
 {% block content %}
-    <div class="mx-5 mb-4 mt-5">
+    <div class="mb-4 mt-5">
         <h2>{{ unit }}</h2>
     </div>
-    <div class="m-5 d-flex gap-5 flex-wrap">
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Manager:</div>
-            <div>{{ object.manager }}</div>
+    {% if user.is_manager %}
+        <div class="my-5">
+            <form method="post">
+                <div class="form-content">
+                    {% csrf_token %} {% crispy form %}
+                </div>
+            </form>
         </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Year:</div>
-            <div>{{ object.year }}</div>
+        <div class="my-4 d-flex gap-2">
+           <a href="{% url 'unit-students' unit.id %}" class="btn btn-secondary">Students ({{ unit.students_count }})</a>
+           <a class="btn btn-secondary">Projects ({{ unit.projects_count }})</a>
         </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Semester:</div>
-            <div>{{ object.semester }}</div>
+    {% else %}
+        <div class="my-5 d-flex gap-5 flex-wrap">
+            <div class="d-flex gap-3">
+                <div class="fw-semibold">Manager:</div>
+                <div>{{ object.manager }}</div>
+            </div>
+            <div class="d-flex gap-3">
+                <div class="fw-semibold">Year:</div>
+                <div>{{ object.year }}</div>
+            </div>
+            <div class="d-flex gap-3">
+                <div class="fw-semibold">Semester:</div>
+                <div>{{ object.semester }}</div>
+            </div>
         </div>
-    </div>
-    <div class="m-5">
-        Project list / preference submission
-    </div>
+        <div class="my-5">
+            Project list / preference submission
+        </div>
+    {% endif %}
 {% endblock %}

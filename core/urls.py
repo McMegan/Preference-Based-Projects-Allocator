@@ -1,21 +1,16 @@
 from django.urls import path, re_path
+from django.contrib.auth import views as auth_views
 from . import views
 from . import forms
 
 urlpatterns = [
-    path('', views.IndexView.as_view(), name='index'),
-    # Unit views
-    path('units/new', views.UnitCreateView.as_view(), name='unit-new'),
-    path('units/<pk>/',
-         views.UnitDetailView.as_view(), name='unit-detail'),
-    path('units/<pk>/delete',
-         views.UnitDeleteView.as_view(), name='unit-delete'),
-    path('units/<pk>/edit',
-         views.UnitUpdateView.as_view(), name='unit-edit'),
-    # Unit student views
-    re_path(r'^units/(?P<pk_unit>[0-9]+)/students$',
-            views.UnitStudentsListView.as_view(), name='unit-students'),
-    re_path(r'^units/(?P<pk_unit>[0-9]+)/students/new$',
-            views.UnitStudentsListView.as_view(), name='unit-students-new'),
-    # re_path(r'^units/(?P<pk_unit>[0-9]+)/students/(?P<pk_student>[0-9]+)/remove$',views.UnitStudentsListView.as_view(), name='unit-students-remove'),
+    path('', views.index_view, name='index'),
+
+    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html',
+         authentication_form=forms.UserLoginForm), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(template_name='registration/logout.html'), name='logout'),
+    path('password_reset/', auth_views.PasswordResetView.as_view(
+        template_name='registration/password_reset.html', form_class=forms.UserPasswordResetForm), name='password_reset'),
+    path('password_change/', auth_views.PasswordChangeView.as_view(
+        template_name='registration/password_change.html', form_class=forms.UserPasswordChangeForm), name='password_change'),
 ]

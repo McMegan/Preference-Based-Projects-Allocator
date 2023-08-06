@@ -1,15 +1,23 @@
 {% extends 'base.html' %} 
 {% block extrastyle %}{% load static %}<link rel='stylesheet' href='{% static 'css/core/base.css' %}'> {% endblock %}
-{% block header %}
-    {% if user.is_authenticated %}
-        <a id="header-heading" href="{% url 'index' %}"><h1>Capstone Projects Allocator</h1></a>
-        <nav>
-            <a href="{% url 'index' %}">Home</a>
 
-            <span>Welcome, <strong>{{ user.username }}</strong>.</span>
-            <a href="{% url 'logout' %}">Log Out</a>
-            <a href="{% url 'password_change' %}">Change Password</a>
-            {% if user.is_staff %}<a href="{% url 'admin:index' %}"><strong>Admin Site</strong></a>{% endif %}
-        </nav>
-    {% endif %}
+{% block container %}
+    <header class="sticky-top bg-body-tertiary py-3 mb-4 border-bottom">
+        <div class="container d-flex flex-wrap align-items-center justify-content-center justify-content-md-between">
+            <div class="me-auto">
+                <a href="{% url 'index' %}" class="d-inline-flex link-body-emphasis text-decoration-none">Projects Allocator</a>
+            </div>
+            <ul class="nav col mb-2 d-flex gap-2 justify-content-end align-items-center mb-md-0">
+                
+                {% comment %} <li class="nav-item"><a href="{% url 'index' %}" class="nav-link px-1 link-secondary">Home</a></li> {% endcomment %}
+                {% if user.is_staff %}<li class="nav-item"><a href="{% url 'admin:index' %}" class="nav-link px-1 link-primary">Admin Site</a></li>{% endif %}
+
+                <li class="nav-item"><span>{{ user.username }}</span></li>
+
+                <li class="nav-item"><a href="{% url 'logout' %}" class="btn btn-sm btn-outline-primary text-nowrap">Log Out</a></li>
+                <li class="nav-item"><a href="{% url 'password_change' %}" class="btn btn-sm btn-outline-secondary text-nowrap">Change Password</a></li>
+            </ul>
+        </div>
+    </header>
+    <main class="m-5">{% block content %}{% endblock %}</main>
 {% endblock %}

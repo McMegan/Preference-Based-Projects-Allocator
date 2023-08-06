@@ -1,17 +1,16 @@
 /* BODY */
 body {
 	font-family: 'Open Sans', Roboto, 'Helvetica Neue', Arial, serif;
-	font-size: 11pt;
 	background: var(--body-bg);
 	color: var(--body-fg);
 
-	margin: 0;
 	min-height: 100vh;
-
-	display: grid;
 }
 
-/* LINKS */
+/* EXTEND BOOTSTRAP */
+
+/* LINKS 
+a,
 a:link,
 a:visited {
 	text-decoration: none;
@@ -23,32 +22,33 @@ a:hover {
 	color: var(--link-hover-color);
 }
 
-/* HEADINGS */
+/* HEADINGS 
 h1 {
 	margin: 0;
-	font-weight: 500;
+	font-weight: 300;
+	font-size: 1.5rem;
 }
 
-/* HEADER */
-header {
+/* HEADER 
+#header {
 	background-color: var(--header-bg);
 	color: var(--header-color);
 }
-header a:is(:link, :visited) {
+#header a:is(:link, :visited) {
 	color: var(--header-link-color);
 }
-header a:is(:link, :visited):hover {
+#header a:is(:link, :visited):hover {
 	color: var(--header-link-hover-color);
 }
 
-/* FORMS */
+/* FORMS 
 form {
 	display: flex;
 	gap: 20px;
 	flex-direction: column;
 }
 
-/* FORM CONTENT & BUTTONS */
+/* FORM CONTENT & BUTTONS 
 form .form-content {
 	display: flex;
 	flex-direction: column;
@@ -65,7 +65,7 @@ form .form-buttons {
 	gap: 10px;
 }
 
-/* FORM - INPUTS & BUTTONS */
+/* FORM - INPUTS & BUTTONS 
 input,
 button {
 	outline: none;
@@ -73,8 +73,8 @@ button {
 	margin: 0;
 }
 
-/* FORM - INPUT */
-input:is([type='text'], [type='password'], [type='email']) {
+/* FORM - INPUT 
+input:is([type='text'], [type='password'], [type='email'], [type='number']) {
 	background-color: var(--form-field-bg) !important;
 	border: 1px solid var(--form-field-border);
 	border-radius: 5px;
@@ -84,10 +84,8 @@ input:is([type='text'], [type='password'], [type='email']) {
 	font: inherit;
 	font-weight: inherit;
 
-	/* DELETE */
-	color: black;
 }
-label {
+:is(label, .label) {
 	font-size: 0.85em;
 	font-weight: 500;
 	letter-spacing: 0.5px;
@@ -97,7 +95,29 @@ label {
 	padding: 5px 10px;
 }
 
-/* BUTTONS */
+/* FIELDSETS 
+fieldset {
+	border-radius: 5px;
+	border: 1px solid var(--form-fieldset-border);
+
+	display: grid;
+	gap: 5px;
+}
+fieldset legend {
+	font-size: 0.85em;
+	font-weight: 600;
+	letter-spacing: 0.5px;
+
+	text-transform: uppercase;
+}
+fieldset > div {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	align-items: center;
+}
+
+/* BUTTONS 
 :is(button, .button, input[type='submit']) {
 	display: block;
 	padding: 6px 10px;
@@ -132,3 +152,4 @@ label {
 :is(button, .button, input[type='submit']).inactive:hover {
 	background-color: var(--button-inactive-bg);
 }
+*/

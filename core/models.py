@@ -1,5 +1,4 @@
-from typing import Iterable, Optional
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -25,8 +24,13 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         if self.is_manager:
+            # Give access to admin panel
             self.is_staff = True
-            # Give certain permissions
+            # Add to manager group
+            if not self.groups.filter(name='Managers').exists():
+                group, created = Group.objects.get_or_create(name='Managers')
+                self.groups.add(group)
+                print(self.groups.filter(name='Managers'))
         super().save(*args, **kwargs)
 
 

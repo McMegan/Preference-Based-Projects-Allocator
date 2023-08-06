@@ -1,4 +1,31 @@
 {% extends 'base.html' %}
-{% block title %}{{ block.super }} - {% endblock %} 
-{% block extrastyle %}{% load static %}<link rel='stylesheet' href='{% static 'css/registration/base.css' %}'> {% endblock %} 
-{% block header %}<h1>{% block heading %}{% endblock %}</h1>{% endblock %}
+{%load crispy_forms_tags %} 
+{% block title %}{{ block.super }} - {% endblock %}
+
+{% block body_classes %}d-flex align-items-center py-4 bg-body-tertiary{% endblock %}
+
+{% block body %}
+<div class="container container-sm" style="max-width: 500px;">
+    <div class="card m-2">
+        {% block card_header_outer %}
+        <div class="card-header p-3">{% block card_header_inner %}{% endblock %}</div>
+        {% endblock %}
+        {% block card_body_outer %}
+        <div class="card-body p-4">
+            {% block card_body_inner %}
+                <form method="post">
+                    {% csrf_token %} {% crispy form %}
+                </form>
+            {% endblock %}
+        </div>
+        {% endblock %}
+        {% block card_footer_outer %}
+        <div class="card-footer">
+            {% block card_footer_inner %}
+                <a class="small text-muted link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'password_reset' %}">Forgot password?</a>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </div>
+</div>
+{% endblock %}

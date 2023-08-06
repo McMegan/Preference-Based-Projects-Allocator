@@ -1,7 +1,13 @@
+from typing import Any, Dict
+from django.http import HttpRequest, HttpResponse
 from django.urls import reverse_lazy, resolve
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
+from django.shortcuts import render, redirect
+from django.db.models import Count
+
 from . import models
+from . import forms
 
 # Mixin for unit views
 
@@ -10,61 +16,66 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
     model = models.Unit
 
     def get_queryset(self):
-        return models.Unit.objects.select_related('manager').filter(manager_id=self.request.user.id)
+        if self.request.user.is_manager:
+            return self.request.user.managed_units.all()
+        elif self.request.user.is_student:
+            return self.request.user.enrolled_units.all()
+        return None
 
     def test_func(self):
-        return self.request.user.is_manager
+        # print(self)
+        # MANAGER ONLY FOR CREATE & DELETE
+        return self.request.user.is_superuser or self.request.user.is_manager or self.request.user.is_student
 
 # List the managed/enrolled units on the index page
 
 
-class IndexView(LoginRequiredMixin, ListView):
+class IndexView(UnitMixin, ListView):
     template_name = "core/index.html"
 
     model = models.Unit
-    paginate_by = 100
+    # paginate_by = 100
 
     def get_context_data(self, **kwargs):
         print(self.request)
         return super().get_context_data(**kwargs)
-
-    def get_queryset(self):
-        return models.Unit.objects.filter(manager_id=self.request.user.id)
-
-    def test_func(self):
-        return self.request.user.is_manager
-
-
-class UnitListView(UnitMixin, ListView):
-    model = models.Unit
-    paginate_by = 100
 
 
 class UnitDetailView(UnitMixin, DetailView):
     pass
 
 
-class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
-    model = models.Unit
+class UnitCreateView(UnitMixin, CreateView):
+    # fields = ['code', 'name', 'year', 'semester', 'preference_submission_start','preference_submission_end', 'minimum_preference_limit']
+    success_url = reverse_lazy('index')
+    form_class = forms.UnitForm
+    template_name = 'core/unit_add.html'
+
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        form = self.get_form()
+        if form.is_valid():
+            form.instance.manager_id = request.user.id
+            form.instance.save()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+
+class UnitUpdateView(UnitMixin, UpdateView):
     fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',
               'preference_submission_end', 'minimum_preference_limit']
+    # success_url = reverse_lazy('index')
+    form_class = forms.UnitForm
 
-    def test_func(self):
-        return self.get_object().manager.id == self.request.user.id
+    def get_queryset(self):
+        return super().get_queryset().annotate(students_count=Count('students'), projects_count=Count('projects'))
 
-
-class UnitUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = models.Unit
-    fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',
-              'preference_submission_end', 'minimum_preference_limit']
-
-    def test_func(self):
-        return self.get_object().manager.id == self.request.user.id
+# def unit_update_view(request, pk):
+#     band = Band.objects.get(id=id)
+#     form = BandForm(instance=band) 
+#     return render(request,'core/unit_form.html',{'form': form})
 
 
-class UnitDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = models.Unit
-    success_url = reverse_lazy('unit-list')
-
-    def test_func(self):
-        return self.get_object().manager.id == self.request.user.id
+class UnitDeleteView(UnitMixin, DeleteView):
+    success_url = reverse_lazy('index')
+# listings/views.py

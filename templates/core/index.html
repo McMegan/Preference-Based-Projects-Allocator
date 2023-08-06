@@ -3,30 +3,29 @@
     {% if user.is_authenticated %}
         {% if user.is_manager or user.is_student %}
             <h2>{% if user.is_manager %}Managed {% endif %}{% if user.is_student %}Registered {% endif %}Units</h2>
-            <div id="unit-list">
+            <div class="mt-2 mb-4 row row-cols-1 row-cols-md-2 g-4">
                 {% for unit in object_list %}
-                    <div class="unit-detail">
-                        <a class="unit-header" href="/units/{{ unit.id }}/">{{ unit.code }}: {{ unit.name }}</a>
-                        <div class="unit-content">
-                            <div class="unit-year">Year: {{ unit.year }}</div>
-                            <div class="unit-semester">Semester: {{ unit.semester }}</div>
-                        </div>
-                        <div class="unit-controls">
-                            <a href="/units/{{ unit.id }}/">View</a>
-                            {% if user.is_manager %}
-                                <a class="controls-delete" href="/units/{{ unit.id }}/edit">Update</a>
-                                <a class="controls-delete" href="/units/{{ unit.id }}/delete">Delete</a>
-                            {% endif %}
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-body">
+                                <a class="text-decoration-none" href="/units/{{ unit.id }}{% if user.is_manager %}/edit{% endif %}"><h5 class="card-title">{{ unit.code }}: {{ unit.name }}</h5></a>
+                                <h6 class="card-subtitle text-body-secondary">{{ unit.year }}, {{ unit.semester }}</h6>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/units/{{ unit.id }}/delete" class="btn btn-danger btn-sm">Delete</a>
+                            </div>
                         </div>
                     </div>
                 {% empty %}
-                    <div class="unit-none">No units.</div>
-                    {% if user.is_student %}<div>If you don't see your unit here, please contact your unit convenor.</div>{% endif %}
+                    <div class="unit-none">
+                        <div>No units available.</div>
+                        {% if user.is_student %}<div>If you don't see your unit here, please contact your unit convenor.</div>{% endif %}
+                    </div>
                 {% endfor %}
             </div>
             {% if user.is_manager %}
                 <div id="unit-buttons">
-                    <a href="{% url 'unit-new' %}">Add unit</a>
+                    <a class="btn btn-primary" href="{% url 'unit-new' %}">Add unit</a>
                 </div>
             {% endif %}
         {% endif %}

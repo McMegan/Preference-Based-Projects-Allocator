@@ -1,9 +1,39 @@
 {% extends 'core/base.html' %}
+{%load crispy_forms_tags %} 
+
 {% block content %}
-    <h2>Update Unit</h2>
+    <h2>Add Unit</h2>
     <form method="post">
         <div class="form-content">
-            {% csrf_token %} {{ form.as_div }}
+            {% csrf_token %} {% crispy form %}
+            <fieldset class="readonly">
+                <legend>Students</legend>
+                <div>
+                    <div class="label">No. Students</div>
+                    <div class="readonly-field">
+                        {{ object.students_count }}
+                    </div>
+                </div>
+                <div>
+                    <a class="button">View Student List</a>
+                    <a class="button">Add New Student</a>
+                    <a class="button">Upload List of Students</a>
+                </div>
+            </fieldset>
+            <div class="readonly-field-set">
+                <div class="label">Projects</div>
+                <div>
+                    <div class="label">No. Projects</div>
+                    <div class="readonly-field">
+                        {{ object.projects_count }}
+                    </div>
+                </div>
+                <div>
+                    <a class="button">View Project List</a>
+                    <a class="button">Add New Project</a>
+                    <a class="button">Upload List of Projects</a>
+                </div>
+            </div>
         </div>
         <div class="form-buttons">
             <input type="submit" value="Save">

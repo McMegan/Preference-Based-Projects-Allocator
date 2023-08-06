@@ -2,27 +2,25 @@
 :root,
 html[data-theme] {
 	/* FROM DJANGO */
-	--primary: hsl(125, 40%, 25%);
+	--primary: hsl(125, 25%, 25%);
 	--secondary: hsl(125, 30%, 40%);
 	--accent: hsl(205, 65%, 70%);
 	--primary-fg: hsl(0, 0%, 100%);
 
-	--body-bg: hsl(0, 0%, 90%);
+	--body-bg: hsl(0, 0%, 93%);
 	--body-fg: hsl(0, 0%, 15%);
 	--body-quiet-color: hsl(0, 0%, 40%);
 	--body-loud-color: hsl(0, 0%, 0%);
 
 	--header-color: hsl(125, 20%, 95%);
 	--header-branding-color: hsl(125, 20%, 95%);
-	--header-bg: hsl(125, 25%, 55%);
+	--header-bg: hsl(125, 20%, 40%);
 	--header-link-color: var(--primary-fg);
 	--header-link-hover-color: hsl(125, 20%, 75%);
 
-	--header-shadow: hsl(0, 0%, 0%, 0.05);
-
 	--breadcrumbs-fg: hsl(200, 44%, 84%);
 	--breadcrumbs-link-fg: var(--body-bg);
-	--breadcrumbs-bg: hsl(125, 30%, 30%);
+	--breadcrumbs-bg: hsl(125, 23%, 35%);
 
 	--link-fg: hsl(205, 30%, 50%);
 	--link-hover-color: hsl(175, 60%, 25%);
@@ -60,6 +58,8 @@ html[data-theme] {
 	/* MY THEMES */
 	--popup-bg: hsl(0, 0%, 100%);
 
+	--form-fieldset-border: hsl(0, 0%, 70%);
+
 	--form-field-bg: hsl(0, 0%, 95%);
 	--form-field-focused-bg: hsl(0, 0%, 93%);
 	--form-field-empty-fg: hsl(0, 0%, 45%);
@@ -82,6 +82,8 @@ html[data-theme] {
 	--button-light-bg: hsl(0, 0%, 90%);
 	--button-light-focus-bg: hsl(0, 0%, 70%);
 	--button-light-fg: hsl(0, 0%, 30%);
+
+	/* BOOTSTRAP */
 }
 html[data-theme='dark'] {
 	--primary-fg: hsl(0, 0%, 95%);

@@ -1,5 +1,7 @@
+from typing import Optional
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.http.request import HttpRequest
 from django.utils.html import format_html, urlencode
 from django.db.models import Count
 from django.urls import reverse
@@ -8,13 +10,11 @@ from django.contrib.auth.models import Group
 
 from . import models
 
-admin.site.unregister(Group)
-
 
 @admin.register(models.User)
 class UserAdmin(BaseUserAdmin):
     list_display = BaseUserAdmin.list_display + \
-        ('is_manager', 'is_student', 'last_login')
+        ('groups_list', 'is_manager', 'is_student', 'last_login')
     list_filter = BaseUserAdmin.list_filter + ('is_manager', 'is_student')
     fieldsets = BaseUserAdmin.fieldsets + (
         ('User type', {'fields': ('is_manager', 'is_student')}),
@@ -27,15 +27,19 @@ class UserAdmin(BaseUserAdmin):
         'date_joined', 'last_login'
     ]
 
+    def groups_list(self, user):
+        return [group.name for group in user.groups.all()]
+    groups_list.short_description = 'groups'
+
     def get_queryset(self, request):
-        return super().get_queryset(request)
+        return super().get_queryset(request).prefetch_related('groups')
 
 
 @admin.register(models.Unit)
 class UnitAdmin(admin.ModelAdmin):
     autocomplete_fields = ['manager']
     list_select_related = ['manager']
-    list_display = ['id', 'code', 'name', 'year', 'semester', 'manager_link', 'students_count', 'student_list', 'preference_submission_start',
+    list_display = ['code', 'name', 'year', 'semester', 'manager_link', 'students_count', 'projects_count', 'preference_submission_start',
                     'preference_submission_end', 'minimum_preference_limit']
     search_fields = ['code', 'name', 'year', 'semester']
 
@@ -46,9 +50,6 @@ class UnitAdmin(admin.ModelAdmin):
             unit.manager
         ))
     manager_link.short_description = 'manager'
-
-    def student_list(self, unit):
-        return [student for student in unit.students.all()]
 
     @admin.display(ordering='students_count')
     def students_count(self, unit):
@@ -61,9 +62,24 @@ class UnitAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', url, unit.students_count)
     students_count.short_description = 'no. students'
 
+    @admin.display(ordering='projects_count')
+    def projects_count(self, unit):
+        return unit.projects_count
+        url = (
+            reverse('admin:core_project_change')
+            + '?'
+            + urlencode({
+                'unit__id': str(unit.id)
+            }))
+        return format_html('<a href="{}">{}</a>', url, unit.projects_count)
+    projects_count.short_description = 'no. projects'
+
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(
-            students_count=Count('students')
+        queryset = super().get_queryset(request)
+        if request.user.is_manager:
+            queryset = queryset.filter(manager_id=request.user.id)
+        return queryset.annotate(
+            students_count=Count('students'), projects_count=Count('projects')
         )
 
 

@@ -10,7 +10,6 @@ urlpatterns = [
          views.UnitDetailView.as_view(), name='manager-unit-detail'),
     path('units/<pk>/delete',
          views.UnitDeleteView.as_view(), name='manager-unit-delete'),
-    # path('units/<pk>/edit',views.UnitUpdateView.as_view(), name='unit-edit'),
     # Unit student views
     re_path(r'^units/(?P<pk_unit>[0-9]+)/students$',
             views.UnitStudentsListView.as_view(), name='manager-unit-students'),

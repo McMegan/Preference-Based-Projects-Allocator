@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.http.request import HttpRequest
@@ -8,18 +8,28 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import Group
 
+from django.contrib.auth.forms import PasswordResetForm
+from django.utils.crypto import get_random_string
+
 from . import models
+from . import forms
 
 
 @admin.register(models.User)
 class UserAdmin(BaseUserAdmin):
+    add_form_template = 'registration/add_form.html'
+    add_form = forms.UserRegistrationForm
+    add_fieldsets = (
+        (None, {'fields': ('username', 'email')}),
+        ('Password', {'fields': ('password1', 'password2'),
+         'classes': ('collapse', 'collapse-closed'), }),
+        ('User type', {'fields': ('is_manager', 'is_student')}),
+    )
+
     list_display = BaseUserAdmin.list_display + \
         ('groups_list', 'is_manager', 'is_student', 'last_login')
     list_filter = BaseUserAdmin.list_filter + ('is_manager', 'is_student')
     fieldsets = BaseUserAdmin.fieldsets + (
-        ('User type', {'fields': ('is_manager', 'is_student')}),
-    )
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (
         ('User type', {'fields': ('is_manager', 'is_student')}),
     )
 
@@ -33,6 +43,24 @@ class UserAdmin(BaseUserAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related('groups')
+
+    def save_model(self, request, obj, form, change):
+        if not change and (not form.cleaned_data['password1'] or not obj.has_usable_password()):
+            # Create a temporary random password as the reset form won't reset an un-set password.
+            obj.set_password(get_random_string(10))
+
+            super().save_model(request, obj, form, change)
+
+            reset_form = PasswordResetForm({'email': obj.email})
+            assert reset_form.is_valid()
+            reset_form.save(
+                request=request,
+                use_https=request.is_secure(),
+                subject_template_name='registration/account_creation_subject.txt',
+                email_template_name='registration/account_creation_email.html',
+            )
+        else:
+            super().save_model(request, obj, form, change)
 
 
 @admin.register(models.Unit)

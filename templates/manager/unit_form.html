@@ -2,18 +2,24 @@
 {%load crispy_forms_tags %} 
 
 {% block content %}
-    <div class="mx-5 mb-4 mt-5">
+    <div class="mb-4 mt-5">
         <h2>{{ unit }}</h2>
     </div>
-    <div class="m-5">
+    <div class="my-5">
         <form method="post">
             <div class="form-content">
                 {% csrf_token %} {% crispy form %}
             </div>
         </form>
     </div>
-    <div class="m-5 d-flex gap-2 my-4">
-       <a href="{% url 'manager-unit-students' unit.id %}" class="btn btn-secondary">Students ({{ unit.students_count }})</a>
-       <a class="btn btn-secondary">Projects ({{ unit.projects_count }})</a>
+    <div class="my-4 d-flex gap-2">
+       <a href="{% url 'manager-unit-students' unit.id %}" class="btn btn-secondary">Student List ({{ unit.students_count }})</a>
+       <a class="btn btn-secondary">Project List ({{ unit.projects_count }})</a>
+    </div>
+    <div class="my-4 d-flex gap-2">
+        {% comment %} preference submission timeframe - ended {% endcomment %}
+        <a href="#" class="btn btn-primary">Start Allocation</a>
+        {% comment %} allocation completed {% endcomment %}
+       <a href="#" class="btn btn-secondary">View Allocation Results</a>
     </div>
 {% endblock %}

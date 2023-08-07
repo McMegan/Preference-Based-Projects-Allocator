@@ -17,23 +17,10 @@ class UserIsManagerMixin(LoginRequiredMixin, UserPassesTestMixin):
         return self.request.user.is_manager
 
 
-# Mixin for unit views
-class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
-    model = models.Unit
-    success_url = reverse_lazy('index')
-
-    def get_queryset(self):
-        if self.request.user.is_manager:
-            return self.request.user.managed_units.all()
-        elif self.request.user.is_student:
-            return self.request.user.enrolled_units.all()
-        return None
-
-
 # List the managed/enrolled units on the index page
 class IndexView(UserIsManagerMixin, ListView):
-    template_name = "manager/index.html"
     model = models.Unit
+    template_name = 'manager/index.html'
 
     def get_queryset(self):
         if self.request.user.is_manager:
@@ -43,7 +30,7 @@ class IndexView(UserIsManagerMixin, ListView):
         return None
 
 
-class UnitCreateView(UnitMixin, CreateView):
+class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = forms.UnitForm
     template_name = 'manager/unit_new.html'
 
@@ -56,11 +43,18 @@ class UnitCreateView(UnitMixin, CreateView):
         else:
             return self.form_invalid(form)
 
+    def test_func(self):
+        return self.request.user.is_manager
 
-class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, DetailView):
+
+class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = models.Unit
-    success_url = reverse_lazy('index')
     form_class = forms.UnitForm
+    # success_url = reverse_lazy('index')
+    template_name = 'manager/unit_form.html'
+
+    def get_success_url(self):
+        return self.request.path
 
     def get_initial(self):
         initial = super().get_initial()
@@ -72,32 +66,25 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, DetailV
 
     def get_queryset(self, *args, **kwargs):
         queryset = super().get_queryset().filter(pk=self.kwargs['pk'])
-        if self.request.user.is_manager:
-            return queryset.prefetch_related(
-                'projects').prefetch_related('students').annotate(students_count=Count('students', distinct=True)).annotate(projects_count=Count('projects', distinct=True))
-        elif self.request.user.is_student:
-            return queryset.prefetch_related(
-                'projects').annotate(projects_count=Count('projects', distinct=True))
+        return queryset.prefetch_related(
+            'projects').prefetch_related('students').annotate(students_count=Count('students', distinct=True)).annotate(projects_count=Count('projects', distinct=True))
 
     def test_func(self):
-        if self.request.user.is_manager:
-            return self.get_queryset().filter(
-                manager_id=self.request.user.id).exists()
-        elif self.request.user.is_student:
-            return self.get_queryset().filter(
-                students__id=self.request.user.id).exists()
-        return self.request.user.is_manager or self.request.user.is_student
+        return self.request.user.is_manager and self.get_queryset().filter(manager_id=self.request.user.id).exists()
 
 
-class UnitDeleteView(UnitMixin, DeleteView):
+class UnitDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy('index')
+    template_name = 'manager/unit_confirm_delete.html'
+
+    def test_func(self):
+        return self.request.user.is_manager and self.get_queryset().filter(manager_id=self.request.user.id).exists()
 
 
 # Unit Enrolled Student Views
 class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = models.User
     template_name = 'manager/unit_students.html'
-    # form_class
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -110,3 +97,4 @@ class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
     def test_func(self):
         return self.request.user.is_manager
+        # and self.get_queryset().filter(manager_id=self.request.user.id).exists()

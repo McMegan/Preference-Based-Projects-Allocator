@@ -29,13 +29,13 @@ class UnitForm(forms.ModelForm):
     preference_submission_end = SplitDateTimeField(
         initial=datetime.datetime.now, required=False)
 
-    student_list_file = forms.FileField(label='Student list', required=False)
-    student_list_override = forms.BooleanField(
-        label='Replace current students', required=False)
+    # student_list_file = forms.FileField(label='Student list', required=False)
+    # student_list_override = forms.BooleanField(
+    #     label='Replace current students', required=False)
 
-    project_list_file = forms.FileField(label='Project list', required=False)
-    project_list_override = forms.BooleanField(
-        label='Replace current projects', required=False)
+    # project_list_file = forms.FileField(label='Project list', required=False)
+    # project_list_override = forms.BooleanField(
+    #     label='Replace current projects', required=False)
 
     # ADD FILE UPLOAD FOR STUDENTS & PROJECTS
 
@@ -69,4 +69,4 @@ class UnitForm(forms.ModelForm):
     class Meta:
         model = models.Unit
         fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',
-                  'preference_submission_end', 'minimum_preference_limit', 'students']
+                  'preference_submission_end', 'minimum_preference_limit']

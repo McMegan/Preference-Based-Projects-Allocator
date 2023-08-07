@@ -24,17 +24,6 @@ class User(AbstractUser):
             return self.username
         return f'{self.get_full_name()} ({self.username})'
 
-    def save(self, *args, **kwargs):
-        if self.is_manager:
-            # Give access to admin panel
-            self.is_staff = True
-            # Add to manager group
-            if not self.groups.filter(name='Managers').exists():
-                group, created = Group.objects.get_or_create(name='Managers')
-                self.groups.add(group)
-                print(self.groups.filter(name='Managers'))
-        super().save(*args, **kwargs)
-
 
 class Unit(models.Model):
     code = models.CharField(max_length=15)

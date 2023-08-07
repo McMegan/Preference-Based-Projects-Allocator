@@ -2,17 +2,32 @@
 {% block extrastyle %}{% load static %}<link rel='stylesheet' href='{% static 'css/core/base.css' %}'> {% endblock %}
 
 {% block container %}
-    <header class="sticky-top bg-body-tertiary py-3 mb-4 border-bottom">
-        <div class="container d-flex flex-wrap align-items-center justify-content-center justify-content-md-between">
-            <div class="me-auto">
-                <a href="{% url 'index' %}" class="d-inline-flex link-body-emphasis text-decoration-none">Projects Allocator</a>
+    <header class="sticky-top bg-body-secondary mb-4 border-bottom">
+        <div class="border-bottom pt-4 pb-3">
+            <div class="container d-flex justify-content-center align-items-center">
+                <a href="{% url 'index' %}" class="link-body-emphasis text-decoration-none"><h1 class="fs-3">Project Allocator</h1></a>
             </div>
-            <ul class="nav col mb-2 d-flex gap-2 justify-content-end align-items-center mb-md-0">
-                <li class="nav-item"><span>{{ user.username }}</span></li>
-
-                <li class="nav-item"><a href="{% url 'logout' %}" class="btn btn-sm btn-outline-primary text-nowrap">Log Out</a></li>
-                <li class="nav-item"><a href="{% url 'password_change' %}" class="btn btn-sm btn-outline-secondary text-nowrap">Change Password</a></li>
-            </ul>
+        </div>
+        <div class="bg-body-secondary py-2">
+            <div class="container d-flex flex-wrap align-items-center justify-content-center justify-content-md-between">
+                <ul class="me-auto nav col mb-2 d-flex gap-2 align-items-center mb-md-0">
+                    {% if user.is_authenticated %}
+                        {% if user.is_manager %}
+                            <li class="nav-item"><a href="{% url 'manager-index' %}" class="text-decoration-none">Managed Units</a></li>
+                        {% endif %}
+                        {% if user.is_student %}
+                            <li class="nav-item"><a href="{% url 'student-index' %}" class="text-decoration-none">Enrolled Units</a></li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="nav col mb-2 d-flex gap-2 justify-content-end align-items-center mb-md-0">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item"><span>{{ user.username }}</span></li>
+                    {% endif %}
+                    <li class="nav-item"><a href="{% url 'logout' %}" class="btn btn-sm btn-outline-primary text-nowrap">Log Out</a></li>
+                    <li class="nav-item"><a href="{% url 'password_change' %}" class="btn btn-sm btn-outline-secondary text-nowrap">Change Password</a></li>
+                </ul>
+            </div>
         </div>
     </header>
     <main class="container">{% block content %}{% endblock %}</main>

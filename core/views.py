@@ -9,8 +9,12 @@ from . import forms
 
 
 def index_view(request):
-    if request.user.is_manager:
-        return redirect('manager-index')
+    if not request.user.is_authenticated:
+        return redirect('login')
     if request.user.is_student:
         return redirect('student-index')
+    if request.user.is_manager:
+        return redirect('manager-index')
+    if request.user.is_superuser:
+        return redirect('admin')
     return None

@@ -20,9 +20,7 @@ class User(AbstractUser):
     is_student = models.BooleanField(default=False)
 
     def __str__(self):
-        if self.get_full_name() == '':
-            return self.username
-        return f'{self.get_full_name()} ({self.username})'
+        return self.username
 
 
 class Unit(models.Model):
@@ -36,8 +34,6 @@ class Unit(models.Model):
 
     manager = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name='managed_units', limit_choices_to={'is_manager': True})
-    students = models.ManyToManyField(
-        User, related_name='enrolled_units', limit_choices_to={'is_student': True}, blank=True)
 
     def __str__(self):
         return f'{self.code}: {self.name}'
@@ -55,6 +51,23 @@ class Unit(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['code', 'year', 'semester'], name='%(app_label)s_%(class)s_unique')
+        ]
+
+
+class EnrolledStudent(models.Model):
+    student_id = models.CharField(max_length=15)
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='enrollments', limit_choices_to={'is_student': True}, null=True, blank=True)
+    unit = models.ForeignKey(
+        Unit, on_delete=models.CASCADE, related_name='enrolled_students')
+
+    def __str__(self):
+        return f'{self.unit.code}-{self.student_id}'
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student_id', 'unit'], name='%(app_label)s_%(class)s_unique'),
         ]
 
 

@@ -3,10 +3,11 @@ from django.contrib.auth import views as auth_views
 from . import views
 from . import forms
 
-print(auth_views)
 
 urlpatterns = [
     path('', views.index_view, name='index'),
+
+    path('register/', views.StudentRegistrationView.as_view(), name='register'),
 
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html',
          authentication_form=forms.UserLoginForm), name='login'),

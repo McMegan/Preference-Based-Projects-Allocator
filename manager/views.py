@@ -1,11 +1,8 @@
-from typing import Any, Dict, List, Optional
 from django.db import models
-from django.http import HttpRequest, HttpResponse
-from django.urls import reverse_lazy, resolve
+from django.http import HttpRequest
+from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
-from django.views.generic.edit import FormMixin
-from django.shortcuts import render, redirect
+from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView
 from django.db.models import Count
 
 from core import models
@@ -23,18 +20,15 @@ class IndexView(UserIsManagerMixin, ListView):
     template_name = 'manager/index.html'
 
     def get_queryset(self):
-        if self.request.user.is_manager:
-            return self.request.user.managed_units.all()
-        elif self.request.user.is_student:
-            return self.request.user.enrolled_units.all()
-        return None
+        return self.request.user.managed_units.all()
 
 
-class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+class UnitCreateView(UserIsManagerMixin, CreateView):
     form_class = forms.UnitForm
     template_name = 'manager/unit_new.html'
+    success_url = reverse_lazy('manager-index')
 
-    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+    def post(self, request: HttpRequest, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
             form.instance.manager_id = request.user.id
@@ -42,6 +36,9 @@ class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
+
+    def get_queryset(self):
+        return self.request.user.managed_units.all()
 
     def test_func(self):
         return self.request.user.is_manager
@@ -65,9 +62,8 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return initial
 
     def get_queryset(self, *args, **kwargs):
-        queryset = super().get_queryset().filter(pk=self.kwargs['pk'])
-        return queryset.prefetch_related(
-            'projects').prefetch_related('students').annotate(students_count=Count('students', distinct=True)).annotate(projects_count=Count('projects', distinct=True))
+        return super().get_queryset().filter(pk=self.kwargs['pk']).prefetch_related(
+            'projects').prefetch_related('enrolled_students').annotate(students_count=Count('enrolled_students', distinct=True)).annotate(projects_count=Count('projects', distinct=True))
 
     def test_func(self):
         return self.request.user.is_manager and self.get_queryset().filter(manager_id=self.request.user.id).exists()
@@ -77,13 +73,16 @@ class UnitDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy('index')
     template_name = 'manager/unit_confirm_delete.html'
 
+    def get_queryset(self):
+        return self.request.user.managed_units.all()
+
     def test_func(self):
         return self.request.user.is_manager and self.get_queryset().filter(manager_id=self.request.user.id).exists()
 
 
 # Unit Enrolled Student Views
 class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    model = models.User
+    model = models.EnrolledStudent
     template_name = 'manager/unit_students.html'
 
     def get_context_data(self, **kwargs):
@@ -93,8 +92,55 @@ class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return context
 
     def get_queryset(self):
-        return super().get_queryset().filter(enrolled_units=self.kwargs['pk_unit'])
+        return super().get_queryset().prefetch_related('user').filter(unit=self.kwargs['pk_unit'])
 
     def test_func(self):
-        return self.request.user.is_manager
-        # and self.get_queryset().filter(manager_id=self.request.user.id).exists()
+        return self.request.user.is_manager and self.request.user.managed_units.filter(pk=self.kwargs['pk_unit']).exists()
+
+
+class UnitStudentsCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    form_class = forms.StudentForm
+    template_name = 'manager/unit_students_new.html'
+
+    def get_success_url(self):
+        return self.request.path
+
+    def post(self, request: HttpRequest, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            form.instance.unit_id = self.kwargs['pk_unit']
+            form.instance.save()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['unit'] = self.request.user.managed_units.get(
+            pk=self.kwargs['pk_unit'])
+        return context
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('user').filter(unit=self.kwargs['pk_unit'])
+
+    def test_func(self):
+        return self.request.user.is_manager and self.request.user.managed_units.filter(pk=self.kwargs['pk_unit']).exists()
+
+
+class UnitStudentsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = models.EnrolledStudent
+    template_name = 'manager/unit_students_detail.html'
+
+    def get_queryset(self, *args, **kwargs):
+        return super().get_queryset().prefetch_related('user').prefetch_related('user__project_preferences')
+
+    def test_func(self):
+        return self.request.user.is_manager and self.request.user.managed_units.filter(pk=self.kwargs['pk_unit']).exists()
+
+
+class UnitStudentsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    success_url = reverse_lazy('index')
+    template_name = 'manager/unit_student_confirm_delete.html'
+
+    def test_func(self):
+        return self.request.user.is_manager and self.request.user.managed_units.filter(pk=self.kwargs['pk_unit']).exists()

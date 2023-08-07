@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+{%load crispy_forms_tags %} 
+
+{% block content %}
+    <div class="mb-4 mt-5">
+        <a class="text-decoration-none" href="{% url 'manager-unit-detail' unit.id %}"><h2>{{ unit }}</h2></a>
+        <h3>Add Student</h3>
+    </div>
+    <div class="my-5">
+        <form method="post">
+            <div class="form-content">
+                {% csrf_token %} {% crispy form %}
+            </div>
+        </form>
+    </div>
+{% endblock %}

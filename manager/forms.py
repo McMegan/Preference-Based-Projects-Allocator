@@ -70,3 +70,24 @@ class UnitForm(forms.ModelForm):
         model = models.Unit
         fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',
                   'preference_submission_end', 'minimum_preference_limit']
+
+
+class StudentForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Fieldset(
+                '',
+                FloatingField('student_id'),
+            ),
+            FormActions(
+                Submit('submit', 'Save', css_class='btn btn-primary'),
+            )
+        )
+
+    class Meta:
+        model = models.EnrolledStudent
+        fields = ['student_id']

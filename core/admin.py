@@ -18,7 +18,7 @@ from . import forms
 @admin.register(models.User)
 class UserAdmin(BaseUserAdmin):
     add_form_template = 'registration/add_form.html'
-    add_form = forms.UserRegistrationForm
+    add_form = forms.AdminUserRegistrationForm
     add_fieldsets = (
         (None, {'fields': ('username', 'email')}),
         ('Password', {'fields': ('password1', 'password2'),
@@ -107,8 +107,13 @@ class UnitAdmin(admin.ModelAdmin):
         if request.user.is_manager:
             queryset = queryset.filter(manager_id=request.user.id)
         return queryset.annotate(
-            students_count=Count('students'), projects_count=Count('projects')
+            students_count=Count('enrolled_students'), projects_count=Count('projects')
         )
+
+
+@admin.register(models.EnrolledStudent)
+class EnrolledStudentAdmin(admin.ModelAdmin):
+    list_display = ['id', 'student_id', 'user', 'unit']
 
 
 @admin.register(models.Project)

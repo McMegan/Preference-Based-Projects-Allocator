@@ -1,19 +1,15 @@
-import datetime
-from typing import Any, Dict
-from django.contrib.auth.forms import AuthenticationForm, UsernameField, PasswordChangeForm, PasswordResetForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, UserCreationForm
 from django import forms
 
-from crispy_forms.bootstrap import FormActions, TabHolder, Tab
+from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML
+from crispy_forms.layout import Layout, Fieldset, Submit, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
 
 from . import models
 
-# password_reset_confirm
 
-
-class UserRegistrationForm(UserCreationForm):
+class AdminUserRegistrationForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Passwords are not required
@@ -32,6 +28,33 @@ class UserRegistrationForm(UserCreationForm):
         return super().clean()
 
 
+class StudentUserRegistrationForm(UserCreationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['email'].required = True
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Fieldset(
+                '',
+                FloatingField('username'),
+                FloatingField('email'),
+                FloatingField('password1'),
+                FloatingField('password2'),
+            ),
+            Submit('submit', 'Register', css_class='btn btn-primary'),
+        )
+
+    def clean(self):
+
+        return super().clean()
+
+    class Meta(UserCreationForm.Meta):
+        model = models.User
+        fields = ['username', 'email', 'password1', 'password2']
+
+
 class UserLoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -43,7 +66,11 @@ class UserLoginForm(AuthenticationForm):
                 FloatingField('username'),
                 FloatingField('password'),
             ),
-            Submit('submit', 'Log In', css_class='btn btn-primary'),
+            FormActions(
+                Submit('submit', 'Log In', css_class='btn btn-primary'),
+                HTML(
+                    """<a href="{% url 'register' %}" class="btn btn-secondary">Register</a>"""),
+            )
         )
 
 

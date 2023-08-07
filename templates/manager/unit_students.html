@@ -1,8 +1,8 @@
 {% extends 'core/base.html' %}
 {% block content %}
     <div class="mb-4 mt-5">
-        <h2>Student List</h2>
-        <a class="text-decoration-none" href="{% url 'manager-unit-detail' unit.id %}"><h3>{{ unit.code }}: {{ unit.name }}</h3></a>
+        <a class="text-decoration-none" href="{% url 'manager-unit-detail' unit.id %}"><h2>{{ unit.code }}: {{ unit.name }}</h2></a>
+        <h3>Student List</h3>
     </div>
     <div class="my-4 d-flex gap-5 flex-wrap">
         <div class="d-flex gap-3">
@@ -15,14 +15,14 @@
         </div>
     </div>
     <div class="my-4 d-flex gap-2">
-        <a class="btn btn-primary" href="{% url 'manager-unit-new' %}">Upload student list</a>
-        <a class="btn btn-secondary" href="{% url 'manager-unit-new' %}">Add student</a>
+        <a class="btn btn-primary" href="{% url 'manager-unit-students-new' unit.id %}">Upload student list</a>
+        <a class="btn btn-secondary" href="{% url 'manager-unit-students-new' unit.id %}">Add student</a>
     </div>
     <table class="table table-striped ">
         <thead>
             <tr>
-                <th scope="col">Username</th>
-                <th scope="col">Name</th>
+                <th scope="col">Student ID</th>
+                <th scope="col">Registered</th>
                 <th scope="col">Submitted Preferences?</th>
                 <th scope="col"></th>
             </tr>
@@ -30,12 +30,12 @@
         <tbody>
             {% for student in object_list %}
                 <tr>
-                    <th scope="row">{{ student.username }}</th>
-                    <td>{{ student.full_name }}</td>
-                    <td>{{ student }}</td>
+                    <th scope="row">{{ student.student_id }}</th>
+                    <td>{% if student.user %}True{% else %}False{% endif %}</td>
+                    <td>...</td>
                     <td class="d-flex gap-2 justify-content-end">
-                        <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-new' %}">View</a>
-                        <a class="btn btn-danger btn-sm" href="{% url 'manager-unit-students-new' unit.id %}">Remove</a>
+                        <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-students-detail' unit.id student.id %}">View</a>
+                        <a class="btn btn-danger btn-sm" href="{% url 'unit-students-remove' unit.id student.id %}">Remove</a>
                     </td>
                 </tr>
             {% endfor %}

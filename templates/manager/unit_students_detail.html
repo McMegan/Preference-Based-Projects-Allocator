@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+{% block content %}
+    <div class="mb-4 mt-5">
+        <a class="text-decoration-none" href="{% url 'manager-unit-detail' enrolledstudent.unit.id %}"><h2>{{ enrolledstudent.unit }}</h2></a>
+        <h3>Student - {{ enrolledstudent.id }}</h3>
+    </div>
+    <div class="my-4 d-grid gap-3">
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Student ID:</div>
+            <div>{{ enrolledstudent.student_id }}</div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Registered:</div>
+            <div>{% if enrolledstudent.user %}True{% else %}False{% endif %}</div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Submitted Preferences:</div>
+            <div>{{ enrolledstudent.user.project_preferences.exists }}</div>
+        </div>
+    </div>
+    {% if enrolledstudent.user and enrolledstudent.user.project_preferences.exists %}
+        <div class="mb-4 mt-5">
+            <h4>Preferences</h4>
+        </div>
+        <table class="table table-striped ">
+            <thead>
+                <tr>
+                    <th scope="col">Rank</th>
+                    <th scope="col">Project ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in enrolledstudent.user.project_preferences.all %}
+                    <tr>
+                        <th scope="row">{{ student.student_id }}</th>
+                        <td>{% if student.user %}True{% else %}False{% endif %}</td>
+                        <td>...</td>
+                        <td class="d-flex gap-2 justify-content-end">
+                            <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-students-detail' unit.id student.id %}">View</a>
+                            <a class="btn btn-danger btn-sm" href="{% url 'unit-students-remove' unit.id student.id %}">Remove</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <div class="my-4 d-flex gap-2">
+        <a class="btn btn-primary" href="{% url 'manager-unit-students' enrolledstudent.unit.id %}">Back to Student List</a>
+        <a class="btn btn-danger" href="{% url 'unit-students-remove' enrolledstudent.unit.id enrolledstudent.id %}">Remove Student</a>
+    </div>
+{% endblock %}

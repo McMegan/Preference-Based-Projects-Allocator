@@ -8,7 +8,7 @@
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <a class="text-decoration-none" href="{% url 'manager-unit-detail' unit.id %}"><h5 class="card-title">{{ unit.code }}: {{ unit.name }}</h5></a>
+                        <h5 class="card-title"><a class="text-decoration-none" href="{% url 'manager-unit-detail' unit.id %}">{{ unit }}</a></h5>
                         <h6 class="card-subtitle text-body-secondary">{{ unit.year }}, {{ unit.semester }}</h6>
                     </div>
                     <div class="card-footer">
@@ -22,7 +22,7 @@
             </div>
         {% endfor %}
     </div>
-    <div class="m-3 row row-cols-1 row-cols-md-2 g-4">
+    <div class="my-3 row row-cols-1 row-cols-md-2 g-4">
         <div class="col">
             <a class="btn btn-primary" href="{% url 'manager-unit-new' %}">Add unit</a>
         </div>

@@ -19,18 +19,22 @@ class IndexView(UserIsStudentMixin, ListView):
     model = models.Unit
 
     def get_queryset(self):
-        return self.request.user.enrolled_units.all()
+        return super().get_queryset().filter(
+            enrolled_students__user__id=self.request.user.id)
 
 
 # FormMixin
 class UnitDetailView(UserIsStudentMixin, DetailView):
     model = models.Unit
     success_url = reverse_lazy('student-index')
+    template_name = "student/unit_detail.html"
 
     def get_queryset(self, *args, **kwargs):
         return super().get_queryset().filter(pk=self.kwargs['pk']).prefetch_related(
             'projects').annotate(projects_count=Count('projects', distinct=True))
 
     def test_func(self):
+        return super().get_queryset().filter(
+            enrolled_students__user__id=self.request.user.id)
         return self.get_queryset().filter(
             students__id=self.request.user.id).exists()

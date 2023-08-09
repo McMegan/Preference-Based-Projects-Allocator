@@ -9,3 +9,12 @@
 	border-top-left-radius: 0;
 	border-top-right-radius: 0;
 }
+
+/*  */
+.nav-item,
+.nav-item .btn-sm {
+	font-size: 0.8rem;
+}
+.nav-item a {
+	text-transform: uppercase;
+}

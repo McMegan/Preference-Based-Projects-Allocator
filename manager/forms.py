@@ -1,11 +1,13 @@
 import datetime
-
 from django import forms
 
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Submit, Div
 from crispy_bootstrap5.bootstrap5 import FloatingField
+
+import csv
+from io import StringIO
 
 from core import models
 
@@ -28,14 +30,6 @@ class UnitForm(forms.ModelForm):
         initial=datetime.datetime.now, required=False)
     preference_submission_end = SplitDateTimeField(
         initial=datetime.datetime.now, required=False)
-
-    # student_list_file = forms.FileField(label='Student list', required=False)
-    # student_list_override = forms.BooleanField(
-    #     label='Replace current students', required=False)
-
-    # project_list_file = forms.FileField(label='Project list', required=False)
-    # project_list_override = forms.BooleanField(
-    #     label='Replace current projects', required=False)
 
     # ADD FILE UPLOAD FOR STUDENTS & PROJECTS
 
@@ -91,3 +85,41 @@ class StudentForm(forms.ModelForm):
     class Meta:
         model = models.EnrolledStudent
         fields = ['student_id']
+
+
+class StudentListForm(forms.Form):
+    file = forms.FileField(label='')
+    # file.widget = forms.ClearableFileInput(
+    #     attrs={'enctype': 'multipart/form-data', })
+    list_override = forms.BooleanField(
+        label='Replace current students', required=False)
+    column_name = forms.CharField(
+        label='Name of the column for the Student ID in the uploaded file.')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Fieldset(
+                '',
+                'file',
+                'list_override',
+                FloatingField('column_name')
+            ),
+            FormActions(
+                Submit('submit', 'Save', css_class='btn btn-primary'),
+            )
+        )
+
+    def clean(self):
+        file = self.cleaned_data.get('file').read().decode('utf-8')
+        csv_data = csv.DictReader(StringIO(file), delimiter=',')
+
+        try:
+            next(csv_data)[self.cleaned_data.get('column_name')]
+        except KeyError:
+            raise forms.ValidationError(
+                {'column_name': 'Please enter a valid column name for this file.'})
+
+        return super().clean()

@@ -43,16 +43,27 @@ class StudentUserRegistrationForm(UserCreationForm):
                 FloatingField('password1'),
                 FloatingField('password2'),
             ),
-            Submit('submit', 'Register', css_class='btn btn-primary'),
+            FormActions(
+                Submit('submit', 'Register', css_class='btn btn-primary'),
+                HTML(
+                    """<a href="{% url 'login' %}" class="btn btn-outline-secondary">Log In</a>"""),
+            )
         )
 
     def clean(self):
-
+        # If an enrollment doesn't exist for this username / student id
+        if self.cleaned_data.get('username') and not models.EnrolledStudent.objects.filter(
+                student_id=self.cleaned_data.get('username')).exists():
+            raise forms.ValidationError(
+                {'username': 'Invalid student ID. This student ID has not been registered for any units.'})
         return super().clean()
 
     class Meta(UserCreationForm.Meta):
         model = models.User
         fields = ['username', 'email', 'password1', 'password2']
+        labels = {
+            'username': 'Student ID'
+        }
 
 
 class UserLoginForm(AuthenticationForm):
@@ -69,7 +80,7 @@ class UserLoginForm(AuthenticationForm):
             FormActions(
                 Submit('submit', 'Log In', css_class='btn btn-primary'),
                 HTML(
-                    """<a href="{% url 'register' %}" class="btn btn-secondary">Register</a>"""),
+                    """<a href="{% url 'register' %}" class="btn btn-outline-secondary">Register</a>"""),
             )
         )
 
@@ -86,7 +97,9 @@ class UserPasswordChangeForm(PasswordChangeForm):
                 FloatingField('new_password1'),
                 FloatingField('new_password2'),
             ),
-            Submit('submit', 'Save', css_class='btn btn-primary'),
+            FormActions(
+                Submit('submit', 'Save', css_class='btn btn-primary'),
+            )
         )
 
 
@@ -100,5 +113,10 @@ class UserPasswordResetForm(PasswordResetForm):
                 '',
                 FloatingField('email'),
             ),
-            Submit('submit', 'Reset Password', css_class='btn btn-primary'),
+            FormActions(
+                Submit('submit', 'Reset Password',
+                       css_class='btn btn-primary'),
+                HTML(
+                    """<a href="{% url 'login' %}" class="btn btn-outline-secondary">Log In</a>"""),
+            )
         )

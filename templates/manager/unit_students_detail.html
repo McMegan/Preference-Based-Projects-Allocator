@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 {% block content %}
     <div class="mb-4 mt-5">
-        <a class="text-decoration-none" href="{% url 'manager-unit-detail' enrolledstudent.unit.id %}"><h2>{{ enrolledstudent.unit }}</h2></a>
+        <h2><a class="text-decoration-none" href="{% url 'manager-unit-detail' enrolledstudent.unit.id %}">{{ enrolledstudent.unit }}</a></h2>
         <h3>Student - {{ enrolledstudent.id }}</h3>
     </div>
     <div class="my-4 d-grid gap-3">

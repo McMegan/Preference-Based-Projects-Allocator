@@ -65,6 +65,7 @@ class EnrolledStudent(models.Model):
         return f'{self.unit.code}-{self.student_id}'
 
     class Meta:
+        ordering = ['student_id']
         constraints = [
             models.UniqueConstraint(
                 fields=['student_id', 'unit'], name='%(app_label)s_%(class)s_unique'),
@@ -74,7 +75,7 @@ class EnrolledStudent(models.Model):
 class Project(models.Model):
     number = models.CharField(max_length=15)
     name = models.CharField(max_length=150)
-    description = models.CharField(max_length=255, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     min_students = models.IntegerField()
     max_students = models.IntegerField()
 
@@ -85,6 +86,7 @@ class Project(models.Model):
         return f'{self.number}: {self.name} ({self.unit.code})'
 
     class Meta:
+        ordering = ['number', 'name']
         constraints = [
             models.UniqueConstraint(
                 fields=['unit', 'number'], name='%(app_label)s_%(class)s_rank_unique'),

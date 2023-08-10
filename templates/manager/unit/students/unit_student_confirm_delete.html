@@ -1,0 +1,10 @@
+{% extends 'manager/unit/base.html' %}
+{% load crispy_forms_tags %} 
+{% block content %}
+    <h2 class="mb-5">Remove Student from Unit</h2>
+    <form method="post">{% csrf_token %}
+        <p>Are you sure you want to remove "{{ object }}" from unit?</p>
+        {% crispy form %}
+        <input class="btn btn-danger" type="submit" value="Confirm">
+    </form>
+{% endblock %}

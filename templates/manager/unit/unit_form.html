@@ -1,8 +1,8 @@
-{% extends 'core/base.html' %}
-{%load crispy_forms_tags %} 
+{% extends 'manager/unit/base.html' %}
+{% load crispy_forms_tags %} 
 
 {% block content %}
-    <div class="mb-4 mt-5">
+    <div class="mb-4">
         <h2>{{ unit }}</h2>
     </div>
     <div class="my-5">
@@ -13,14 +13,14 @@
         </form>
     </div>
     <div class="my-4 d-flex gap-2">
-        <a href="{% url 'manager-unit-students' unit.id %}" class="btn btn-{% if unit.students_count %}primary{% else %}secondary{% endif %}">Student List ({{ unit.students_count }})</a>
-       <a class="btn btn-{% if unit.projects_count %}primary{% else %}secondary{% endif %}">Project List ({{ unit.projects_count }})</a>
+        <a href="{% url 'manager-unit-students' unit.id %}" class="btn btn-{% if unit.students_count %}primary{% else %}secondary{% endif %}">Students ({{ unit.students_count }})</a>
+       <a href="{% url 'manager-unit-projects' unit.id %}" class="btn btn-{% if unit.projects_count %}primary{% else %}secondary{% endif %}">Projects ({{ unit.projects_count }})</a>
     </div>
     <div class="my-4 d-flex gap-2">
         {% comment %} preference submission timeframe - ended {% endcomment %}
-        <a class="btn btn-secondary">Preference List</a>
+        <a class="btn btn-secondary">Preferences</a>
     </div>
-    <div class="my-4 d-flex gap-2">
+    <div class="mt-4 d-flex gap-2">
         {% comment %} preference submission timeframe - ended {% endcomment %}
         <a href="#" class="btn btn-primary">Start Allocation</a>
         {% comment %} allocation completed {% endcomment %}

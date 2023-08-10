@@ -1,0 +1,58 @@
+{% extends 'manager/unit/base.html' %}
+{% block content %}
+    <div class="mb-4">
+        <h3>Project List</h3>
+    </div>
+    <div class="my-4 d-flex gap-5 flex-wrap">
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">No. Projects:</div>
+            <div>{{ unit.projects_count }}</div>
+        </div>
+    </div>
+    <div class="my-4 d-flex gap-2">
+        <a class="btn btn-primary" href="{% url 'manager-unit-projects-new-list' unit.id %}">Upload project list</a>
+        <a class="btn btn-secondary" href="{% url 'manager-unit-projects-new' unit.id %}">Add project</a>
+    </div>
+    <table class="table table-striped ">
+        <thead>
+            <tr>
+                <th scope="col">Number</th>
+                <th scope="col">Name</th>
+                <th scope="col">Description</th>
+                <th scope="col">Minimum Students</th>
+                <th scope="col">Maximum Students</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in object_list %}
+                <tr>
+                    <th scope="row">{{ project.number }}</th>
+                    <td>{{ project.name }}</td>
+                    <td>{% if project.description %}{{ project.description }}{% endif %}</td>
+                    <td>{{ project.min_students }}</td>
+                    <td>{{ project.max_students }}</td>
+                    <td>
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a class="btn btn-primary btn-sm" href="">Edit</a>
+                            <a class="btn btn-danger btn-sm" href="">Remove</a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="my-5 d-flex gap-3 justify-content-center align-items-center">
+        {% if page_obj.has_previous %}
+            <a class="btn btn-sm btn-outline-secondary" href="?page=1">&laquo; first</a>
+            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+        {% if page_obj.has_next %}
+            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.next_page_number }}">next</a>
+            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </div>
+{% endblock %}

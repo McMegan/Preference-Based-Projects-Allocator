@@ -29,9 +29,11 @@
                     <th scope="row">{{ student.student_id }}</th>
                     <td><span class ="badge rounded-pill {% if student.user %}text-bg-success{% else %}text-bg-danger{% endif %}"><i class="bi bi-{% if student.user %}check{% else %}x{% endif %}-lg"></i></span></td>
                     <td>...</td>
-                    <td class="d-flex gap-2 justify-content-end">
-                        <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-students-detail' unit.id student.id %}">View</a>
-                        <a class="btn btn-danger btn-sm" href="{% url 'unit-students-remove' unit.id student.id %}">Remove</a>
+                    <td>
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-students-detail' unit.id student.id %}">View</a>
+                            <a class="btn btn-danger btn-sm" href="{% url 'unit-students-remove' unit.id student.id %}">Remove</a>
+                        </div>
                     </td>
                 </tr>
             {% endfor %}

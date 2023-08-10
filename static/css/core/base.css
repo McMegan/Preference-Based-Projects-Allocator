@@ -12,9 +12,7 @@
 
 /*  */
 .nav-item,
-.nav-item .btn-sm {
-	font-size: 0.8rem;
-}
-.nav-item a {
-	text-transform: uppercase;
+.nav-item .nav-link,
+.dropdown-item {
+	font-size: 0.85rem;
 }

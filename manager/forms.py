@@ -3,13 +3,31 @@ from django import forms
 
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Fieldset, Submit, Div
+from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
 
 import csv
 from io import StringIO
+import os
 
 from core import models
+
+
+def valid_csv_file(file):
+    if os.path.splitext(file.name)[1].casefold() != '.csv'.casefold():
+        raise forms.ValidationError({'file': 'File must be CSV.'})
+
+
+def column_exists_in_csv(file, field_name, column_name):
+    file.seek(0)
+    file = file.read().decode('utf-8-sig')
+    csv_data = csv.DictReader(StringIO(file), delimiter=',')
+
+    try:
+        next(csv_data)[column_name]
+    except KeyError:
+        raise forms.ValidationError(
+            {field_name: 'Please enter a valid column name for this file.'})
 
 
 class SplitDateTimeWidget(forms.SplitDateTimeWidget):
@@ -66,9 +84,15 @@ class UnitForm(forms.ModelForm):
                   'preference_submission_end', 'minimum_preference_limit']
 
 
+# Students
 class StudentForm(forms.ModelForm):
+    """
+        Form for adding a single student to a unit
+    """
 
     def __init__(self, *args, **kwargs):
+        self.pk_unit = kwargs.pop('pk_unit', None)
+
         super().__init__(*args, **kwargs)
 
         self.helper = FormHelper()
@@ -82,22 +106,32 @@ class StudentForm(forms.ModelForm):
             )
         )
 
+    def clean(self):
+        student_id = self.cleaned_data.get('student_id')
+        if models.EnrolledStudent.objects.filter(student_id=student_id, unit_id=self.pk_unit).exists():
+            raise forms.ValidationError(
+                {'student_id': 'A student with that ID is already enrolled in this unit.'})
+        return super().clean()
+
     class Meta:
         model = models.EnrolledStudent
         fields = ['student_id']
 
 
 class StudentListForm(forms.Form):
+    """
+        Form for uploading a list of students
+    """
     file = forms.FileField(label='')
-    # file.widget = forms.ClearableFileInput(
-    #     attrs={'enctype': 'multipart/form-data', })
     list_override = forms.BooleanField(
         label='Replace current students', required=False)
-    column_name = forms.CharField(
+    student_id_column = forms.CharField(
         label='Name of the column for the Student ID in the uploaded file.')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.fields['student_id_column'].initial = 'user_id'
 
         self.helper = FormHelper()
         self.helper.layout = Layout(
@@ -105,7 +139,7 @@ class StudentListForm(forms.Form):
                 '',
                 'file',
                 'list_override',
-                FloatingField('column_name')
+                FloatingField('student_id_column')
             ),
             FormActions(
                 Submit('submit', 'Save', css_class='btn btn-primary'),
@@ -113,13 +147,106 @@ class StudentListForm(forms.Form):
         )
 
     def clean(self):
-        file = self.cleaned_data.get('file').read().decode('utf-8')
-        csv_data = csv.DictReader(StringIO(file), delimiter=',')
+        valid_csv_file(self.cleaned_data.get('file'))
+        column_exists_in_csv(self.cleaned_data.get('file'), 'student_id_column',
+                             self.cleaned_data.get('student_id_column'))
+        return super().clean()
 
-        try:
-            next(csv_data)[self.cleaned_data.get('column_name')]
-        except KeyError:
+
+# Projects
+class ProjectForm(forms.ModelForm):
+    """
+        Form for adding a single project to a unit
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.pk_unit = kwargs.pop('pk_unit', None)
+
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Fieldset(
+                '',
+                FloatingField('number'),
+                FloatingField('name'),
+                FloatingField('min_students'),
+                FloatingField('max_students'),
+            ),
+            FormActions(
+                Submit('submit', 'Save', css_class='btn btn-primary'),
+            )
+        )
+
+    def clean(self):
+        number = self.cleaned_data.get('number')
+        if models.Project.objects.filter(number=number, unit_id=self.pk_unit).exists():
             raise forms.ValidationError(
-                {'column_name': 'Please enter a valid column name for this file.'})
+                {'number': 'A project with that number is already included in this unit.'})
+        return super().clean()
+
+    class Meta:
+        model = models.Project
+        fields = ['number', 'name', 'min_students', 'max_students']
+
+
+class ProjectListForm(forms.Form):
+    """
+        Form for uploading a list of projects
+    """
+    file = forms.FileField(label='')
+    list_override = forms.BooleanField(
+        label='Replace current projects', required=False)
+    number_column = forms.CharField(
+        label='Name of the column for the Project Number in the uploaded file.')
+    name_column = forms.CharField(
+        label='Name of the column for the Project Name in the uploaded file.')
+    min_students_column = forms.CharField(
+        label='Name of the column for the Minimum Students in the uploaded file.')
+    max_students_column = forms.CharField(
+        label='Name of the column for the Maximum Students in the uploaded file.')
+
+    description_column = forms.CharField(
+        label='Name of the column for the Project Description in the uploaded file. Leave blank if none.', required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.initial['number_column'] = 'number'
+        self.initial['name_column'] = 'name'
+        self.initial['min_students_column'] = 'min_students'
+        self.initial['max_students_column'] = 'max_students'
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Fieldset(
+                '',
+                'file',
+                'list_override',
+                FloatingField('number_column'),
+                FloatingField('name_column'),
+                FloatingField('min_students_column'),
+                FloatingField('max_students_column'),
+                FloatingField('description_column')
+            ),
+            FormActions(
+                Submit('submit', 'Save', css_class='btn btn-primary'),
+            )
+        )
+
+    def clean(self):
+        valid_csv_file(self.cleaned_data.get('file'))
+        column_exists_in_csv(self.cleaned_data.get('file'), 'number_column',
+                             self.cleaned_data.get('number_column'))
+        column_exists_in_csv(self.cleaned_data.get('file'), 'name_column',
+                             self.cleaned_data.get('name_column'))
+        column_exists_in_csv(self.cleaned_data.get('file'), 'min_students_column',
+                             self.cleaned_data.get('min_students_column'))
+        column_exists_in_csv(self.cleaned_data.get('file'), 'max_students_column',
+                             self.cleaned_data.get('max_students_column'))
+
+        if self.cleaned_data.get('description_column') != '':
+            column_exists_in_csv(self.cleaned_data.get('file'), 'max_students_column',
+                                 self.cleaned_data.get('max_students_column'))
 
         return super().clean()

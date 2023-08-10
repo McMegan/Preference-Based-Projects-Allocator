@@ -118,7 +118,7 @@ class EnrolledStudentAdmin(admin.ModelAdmin):
 
 @admin.register(models.Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['name', 'number', 'description',
+    list_display = ['id', 'name', 'number', 'description',
                     'min_students', 'max_students']
     search_fields = ['name', 'number']
     # add unit?

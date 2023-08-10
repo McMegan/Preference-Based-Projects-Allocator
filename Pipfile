@@ -11,6 +11,7 @@ pymysql = "*"
 cryptography = "*"
 django-crispy-forms = "*"
 crispy-bootstrap5 = "*"
+ortools = "*"
 
 [dev-packages]
 

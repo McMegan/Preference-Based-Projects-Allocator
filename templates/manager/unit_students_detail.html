@@ -30,15 +30,10 @@
                 </tr>
             </thead>
             <tbody>
-                {% for student in enrolledstudent.user.project_preferences.all %}
+                {% for preference in enrolledstudent.user.project_preferences.all %}
                     <tr>
-                        <th scope="row">{{ student.student_id }}</th>
-                        <td>{% if student.user %}True{% else %}False{% endif %}</td>
-                        <td>...</td>
-                        <td class="d-flex gap-2 justify-content-end">
-                            <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-students-detail' unit.id student.id %}">View</a>
-                            <a class="btn btn-danger btn-sm" href="{% url 'unit-students-remove' unit.id student.id %}">Remove</a>
-                        </td>
+                        <th scope="row">{{ preference.rank }}</th>
+                        <td>{{ preference.project_id }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

@@ -39,7 +39,7 @@ class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
 class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = forms.UnitForm
-    template_name = 'manager/unit_new.html'
+    template_name = 'manager/unit/unit_new.html'
     success_url = reverse_lazy('manager-index')
 
     def post(self, request: HttpRequest, *args, **kwargs):
@@ -62,7 +62,7 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = models.Unit
     form_class = forms.UnitForm
     # success_url = reverse_lazy('index')
-    template_name = 'manager/unit_form.html'
+    template_name = 'manager/unit/unit_form.html'
 
     def get_success_url(self):
         return self.request.path
@@ -85,7 +85,7 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
 class UnitDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy('index')
-    template_name = 'manager/unit_confirm_delete.html'
+    template_name = 'manager/unit/unit_confirm_delete.html'
 
     def get_queryset(self):
         return self.request.user.managed_units.all()
@@ -99,7 +99,7 @@ class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         List of students in unit
     """
     model = models.EnrolledStudent
-    template_name = 'manager/unit_students.html'
+    template_name = 'manager/unit/students/unit_students.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -116,7 +116,7 @@ class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
 class UnitStudentsCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = forms.StudentForm
-    template_name = 'manager/unit_students_new.html'
+    template_name = 'manager/unit/students/unit_students_new.html'
 
     def get_success_url(self):
         return reverse('manager-unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
@@ -148,7 +148,7 @@ class UnitStudentUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMix
         Upload list of students
     """
     form_class = forms.StudentListForm
-    template_name = 'manager/unit_students_new_list.html'
+    template_name = 'manager/unit/students/unit_students_new_list.html'
 
     def get_success_url(self):
         return reverse('manager-unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
@@ -203,7 +203,7 @@ class UnitStudentUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMix
 
 class UnitStudentsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     model = models.EnrolledStudent
-    template_name = 'manager/unit_students_detail.html'
+    template_name = 'manager/unit/students/unit_students_detail.html'
 
     def get_queryset(self, *args, **kwargs):
         return super().get_queryset().prefetch_related('user').prefetch_related('user__project_preferences')
@@ -214,7 +214,7 @@ class UnitStudentsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView
 
 class UnitStudentsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy('index')
-    template_name = 'manager/unit_student_confirm_delete.html'
+    template_name = 'manager/unit/unit_student_confirm_delete.html'
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])

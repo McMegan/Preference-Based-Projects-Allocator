@@ -44,12 +44,8 @@ class SplitDateTimeField(forms.SplitDateTimeField):
 
 
 class UnitForm(forms.ModelForm):
-    preference_submission_start = SplitDateTimeField(
-        initial=datetime.datetime.now, required=False)
-    preference_submission_end = SplitDateTimeField(
-        initial=datetime.datetime.now, required=False)
-
-    # ADD FILE UPLOAD FOR STUDENTS & PROJECTS
+    preference_submission_start = SplitDateTimeField(required=False)
+    preference_submission_end = SplitDateTimeField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -153,6 +149,23 @@ class StudentListForm(forms.Form):
         return super().clean()
 
 
+class StudentListClearForm(forms.Form):
+    """
+        Form for clearing the list of students
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            HTML('<p>Are you sure you want to remove all students from this unit?</p>'),
+            FormActions(
+                Submit('submit', 'Confirm', css_class='btn btn-danger'),
+            )
+        )
+
+
 # Projects
 class ProjectForm(forms.ModelForm):
     """
@@ -172,6 +185,7 @@ class ProjectForm(forms.ModelForm):
                 FloatingField('name'),
                 FloatingField('min_students'),
                 FloatingField('max_students'),
+                'description'
             ),
             FormActions(
                 Submit('submit', 'Save', css_class='btn btn-primary'),
@@ -187,7 +201,8 @@ class ProjectForm(forms.ModelForm):
 
     class Meta:
         model = models.Project
-        fields = ['number', 'name', 'min_students', 'max_students']
+        fields = ['number', 'name', 'description',
+                  'min_students', 'max_students']
 
 
 class ProjectListForm(forms.Form):

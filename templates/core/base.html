@@ -3,7 +3,7 @@
 
 {% block container %}
     <div class="sticky-top">
-        <nav class="navbar py-2 navbar-expand-md bg-body-secondary border-bottom">
+        <nav class="navbar py-2 navbar-expand-md bg-white border-bottom">
             <div class="container d-flex align-items-center">
                 <a class="navbar-brand fs-4" href="{% url 'index' %}">Projects Allocator</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-toggled" aria-controls="navbar-toggled" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,6 +30,6 @@
         </nav>
     </div>
     <main class="container my-5">
-        <div class="row g-5">{% block main %}{% endblock %}</div>
+        {% block main %}{% endblock %}
     </main>
 {% endblock %}

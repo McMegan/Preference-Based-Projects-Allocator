@@ -1,0 +1,59 @@
+{% extends 'manager/base.html' %}
+
+{% block page_title %}Student List{% endblock %}
+{% block extra_header %}
+    <div class="my-3 mx-3 d-flex gap-3 flex-column">
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">No. Students</div>
+            <div>{{ unit.students_count }}</div>
+        </div>
+    </div>
+    <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary" href="{% url 'manager-unit-students-new-list' unit.id %}">Upload Student List</a>
+        <a class="btn btn-primary" href="{% url 'manager-unit-students-new' unit.id %}">Add Student</a>
+        <a class="btn btn-danger {% if not page_obj %}disabled{% endif %}" href="{% url 'manager-unit-students-clear' unit.id %}" {% if not page_obj %}aria-disabled="true"{% endif %}>Clear Student List</a>
+    </div>
+    <hr class="my-4">
+{% endblock %}
+{% block content %}
+    {% if page_obj %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Student ID</th>
+                    <th scope="col">Registered</th>
+                    <th scope="col">Submitted Preferences</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in page_obj %}
+                    <tr>
+                        <th scope="row">{{ student.student_id }}</th>
+                        <td><span class ="badge rounded-pill text-bg-{% if student.user %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user %}check{% else %}x{% endif %}-lg"></i></span></td>
+                        <td><span class ="badge rounded-pill text-bg-{% if student.user and student.user.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user and student.user.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></td>
+                        <td>
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-students-detail' unit.id student.id %}">View</a>
+                                <a class="btn btn-danger btn-sm" href="{% url 'manager-unit-student-remove' unit.id student.id %}">Remove</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="my-5 d-flex gap-3 justify-content-center align-items-center">
+            {% if page_obj.has_previous %}
+                <a class="btn btn-sm btn-outline-secondary" href="?page=1">&laquo; first</a>
+                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            {% if page_obj.has_next %}
+                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.next_page_number }}">next</a>
+                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

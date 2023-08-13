@@ -8,9 +8,7 @@
     </div>
     <div class="my-5">
         <form method="post">
-            <div class="form-content">
-                {% csrf_token %} {% crispy form %}
-            </div>
+            {% csrf_token %} {% crispy form %}
         </form>
     </div>
 {% endblock %}

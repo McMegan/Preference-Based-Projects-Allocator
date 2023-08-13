@@ -1,5 +1,4 @@
-.preference_submission_timeframe {
-}
+/* PREFERENCE SUBMISSION TIMEFRAME */
 .preference_submission_timeframe input:first-of-type {
 	border-bottom-left-radius: 0;
 	border-bottom-right-radius: 0;
@@ -10,9 +9,17 @@
 	border-top-right-radius: 0;
 }
 
-/*  */
+/* HEADER NAV-ITEMS */
 .nav-item,
 .nav-item .nav-link,
 .dropdown-item {
 	font-size: 0.85rem;
+}
+
+/* PREFERENCE SUBMISSION FORMS */
+.preference-submission-form label.form-label {
+	display: none;
+}
+.preference-submission-form fieldset > div {
+	margin-bottom: 0 !important;
 }

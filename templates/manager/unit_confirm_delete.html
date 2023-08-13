@@ -1,0 +1,10 @@
+{% extends 'manager/base.html' %}
+
+
+{% block page_title %}Delete {{ unit }}?{% endblock %}
+{% block content %}
+    <form method="post">{% csrf_token %}
+        <p>Are you sure you want to delete "{{ object }}"?</p>
+        <input class="mt-3 btn btn-danger" type="submit" value="Confirm">
+    </form>
+{% endblock %}

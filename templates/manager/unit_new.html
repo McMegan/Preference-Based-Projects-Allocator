@@ -1,0 +1,12 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %} 
+
+{% block main %}
+    <a class="nav-link d-flex gap-2 align-items-center" href="{% url 'index' %}">
+        <i class="bi bi-chevron-left"></i><span>Unit List</span>
+    </a>
+    <div class="my-5"><h2>Add Unit</h2></div>
+    <form method="post">
+        {% csrf_token %} {% crispy form %}
+    </form>
+{% endblock %}

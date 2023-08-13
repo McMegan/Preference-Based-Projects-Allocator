@@ -1,0 +1,82 @@
+{% extends 'manager/base.html' %}
+
+{% block page_title %}Project List{% endblock %}
+{% block extra_header %}
+    <div class="my-3 mx-3 d-flex gap-3 flex-column">
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">No. Projects</div>
+            <div>{{ unit.projects_count }}</div>
+        </div>
+    </div>
+    <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary" href="{% url 'manager-unit-projects-new-list' unit.id %}">Upload Project List</a>
+        <a class="btn btn-primary" href="{% url 'manager-unit-projects-new' unit.id %}">Add Project</a>
+        <a class="btn btn-danger {% if not page_obj %}disabled{% endif %}" href="{% url 'manager-unit-projects' unit.id %}" {% if not page_obj %}aria-disabled="true"{% endif %}>Clear Project List</a>
+    </div>
+    <hr class="my-4">
+{% endblock %}
+{% block content %}
+    {% if page_obj %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Group Size</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in page_obj %}
+                    {% if project.description %}
+                        <tr class="accordion accordion-flush" id="accordian-{{project.id}}">
+                            <th scope="row">{{ project.number }}</th>
+                            <td class="accordion-header">
+                                <button class="accordion-button collapsed gap-2 p-0" style="box-shadow: none; background: transparent;" type="button" data-bs-toggle="collapse" data-bs-target="#accordian-{{project.id}}-description" aria-expanded="false" aria-controls="accordian-{{project.id}}-description">
+                                    {{ project.name }}
+                                </button>
+                                <div id="accordian-{{project.id}}-description" class="accordion-collapse collapse mt-3" data-bs-parent="#accordian-{{project.id}}">
+                                    <div class="accordion-body p-0">
+                                        {{project.description}}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ project.min_students }} - {{ project.max_students }}</td>
+                            <td>
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-projects-edit' unit.id project.id %}">Edit</a>
+                                    <a class="btn btn-danger btn-sm" href="{% url 'manager-unit-project-remove' unit.id project.id %}">Remove</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <th scope="row">{{ project.number }}</th>
+                            <td>{{ project.name }}</td>
+                            <td>{{ project.min_students }} - {{ project.max_students }}</td>
+                            <td>
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-projects-edit' unit.id project.id %}">Edit</a>
+                                    <a class="btn btn-danger btn-sm" href="{% url 'manager-unit-project-remove' unit.id project.id %}">Remove</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="my-5 d-flex gap-3 justify-content-center align-items-center">
+            {% if page_obj.has_previous %}
+                <a class="btn btn-sm btn-outline-secondary" href="?page=1">&laquo; first</a>
+                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            {% if page_obj.has_next %}
+                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.next_page_number }}">next</a>
+                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

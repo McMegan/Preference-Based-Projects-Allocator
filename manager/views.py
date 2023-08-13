@@ -1,6 +1,6 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from django.db import models
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
@@ -36,6 +36,12 @@ def get_context_for_sidebar(pk_unit):
                         kwargs={'pk_unit': pk_unit}), 'label': 'Add Project', 'classes': 'ms-5'},
 
         {'url': '#', 'label': 'Preferences', 'classes': 'ms-3'},
+
+        {'url': '#', 'label': 'Allocation', 'classes': 'ms-3'},
+
+        {'url': reverse('manager-unit-delete',
+                        kwargs={'pk': pk_unit}), 'label': 'Delete Unit', 'classes': 'ms-3 link-danger'},
+
     ]
     return {'unit': unit, 'nav_links': nav_links}
 
@@ -54,7 +60,7 @@ def user_manages_unit_pk(user, pk):
 
 class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = models.Unit
-    template_name = 'manager/index.html'
+    template_name = 'core/index.html'
     paginate_by = 10
 
     def get_queryset(self):
@@ -63,10 +69,12 @@ class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def test_func(self):
         return user_is_manager(self.request.user)
 
+# Unit Views
+
 
 class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = forms.UnitForm
-    template_name = 'manager/unit/unit_new.html'
+    template_name = 'manager/unit_new.html'
     success_url = reverse_lazy('manager-index')
 
     def post(self, request: HttpRequest, *args, **kwargs):
@@ -85,10 +93,24 @@ class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return user_is_manager(self.request.user)
 
 
+class UnitDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    success_url = reverse_lazy('index')
+    template_name = 'manager/unit_confirm_delete.html'
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk'])}
+
+    def get_queryset(self):
+        return self.request.user.managed_units.all()
+
+    def test_func(self):
+        return user_is_manager(self.request.user) and user_manages_unit(self.request.user, self.get_queryset())
+
+
 class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = models.Unit
     form_class = forms.UnitForm
-    template_name = 'manager/unit/unit_form.html'
+    template_name = 'manager/unit_form.html'
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk'])}
@@ -112,16 +134,6 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return user_is_manager(self.request.user) and user_manages_unit(self.request.user, self.get_queryset())
 
 
-class UnitDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    success_url = reverse_lazy('index')
-    template_name = 'manager/unit/unit_confirm_delete.html'
-
-    def get_queryset(self):
-        return self.request.user.managed_units.all()
-
-    def test_func(self):
-        return user_is_manager(self.request.user) and user_manages_unit(self.request.user, self.get_queryset())
-
 # Unit student views
 
 
@@ -130,7 +142,7 @@ class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         List of students in unit
     """
     model = models.EnrolledStudent
-    template_name = 'manager/unit/students/unit_students.html'
+    template_name = 'manager/students/unit_students.html'
     paginate_by = 25
 
     def get_context_data(self, **kwargs):
@@ -144,8 +156,11 @@ class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
 
 class UnitStudentsCreateView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
+    """
+        Add a single student to the unit's student list
+    """
     form_class = forms.StudentForm
-    template_name = 'manager/unit/students/unit_students_new.html'
+    template_name = 'manager/students/unit_students_new.html'
 
     def get_success_url(self):
         return reverse('manager-unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
@@ -159,6 +174,11 @@ class UnitStudentsCreateView(LoginRequiredMixin, UserPassesTestMixin, FormMixin,
         form = self.get_form()
         if form.is_valid():
             form.instance.unit_id = self.kwargs['pk_unit']
+            # Check if user account exists for student
+            user = models.User.objects.filter(
+                username=form.cleaned_data.get('student_id'))
+            if user.exists():
+                form.instance.user_id = user.first().id
             form.instance.save()
             return self.form_valid(form)
         else:
@@ -176,10 +196,10 @@ class UnitStudentsCreateView(LoginRequiredMixin, UserPassesTestMixin, FormMixin,
 
 class UnitStudentUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
     """
-        Upload list of students
+        Upload list of students to a unit
     """
     form_class = forms.StudentListForm
-    template_name = 'manager/unit/students/unit_students_new_list.html'
+    template_name = 'manager/students/unit_students_new_list.html'
 
     def get_success_url(self):
         return reverse('manager-unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
@@ -231,8 +251,11 @@ class UnitStudentUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMix
 
 
 class UnitStudentsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """
+        View a single student in a unit
+    """
     model = models.EnrolledStudent
-    template_name = 'manager/unit/students/unit_students_detail.html'
+    template_name = 'manager/students/unit_students_detail.html'
 
     def get_queryset(self, *args, **kwargs):
         return super().get_queryset().prefetch_related('user').prefetch_related('user__project_preferences')
@@ -244,9 +267,40 @@ class UnitStudentsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
 
 
-class UnitStudentsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class UnitStudentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """
+        Remove a single student from a unit
+    """
     model = models.EnrolledStudent
-    template_name = 'manager/unit/students/unit_student_confirm_delete.html'
+    template_name = 'manager/students/unit_student_confirm_delete.html'
+
+    def get_success_url(self):
+        return reverse('manager-unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+
+    def test_func(self):
+        return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
+
+
+class UnitStudentsClearView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
+    """
+        Clear the student list of a unit
+    """
+    model = models.EnrolledStudent
+    template_name = 'manager/students/unit_students_confirm_delete.html'
+    form_class = forms.StudentListClearForm
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            models.EnrolledStudent.objects.filter(
+                unit_id=self.kwargs['pk_unit']).delete()
+
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
     def get_success_url(self):
         return reverse('manager-unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
@@ -265,7 +319,7 @@ class UnitProjectsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         List of projects in unit
     """
     model = models.Project
-    template_name = 'manager/unit/projects/unit_projects.html'
+    template_name = 'manager/projects/unit_projects.html'
     paginate_by = 25
 
     def get_context_data(self, **kwargs):
@@ -280,7 +334,7 @@ class UnitProjectsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
 class UnitProjectsCreateView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
     form_class = forms.ProjectForm
-    template_name = 'manager/unit/projects/unit_projects_new.html'
+    template_name = 'manager/projects/unit_projects_new.html'
 
     def get_success_url(self):
         return reverse('manager-unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
@@ -314,7 +368,7 @@ class UnitProjectUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMix
         Upload list of projects
     """
     form_class = forms.ProjectListForm
-    template_name = 'manager/unit/projects/unit_projects_new_list.html'
+    template_name = 'manager/projects/unit_projects_new_list.html'
 
     def get_success_url(self):
         return reverse('manager-unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
@@ -369,12 +423,16 @@ class UnitProjectUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMix
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
 
 
-class UnitProjectsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+class UnitProjectsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    form_class = forms.ProjectForm
     model = models.Project
-    template_name = 'manager/unit/projects/unit_projects_detail.html'
+    template_name = 'manager/projects/unit_projects_detail.html'
+
+    def get_success_url(self):
+        return reverse('manager-unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().prefetch_related('user').prefetch_related('user__project_preferences')
+        return super().get_queryset()
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
@@ -383,9 +441,41 @@ class UnitProjectsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
 
 
-class UnitProjectsDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    success_url = reverse_lazy('index')
-    template_name = 'manager/unit/unit_project_confirm_delete.html'
+class UnitProjectDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """
+        Remove a single project from a unit
+    """
+    model = models.Project
+    template_name = 'manager/projects/unit_project_confirm_delete.html'
+
+    def get_success_url(self):
+        return reverse('manager-unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+
+    def test_func(self):
+        return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
+
+
+class UnitProjectsClearView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
+    """
+        Clear the project list of a unit
+    """
+    template_name = 'manager/projects/unit_projects_confirm_delete.html'
+    form_class = forms.StudentListClearForm
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            models.Project.objects.filter(
+                unit_id=self.kwargs['pk_unit']).delete()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        return reverse('manager-unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}

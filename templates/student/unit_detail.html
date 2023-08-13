@@ -1,0 +1,33 @@
+{% extends 'student/base.html' %} 
+{% load crispy_forms_tags %} 
+
+{% block back_link %}
+<a class="nav-link d-flex gap-2 align-items-center" href="{% url 'index' %}">
+    <i class="bi bi-chevron-left"></i><span>Unit List</span>
+</a>
+{% endblock %}
+{% block page_title %}{{ unit }}{% endblock %}
+{% block extra_header %}
+    <div class="my-3 mx-3 d-flex gap-3 flex-column">
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Year</div>
+            <div>{{ unit.year }}</div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Semester</div>
+            <div>{{ unit.semester }}</div>
+        </div>
+    </div>
+    <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
+        <a class="btn btn-sm btn-primary" href="">Project List</a>
+    </div>
+    <hr class="my-4">
+{% endblock %}
+{% block content %}
+    <div class="mb-3">
+        <h3>Project Preferences</h3>
+    </div>
+    <form class="preference-submission-form d-grid gap-3" method="post">{% csrf_token %} 
+        {% crispy formset helper %}
+    </form>
+{% endblock %}

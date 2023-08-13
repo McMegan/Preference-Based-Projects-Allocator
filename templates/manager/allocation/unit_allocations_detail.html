@@ -41,6 +41,6 @@
     {% endif %}
     <div class="my-4 d-flex gap-2">
         <a class="btn btn-primary" href="{% url 'manager-unit-students' enrolledstudent.unit.id %}">Back to Student List</a>
-        <a class="btn btn-danger" href="{% url 'unit-students-remove' enrolledstudent.unit.id enrolledstudent.id %}">Remove Student</a>
+        <a class="btn btn-danger" href="{% url 'unit-student-remove' enrolledstudent.unit.id enrolledstudent.id %}">Remove Student</a>
     </div>
 {% endblock %}

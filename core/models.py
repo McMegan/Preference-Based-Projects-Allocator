@@ -2,6 +2,9 @@ from django.contrib.auth.models import AbstractUser, Group
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from django.utils import timezone
+from datetime import datetime
+
 from django.db.models import Count
 
 
@@ -47,7 +50,17 @@ class Unit(models.Model):
             raise ValidationError(errors)
         return super().clean()
 
+    def preference_submission_open(self) -> bool:
+        return self.preference_submission_started() and not self.preference_submission_ended()
+
+    def preference_submission_started(self) -> bool:
+        return timezone.now() > self.preference_submission_start
+
+    def preference_submission_ended(self) -> bool:
+        return timezone.now() > self.preference_submission_end
+
     class Meta:
+        ordering = ['code', 'name']
         constraints = [
             models.UniqueConstraint(
                 fields=['code', 'year', 'semester'], name='%(app_label)s_%(class)s_unique')
@@ -103,7 +116,7 @@ class ProjectPreference(models.Model):
     rank = models.PositiveIntegerField()
 
     def __str__(self):
-        return f'{self.student}\'s {self.unit.code} preference {ordinal(self.rank)}'
+        return f'Student_{self.student}-Unit_{self.unit.code}-Rank_{self.rank}-Project_{self.project.number}'
 
     def clean(self) -> None:
         errors = {}

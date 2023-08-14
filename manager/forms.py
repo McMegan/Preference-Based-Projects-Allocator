@@ -70,7 +70,7 @@ class UnitForm(forms.ModelForm):
                 'minimum_preference_limit',
             ),
             FormActions(
-                Submit('submit', 'Save', css_class='btn btn-primary'),
+                Submit('submit', 'Save Unit', css_class='btn btn-primary'),
             )
         )
 
@@ -98,7 +98,8 @@ class StudentForm(forms.ModelForm):
                 FloatingField('student_id'),
             ),
             FormActions(
-                Submit('submit', 'Save', css_class='btn btn-primary'),
+                Submit('submit', 'Add Student to Unit',
+                       css_class='btn btn-primary'),
             )
         )
 
@@ -138,7 +139,8 @@ class StudentListForm(forms.Form):
                 FloatingField('student_id_column')
             ),
             FormActions(
-                Submit('submit', 'Save', css_class='btn btn-primary'),
+                Submit('submit', 'Upload List of Students to Unit',
+                       css_class='btn btn-primary'),
             )
         )
 
@@ -188,7 +190,8 @@ class ProjectForm(forms.ModelForm):
                 'description'
             ),
             FormActions(
-                Submit('submit', 'Save', css_class='btn btn-primary'),
+                Submit('submit', 'Add Project to Unit',
+                       css_class='btn btn-primary'),
             )
         )
 
@@ -245,7 +248,8 @@ class ProjectListForm(forms.Form):
                 FloatingField('description_column')
             ),
             FormActions(
-                Submit('submit', 'Save', css_class='btn btn-primary'),
+                Submit('submit', 'Upload List of Projects to Unit',
+                       css_class='btn btn-primary'),
             )
         )
 

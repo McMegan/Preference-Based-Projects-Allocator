@@ -2,51 +2,51 @@
 {% load crispy_forms_tags %} 
 
 {% block main %}
-<div class="row g-5">
-    <div class="col-sm-12 col-md-12 col-lg-3">
-        <div class="container-fluid p-0">
-            <div class="card bg-body-tertiary">
-                <div class="card-body">
-                    <ul class="navbar-nav ">
-                        <li class="nav-item">
-                            <a class="nav-link d-flex gap-2 align-items-center" href="{% url 'index' %}">
-                                <i class="bi bi-chevron-left"></i><span>Unit List</span>
-                            </a>
-                        </li>
-                        {% for nav_link in nav_links %}
+    <div class="row g-5">
+        <div class="col-sm-12 col-md-12 col-lg-3">
+            <div class="container-fluid p-0">
+                <div class="card bg-body-tertiary">
+                    <div class="card-body">
+                        <ul class="navbar-nav ">
                             <li class="nav-item">
-                                <a href="{{ nav_link.url }}" class="nav-link {{ nav_link.classes }} {% if request.path == nav_link.url %}active fw-bold{% endif %}" {% if request.path == nav_link.url %}aria-current="page"{% endif %}>
-                                    {{ nav_link.label }}
+                                <a class="nav-link d-flex gap-2 align-items-center" href="{% url 'index' %}">
+                                    <i class="bi bi-chevron-left"></i><span>Unit List</span>
                                 </a>
                             </li>
-                        {% endfor %}
-                    </ul>
+                            {% for nav_link in nav_links %}
+                                <li class="nav-item">
+                                    <a href="{{ nav_link.url }}" class="nav-link {{ nav_link.classes }} {% if request.path == nav_link.url %}active fw-bold{% endif %}" {% if request.path == nav_link.url %}aria-current="page"{% endif %}>
+                                        {{ nav_link.label }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="container-fluid p-0">
+                <div>
+                    <h2>{% block page_title %}{% endblock %}</h2>
+                    <hr class="my-4">
+                    {% block extra_header %}{% endblock %}
+                </div>
+                <div class="overflow-x-auto">
+                    {% block content %}
+                        {% if form %}
+                            <div>
+                                {% block form %}
+                                    {% load crispy_forms_tags %} 
+                                    <form method="post" enctype="multipart/form-data">
+                                        {% csrf_token %} {% crispy form %}
+                                    </form>
+                                {% endblock %}
+                            </div>
+                        {% endif %}
+                    {% endblock %}
                 </div>
             </div>
         </div>
     </div>
-    <div class="col">
-        <div class="container-fluid p-0">
-            <div>
-                <h2>{% block page_title %}{% endblock %}</h2>
-                <hr class="my-4">
-                {% block extra_header %}{% endblock %}
-            </div>
-            <div class="overflow-x-auto">
-                {% block content %}
-                    {% if form %}
-                        <div>
-                            {% block form %}
-                                {% load crispy_forms_tags %} 
-                                <form method="post" enctype="multipart/form-data">
-                                    {% csrf_token %} {% crispy form %}
-                                </form>
-                            {% endblock %}
-                        </div>
-                    {% endif %}
-                {% endblock %}
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

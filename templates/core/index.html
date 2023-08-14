@@ -15,16 +15,23 @@
                         </h4>
                     </div>
                     <ul class="list-group list-group-flush">
-                            <li class="list-group-item">
-                                <div class="d-flex gap-3">
-                                    <div class="fw-semibold">Year</div><div>{{ unit.year }}</div>
-                                </div>
-                            </li>
-                            <li class="list-group-item">
-                                <div class="d-flex gap-3">
-                                    <div class="fw-semibold">Semester</div><div>{{ unit.semester }}</div>
-                                </div>
-                            </li>
+                        <li class="list-group-item">
+                            <div class="d-flex gap-3">
+                                <div class="fw-semibold">Year</div><div>{{ unit.year }}</div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex gap-3">
+                                <div class="fw-semibold">Semester</div><div>{{ unit.semester }}</div>
+                            </div>
+                        </li>
+                        {% if unit.preference_submission_start and unit.preference_submission_end %}
+                        <li class="list-group-item">
+                            <div class="d-flex gap-3">
+                                <div class="fw-semibold">Preference Submission Timeframe</div><div>{{ unit.preference_submission_start }} - {{ unit.preference_submission_end }}</div>
+                            </div>
+                        </li>
+                        {% endif %}
                     </ul>
                     {% if user.is_manager %}
                         <div class="card-footer">

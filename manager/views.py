@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional
 from django.db import models
+from django.db.models import Prefetch
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -149,7 +150,7 @@ class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('user').prefetch_related('user__project_preferences')
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('user').prefetch_related(Prefetch('user__project_preferences', queryset=models.ProjectPreference.objects.filter(unit_id=self.kwargs['pk_unit'])))
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])

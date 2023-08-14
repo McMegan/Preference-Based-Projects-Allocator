@@ -1,3 +1,14 @@
+/* NAVBAR */
+nav.navbar {
+	height: 70px;
+}
+.navbar_sticky {
+	z-index: 9999;
+}
+.preferences_sticky {
+	top: 70px;
+}
+
 /* PREFERENCE SUBMISSION TIMEFRAME */
 .preference_submission_timeframe input:first-of-type {
 	border-bottom-left-radius: 0;

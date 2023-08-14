@@ -1,0 +1,29 @@
+{% if not unit.preference_submission_started %}
+    <div class="p-5 text-danger text-center fw-bold">
+        The preference submission timeframe will start on {{ unit.preference_submission_start}}
+    </div>
+{% endif %}
+{% if unit.preference_submission_ended %}
+    <div class="p-5 text-danger text-center fw-bold">
+        The preference submission timeframe ended on {{ unit.preference_submission_end }}
+    </div>
+    {% if preferences %}
+        <h3>You submitted the following preferences:</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="text-center">Rank</th>
+                    <th>Project</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for preference in preferences %}
+                <tr>
+                    <td class="preference_index text-center">{{ preference.rank }}</td>
+                    <td>{{ preference.project.name }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endif %}

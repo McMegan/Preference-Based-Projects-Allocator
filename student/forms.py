@@ -1,3 +1,4 @@
+from typing import Any, Optional
 from django import forms
 from django.forms import BaseFormSet, formset_factory
 
@@ -12,7 +13,12 @@ from core import models
 
 class PreferenceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        unit_id = kwargs.pop('unit_id')
+
         super().__init__(*args, **kwargs)
+
+        self.fields['project'].queryset = models.Project.objects.filter(
+            unit_id=unit_id)
 
         self.empty_permitted = False
 

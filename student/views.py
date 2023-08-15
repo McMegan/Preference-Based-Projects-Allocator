@@ -44,6 +44,11 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, Templat
         return formset_factory(
             formset=forms.PreferenceFormSet, form=forms.PreferenceForm, extra=0, min_num=self.get_unit().minimum_preference_limit if self.get_unit().minimum_preference_limit else 0)
 
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(**self.get_form_kwargs(), form_kwargs={'unit_id': self.kwargs['pk']})
+
     def get_initial(self):
         preferences = self.request.user.project_preferences.filter(
             unit_id=self.kwargs['pk'])

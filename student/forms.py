@@ -51,6 +51,4 @@ class PreferenceFormSetHelper(FormHelper):
         super().__init__(*args, **kwargs)
         self.form_method = 'post'
         self.add_input(Submit('submit', 'Save Preferences'))
-        self.add_input(Button('add_preference', 'Add Another Preference',
-                       css_class='btn btn-secondary'))
         self.template = 'student/table_inline_formset.html'

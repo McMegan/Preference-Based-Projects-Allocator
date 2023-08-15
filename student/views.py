@@ -42,7 +42,7 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, Templat
 
     def get_form_class(self):
         return formset_factory(
-            formset=forms.PreferenceFormSet, form=forms.PreferenceForm, extra=0, min_num=self.get_unit().minimum_preference_limit if self.get_unit().minimum_preference_limit else 0)
+            formset=forms.PreferenceFormSet, form=forms.PreferenceForm, extra=0, min_num=self.get_unit().minimum_preference_limit if self.get_unit().minimum_preference_limit else 1, validate_min=True if self.get_unit().minimum_preference_limit else False)
 
     def get_form(self, form_class=None):
         if form_class is None:

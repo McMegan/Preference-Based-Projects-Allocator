@@ -14,6 +14,14 @@
     <div>
         {{ formset.management_form|crispy }}
     </div>
+    {% if formset.non_form_errors %}
+        <div class="alert alert-block alert-danger">
+            {% if formset_error_title %}<h4 class="alert-heading">{{ formset_error_title }}</h4>{% endif %}
+            <ul class="m-0">
+                {{ formset.non_form_errors|unordered_list }}
+            </ul>
+        </div>
+    {% endif %}
     <table{% if form_id %} id="{{ form_id }}_table"{% endif%} class="table table-sm align-middle">
         <thead>
             {% if formset.readonly and not formset.queryset.exists %}
@@ -56,6 +64,9 @@
             {% endfor %}
         </tbody>
     </table>
+    <div class="mb-3">
+        <input type="button" name="add_preference" value="Add Another Preference" class="btn btn-sm btn-secondary w-100" id="button-id-add_preference">
+    </div>
     {% include "bootstrap5/inputs.html" %}
 {% if formset_tag %}</form>{% endif %}
 {% endspecialspaceless %}

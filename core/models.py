@@ -144,7 +144,7 @@ class ProjectPreference(models.Model):
         return super().clean()
 
     class Meta:
-        ordering = ['unit_id', 'student_id', 'rank']
+        ordering = ['unit_id',  'student_id', 'rank', 'project_id',]
         constraints = [
             models.UniqueConstraint(
                 fields=['student', 'unit', 'rank'], name='%(app_label)s_%(class)s_rank_unique'),

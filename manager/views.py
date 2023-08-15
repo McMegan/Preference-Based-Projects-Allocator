@@ -18,33 +18,44 @@ from . import forms
 
 
 def get_context_for_sidebar(pk_unit):
-    unit = models.Unit.objects.filter(pk=pk_unit).prefetch_related(
-        'projects').prefetch_related('enrolled_students').annotate(students_count=Count('enrolled_students', distinct=True)).annotate(projects_count=Count('projects', distinct=True)).first()
+    unit_queryset = models.Unit.objects.filter(pk=pk_unit).prefetch_related(
+        'projects').prefetch_related('enrolled_students').annotate(students_count=Count('enrolled_students', distinct=True)).annotate(projects_count=Count('projects', distinct=True))
+    unit = unit_queryset.first()
     nav_links = [
         {'url': reverse('manager-unit-detail',
                         kwargs={'pk': pk_unit}), 'label': unit, 'classes': ''},
+        # Students
         {'url': reverse('manager-unit-students',
                         kwargs={'pk_unit': pk_unit}), 'label': f'Student List ({unit.students_count})', 'classes': 'ms-3'},
         {'url': reverse('manager-unit-students-new-list',
                         kwargs={'pk_unit': pk_unit}), 'label': 'Upload Student List', 'classes': 'ms-5'},
         {'url': reverse('manager-unit-students-new',
                         kwargs={'pk_unit': pk_unit}), 'label': 'Add Student', 'classes': 'ms-5'},
+        {'url': reverse('manager-unit-students-clear',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Clear Student List', 'classes': 'ms-5 link-danger'},
+        # Projects
         {'url': reverse('manager-unit-projects',
                         kwargs={'pk_unit': pk_unit}), 'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
         {'url': reverse('manager-unit-projects-new-list',
                         kwargs={'pk_unit': pk_unit}), 'label': 'Upload Project List', 'classes': 'ms-5'},
         {'url': reverse('manager-unit-projects-new',
                         kwargs={'pk_unit': pk_unit}), 'label': 'Add Project', 'classes': 'ms-5'},
+        {'url': reverse('manager-unit-projects-clear',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Clear Project List', 'classes': 'ms-5 link-danger'},
 
-        {'url': '#', 'label': 'Preferences', 'classes': 'ms-3'},
+        # Preferences
+        {'url': reverse('manager-unit-preferences',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Submitted Preferences', 'classes': 'ms-3'},
 
+        # Allocation
         {'url': '#', 'label': 'Allocation', 'classes': 'ms-3'},
 
+        # Delete unit
         {'url': reverse('manager-unit-delete',
                         kwargs={'pk': pk_unit}), 'label': 'Delete Unit', 'classes': 'ms-3 link-danger'},
 
     ]
-    return {'unit': unit, 'nav_links': nav_links}
+    return {'unit_queryset': unit_queryset, 'unit': unit, 'nav_links': nav_links}
 
 
 def user_is_manager(user):
@@ -480,6 +491,29 @@ class UnitProjectsClearView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, 
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+
+    def test_func(self):
+        return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
+
+
+# Unit Preference Views
+
+
+class UnitPreferencesListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    """
+        List of preferences for projects in unit
+    """
+    model = models.ProjectPreference
+    template_name = 'manager/preferences/unit_preferences.html'
+    paginate_by = 25
+
+    def get_context_data(self, **kwargs):
+        context_data = get_context_for_sidebar(self.kwargs['pk_unit'])
+        return {**super().get_context_data(**kwargs), **context_data, 'unit': context_data['unit_queryset'].annotate(
+            submitted_prefs_students_count=Count('student_project_preferences__student', distinct=True)).first()}
+
+    def get_queryset(self):
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related(Prefetch('student__enrollments', queryset=models.EnrolledStudent.objects.filter(unit_id=self.kwargs['pk_unit'])))
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])

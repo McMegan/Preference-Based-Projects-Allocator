@@ -4,6 +4,7 @@
         <div class="container-fluid pt-5 sticky-top preferences_sticky">
             <div>
                 <h3 class="mb-3">Preferences</h3>
+                <p id="form_minimum">You must submit at least {{ unit.minimum_preference_limit }} project preferences.</p>
                 <form class="preference-submission-form" method="post">
                     {% crispy form helper %}
                 </form>

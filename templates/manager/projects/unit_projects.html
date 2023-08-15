@@ -11,7 +11,7 @@
     <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
         <a class="btn btn-primary" href="{% url 'manager-unit-projects-new-list' unit.id %}">Upload Project List</a>
         <a class="btn btn-primary" href="{% url 'manager-unit-projects-new' unit.id %}">Add Project</a>
-        <a class="btn btn-danger {% if not page_obj %}disabled{% endif %}" href="{% url 'manager-unit-projects' unit.id %}" {% if not page_obj %}aria-disabled="true"{% endif %}>Clear Project List</a>
+        <a class="btn btn-danger {% if not page_obj %}disabled{% endif %}" href="{% url 'manager-unit-projects-clear' unit.id %}" {% if not page_obj %}aria-disabled="true"{% endif %}>Clear Project List</a>
     </div>
     <hr class="my-4">
 {% endblock %}

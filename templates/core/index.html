@@ -10,7 +10,7 @@
                     <div class="card-body">
                         <h4 class="card-title mb-0">
                             {% if user.is_manager or user.is_student %}
-                                <a class="text-decoration-none" href="{% if user.is_manager %}{% url 'manager-unit-detail' unit.id %}{% endif %}{% if user.is_student %}{% url 'student-unit-detail' unit.id %}{% endif %}">{{ unit }}</a>
+                                <a class="text-decoration-none" href="{% if user.is_manager %}{% url 'manager:unit' unit.id %}{% endif %}{% if user.is_student %}{% url 'student:unit-detail' unit.id %}{% endif %}">{{ unit }}</a>
                             {% endif %}
                         </h4>
                     </div>
@@ -35,7 +35,7 @@
                     </ul>
                     {% if user.is_manager %}
                         <div class="card-footer">
-                            <a href="{% url 'manager-unit-delete' unit.id %}" class="btn btn-danger btn-sm">Delete</a>
+                            <a href="{% url 'manager:unit-delete' unit.id %}" class="btn btn-danger btn-sm">Delete</a>
                         </div>
                     {% endif %}
                 </div>
@@ -48,7 +48,7 @@
     </div>
     {% if user.is_manager %}
         <div class="d-flex justify-content-center">
-            <a class="btn btn-primary" href="{% url 'manager-unit-new' %}">Add unit</a>
+            <a class="btn btn-primary" href="{% url 'manager:unit-new' %}">Add unit</a>
         </div>
     {% endif %}
     {% if object_list %}

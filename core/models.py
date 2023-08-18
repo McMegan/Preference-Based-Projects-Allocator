@@ -67,24 +67,6 @@ class Unit(models.Model):
         ]
 
 
-class EnrolledStudent(models.Model):
-    student_id = models.CharField(max_length=15)
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='enrollments', limit_choices_to={'is_student': True}, null=True, blank=True)
-    unit = models.ForeignKey(
-        Unit, on_delete=models.CASCADE, related_name='enrolled_students')
-
-    def __str__(self):
-        return f'{self.unit.code}-{self.student_id}'
-
-    class Meta:
-        ordering = ['student_id']
-        constraints = [
-            models.UniqueConstraint(
-                fields=['student_id', 'unit'], name='%(app_label)s_%(class)s_unique'),
-        ]
-
-
 class Project(models.Model):
     number = models.CharField(max_length=15)
     name = models.CharField(max_length=150)
@@ -106,13 +88,32 @@ class Project(models.Model):
         ]
 
 
-class ProjectPreference(models.Model):
+class EnrolledStudent(models.Model):
+    student_id = models.CharField(max_length=15)
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='enrollments', limit_choices_to={'is_student': True}, null=True, blank=True)
     unit = models.ForeignKey(
-        Unit, on_delete=models.CASCADE, related_name='student_project_preferences')
+        Unit, on_delete=models.CASCADE, related_name='enrolled_students')
+
+    assigned_project = models.ForeignKey(
+        Project, on_delete=models.SET_NULL, null=True, related_name='assigned_students')
+
+    def __str__(self):
+        return f'{self.unit.code}-{self.student_id}'
+
+    class Meta:
+        ordering = ['student_id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student_id', 'unit'], name='%(app_label)s_%(class)s_unique'),
+        ]
+
+
+class ProjectPreference(models.Model):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name='student_preferences')
-    student = models.ForeignKey(User, on_delete=models.CASCADE,
-                                related_name='project_preferences', limit_choices_to={'is_student': True})
+    student = models.ForeignKey(
+        EnrolledStudent, on_delete=models.CASCADE, related_name='project_preferences')
     rank = models.PositiveIntegerField()
 
     def __str__(self):
@@ -144,41 +145,10 @@ class ProjectPreference(models.Model):
         return super().clean()
 
     class Meta:
-        ordering = ['unit_id',  'student_id', 'rank', 'project_id',]
+        ordering = ['student__student_id', 'rank', 'project_id',]
         constraints = [
             models.UniqueConstraint(
-                fields=['student', 'unit', 'rank'], name='%(app_label)s_%(class)s_rank_unique'),
+                fields=['student', 'rank'], name='%(app_label)s_%(class)s_rank_unique'),
             models.UniqueConstraint(
-                fields=['student', 'unit', 'project'], name='%(app_label)s_%(class)s_project_unique')
-        ]
-
-
-class ProjectAssignment(models.Model):
-    project = models.ForeignKey(
-        Project, on_delete=models.CASCADE, related_name='members')
-    student = models.ForeignKey(User, on_delete=models.CASCADE,
-                                related_name='assigned_projects', limit_choices_to={'is_student': True})
-    unit = models.ForeignKey(
-        Unit, on_delete=models.CASCADE, related_name='project_assignments')
-
-    def __str__(self):
-        return f'Project Assignment for {self.student} in {self.unit.code}'
-
-    def clean(self) -> None:
-        errors = {}
-        if hasattr(self, 'unit') and hasattr(self, 'project') and not self.unit.id == self.project.unit.id:
-            errors['project'] = [
-                'The project must belong to the specified unit.']
-        if hasattr(self, 'unit') and hasattr(self, 'student') and not self.student.enrolled_units.filter(pk=self.unit.id).exists():
-            errors['student'] = [
-                'The student must be enrolled in the specified unit.']
-
-        if errors != {}:
-            raise ValidationError(errors)
-        return super().clean()
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['student', 'unit'], name='%(app_label)s_%(class)s_unique')
+                fields=['student', 'project'], name='%(app_label)s_%(class)s_project_unique')
         ]

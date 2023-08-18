@@ -1,0 +1,42 @@
+<tr class="{% if is_preferred %}preference_row{% else %}project_row{% if project in preferred_projects %} d-none{% endif %}{% endif %}" id="project-{{ project.id }}" {% if is_preferred %}data-rank="{{ rank }}"{% endif %} data-project-id="{{ project.id }}">
+    {% if is_preferred %}
+        <td scope="row">
+            <div class="d-flex gap-1">
+                <button type="button" class="project_drag_preference border-0 btn btn-sm p-0"><i class="bi bi-grip-vertical"></i></button>
+                <button type="button"onclick="move_preference({{ project.id }})" class="project_move_up_preference border-0 btn btn-sm p-0"><i class="bi bi-arrow-up"></i></button>
+                <button type="button" onclick="move_preference({{ project.id }}, false)" class="project_move_down_preference border-0 btn btn-sm p-0"><i class="bi bi-arrow-down"></i></button>
+            </div>
+        </td>
+        <td class="preference_rank text-center">{{ rank }}</td>
+    {% endif %}
+
+    <th scope="row" class="project_number">{{ project.number }}</th>
+    <td class="project_name px-3 py-2">{{ project.name }}</td>
+    <td class="project_info_toggle">{% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}</td>
+    <td class="project_capacity">{{ project.min_students }} - {{ project.max_students }}</td>
+    <td>
+        <button type="button" onclick="remove_project_from_prefs({{ project.id }})" class="remove_project_from_prefs btn btn-sm {% if not is_preferred %}disabled d-none{% endif %}" {% if not is_preferred %}aria-disabled="true"{% endif %}><i class="bi bi-x-lg"></i></button>
+        <button type="button" class="add_project_to_prefs border-0 btn btn-sm {% if is_preferred %}disabled d-none{% endif %}"{% if is_preferred %}aria-disabled="true"{% endif %} title="Add to Preferences" onclick="add_project_to_prefs({{ project.id }})"><i class="bi bi-plus-lg"></i></button>
+    </td>
+</tr>
+{% if project.description %}
+    <tr class="{% if not is_preferred %}{% if project in preferred_projects %} d-none{% endif %}{% endif %} project_info_container" data-project-id="{{ project.id }}">
+        <td colspan="12" class="p-0">
+            <div class="project_info" data-project-id="{{ project.id }}" style="display: none;">
+                <table class="table table-striped  m-0">
+                    <tbody>
+                        {% if project.description %}
+                        <tr>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td class="project_description">{{ project.description }}</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </td>
+    </tr>
+{% endif %}
+

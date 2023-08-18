@@ -1,10 +1,8 @@
-from typing import Any
-from django.db import models
-from django.http import HttpRequest, HttpResponse
-from django.views.generic import CreateView, TemplateView
-from django.shortcuts import render, redirect
-from django.urls import reverse_lazy, resolve, reverse
 from django.contrib.auth import login
+from django.db import models
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.views.generic import TemplateView
 from django.views.generic.edit import FormMixin
 
 
@@ -15,11 +13,11 @@ from . import forms
 def index_view(request):
     if request.user.is_authenticated:
         if request.user.is_student:
-            return redirect('student-index')
+            return redirect('student:index')
         if request.user.is_manager:
-            return redirect('manager-index')
+            return redirect('manager:index')
         if request.user.is_superuser:
-            return redirect('admin')
+            return redirect('admin:index')
     return redirect('login')
 
 
@@ -32,7 +30,7 @@ class StudentRegistrationView(FormMixin, TemplateView):
     def get_queryset(self):
         return models.User.objects.all()
 
-    def post(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+    def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
             # Set as student

@@ -2,16 +2,16 @@
 
 {% block page_title %}Student List{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-3 flex-column">
+    <div class="my-3 mx-3 d-flex gap-5 flex-wrap">
         <div class="d-flex gap-3">
             <div class="fw-semibold">No. Students</div>
             <div>{{ unit.students_count }}</div>
         </div>
     </div>
     <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
-        <a class="btn btn-primary" href="{% url 'manager-unit-students-new-list' unit.id %}">Upload Student List</a>
-        <a class="btn btn-primary" href="{% url 'manager-unit-students-new' unit.id %}">Add Student</a>
-        <a class="btn btn-danger {% if not page_obj %}disabled{% endif %}" href="{% url 'manager-unit-students-clear' unit.id %}" {% if not page_obj %}aria-disabled="true"{% endif %}>Clear Student List</a>
+        <a class="btn btn-primary" href="{% url 'manager:unit-students-new-list' unit.id %}">Upload Student List</a>
+        <a class="btn btn-primary" href="{% url 'manager:unit-students-new' unit.id %}">Add Student</a>
+        <a class="btn btn-danger {% if not page_obj %}disabled{% endif %}" href="{% url 'manager:unit-students-clear' unit.id %}" {% if not page_obj %}aria-disabled="true"{% endif %}>Clear Student List</a>
     </div>
     <hr class="my-4">
 {% endblock %}
@@ -31,11 +31,11 @@
                     <tr>
                         <th scope="row">{{ student.student_id }}</th>
                         <td><span class ="badge rounded-pill text-bg-{% if student.user %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user %}check{% else %}x{% endif %}-lg"></i></span></td>
-                        <td><span class ="badge rounded-pill text-bg-{% if student.user and student.user.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user and student.user.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></td>
+                        <td><span class ="badge rounded-pill text-bg-{% if student.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></td>
                         <td>
                             <div class="d-flex gap-2 justify-content-end">
-                                <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-students-detail' unit.id student.id %}">View</a>
-                                <a class="btn btn-danger btn-sm" href="{% url 'manager-unit-student-remove' unit.id student.id %}">Remove</a>
+                                <a class="btn btn-primary btn-sm" href="{% url 'manager:unit-students-detail' unit.id student.id %}">View</a>
+                                <a class="btn btn-danger btn-sm" href="{% url 'manager:unit-student-remove' unit.id student.id %}">Remove</a>
                             </div>
                         </td>
                     </tr>

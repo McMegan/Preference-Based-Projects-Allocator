@@ -2,7 +2,7 @@
 
 {% block page_title %}Student - {{ enrolledstudent.student_id }}{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-3 flex-column">
+    <div class="my-3 mx-3 d-flex gap-5 flex-wrap">
         <div class="d-flex gap-3">
             <div class="fw-semibold">Student ID</div>
             <div>{{ enrolledstudent.student_id }}</div>
@@ -13,16 +13,16 @@
         </div>
         <div class="d-flex gap-3">
             <div class="fw-semibold">Submitted Preferences</div>
-            <div><span class ="badge rounded-pill text-bg-{% if enrolledstudent.user and enrolledstudent.user.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if enrolledstudent.user and enrolledstudent.user.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></div>
+            <div><span class ="badge rounded-pill text-bg-{% if enrolledstudent.user and enrolledstudent.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if enrolledstudent.user and enrolledstudent.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></div>
         </div>
     </div>
     <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
-        <a class="btn btn-danger" href="{% url 'manager-unit-student-remove' enrolledstudent.unit.id enrolledstudent.id %}">Remove Student From Unit</a>
+        <a class="btn btn-danger" href="{% url 'manager:unit-student-remove' enrolledstudent.unit.id enrolledstudent.id %}">Remove Student From Unit</a>
     </div>
     <hr class="my-4">
 {% endblock %}
 {% block content %}
-    {% if enrolledstudent.user and enrolledstudent.user.project_preferences.exists %}
+    {% if enrolledstudent.user and enrolledstudent.project_preferences.exists %}
         <div class="mb-4 mt-5">
             <h4>Preferences</h4>
         </div>
@@ -34,10 +34,10 @@
                 </tr>
             </thead>
             <tbody>
-                {% for preference in enrolledstudent.user.project_preferences.all %}
+                {% for preference in enrolledstudent.project_preferences.all %}
                     <tr>
                         <th class="text-center" scope="row">{{ preference.rank }}</th>
-                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager-unit-projects-edit' unit.id preference.project.id %}">{{ preference.project.number }}: {{ preference.project.name }}</a></td>
+                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-projects-edit' unit.id preference.project.id %}">{{ preference.project.number }}: {{ preference.project.name }}</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

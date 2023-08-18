@@ -124,18 +124,9 @@ class ProjectAdmin(admin.ModelAdmin):
     # add unit?
 
 
-@admin.register(models.ProjectAssignment)
-class ProjectAssignmentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'unit', 'project', 'student']
-    autocomplete_fields = ['unit', 'project', 'student']
-    fieldsets = (
-        (None, {'fields': ('unit', 'project', 'student')}),
-    )
-
-
 @admin.register(models.ProjectPreference)
 class ProjectPreferenceAdmin(admin.ModelAdmin):
-    list_display = ['rank', 'unit', 'project', 'student']
+    list_display = ['rank', 'project', 'student']
 
     # No staff should be able to alter preferences...?
     def has_add_permission(self, request):

@@ -2,16 +2,16 @@
 
 {% block page_title %}Project List{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-3 flex-column">
+    <div class="my-3 mx-3 d-flex gap-5 flex-wrap">
         <div class="d-flex gap-3">
             <div class="fw-semibold">No. Projects</div>
             <div>{{ unit.projects_count }}</div>
         </div>
     </div>
     <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
-        <a class="btn btn-primary" href="{% url 'manager-unit-projects-new-list' unit.id %}">Upload Project List</a>
-        <a class="btn btn-primary" href="{% url 'manager-unit-projects-new' unit.id %}">Add Project</a>
-        <a class="btn btn-danger {% if not page_obj %}disabled{% endif %}" href="{% url 'manager-unit-projects-clear' unit.id %}" {% if not page_obj %}aria-disabled="true"{% endif %}>Clear Project List</a>
+        <a class="btn btn-primary" href="{% url 'manager:unit-projects-new-list' unit.id %}">Upload Project List</a>
+        <a class="btn btn-primary" href="{% url 'manager:unit-projects-new' unit.id %}">Add Project</a>
+        <a class="btn btn-danger {% if not page_obj %}disabled{% endif %}" href="{% url 'manager:unit-projects-clear' unit.id %}" {% if not page_obj %}aria-disabled="true"{% endif %}>Clear Project List</a>
     </div>
     <hr class="my-4">
 {% endblock %}
@@ -44,8 +44,8 @@
                             <td>{{ project.min_students }} - {{ project.max_students }}</td>
                             <td>
                                 <div class="d-flex gap-2 justify-content-end">
-                                    <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-projects-edit' unit.id project.id %}">Edit</a>
-                                    <a class="btn btn-danger btn-sm" href="{% url 'manager-unit-project-remove' unit.id project.id %}">Remove</a>
+                                    <a class="btn btn-primary btn-sm" href="{% url 'manager:unit-projects-edit' unit.id project.id %}">Edit</a>
+                                    <a class="btn btn-danger btn-sm" href="{% url 'manager:unit-project-remove' unit.id project.id %}">Remove</a>
                                 </div>
                             </td>
                         </tr>
@@ -56,8 +56,8 @@
                             <td>{{ project.min_students }} - {{ project.max_students }}</td>
                             <td>
                                 <div class="d-flex gap-2 justify-content-end">
-                                    <a class="btn btn-primary btn-sm" href="{% url 'manager-unit-projects-edit' unit.id project.id %}">Edit</a>
-                                    <a class="btn btn-danger btn-sm" href="{% url 'manager-unit-project-remove' unit.id project.id %}">Remove</a>
+                                    <a class="btn btn-primary btn-sm" href="{% url 'manager:unit-projects-edit' unit.id project.id %}">Edit</a>
+                                    <a class="btn btn-danger btn-sm" href="{% url 'manager:unit-project-remove' unit.id project.id %}">Remove</a>
                                 </div>
                             </td>
                         </tr>

@@ -1,7 +1,7 @@
 {% extends 'manager/base.html' %}
 {% block page_title %}Submitted Preferences{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-3 flex-column">
+    <div class="my-3 mx-3 d-flex gap-5 flex-wrap">
         <div class="d-flex gap-3">
             <div class="fw-semibold">Total No. Students</div>
             <div>{{ unit.students_count }}</div>
@@ -27,8 +27,8 @@
                 {% for preference in page_obj %}
                     <tr>
                         <th class="text-center" scope="row">{{ preference.rank }}</th>
-                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager-unit-projects-edit' unit.id preference.project.id %}">{{ preference.project.number }}: {{ preference.project.name }}</a></td>
-                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager-unit-students-detail' unit.id preference.student.enrollments.first.id %}">{{ preference.student.username }}</a></td>
+                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-projects-edit' unit.id preference.project.id %}">{{ preference.project.number }}: {{ preference.project.name }}</a></td>
+                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-students-detail' unit.id preference.student.id %}">{{ preference.student.student_id }}</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

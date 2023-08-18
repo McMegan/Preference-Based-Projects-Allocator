@@ -27,10 +27,16 @@ nav.navbar {
 	font-size: 0.85rem;
 }
 
-/* PREFERENCE SUBMISSION FORMS */
-.preference-submission-form label.form-label {
-	display: none;
+/* PROJECT INFO TOGGLES */
+.project_info_toggle_button.open {
+	transition: transform 1s;
+	transform: rotate(180deg);
 }
-.preference-submission-form fieldset > div {
-	margin-bottom: 0 !important;
+.project_info_container {
+	border-bottom: transparent;
+}
+
+/* TABLES */
+#preference_table > tbody > tr:last-child {
+	border-bottom: transparent;
 }

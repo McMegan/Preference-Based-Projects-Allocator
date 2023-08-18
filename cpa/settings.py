@@ -32,6 +32,8 @@ INSTALLED_APPS = [
     'django_browser_reload',
 
     'core',
+    'manager',
+    'student',
 
     'debug_toolbar',
 ]

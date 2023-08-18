@@ -1,4 +1,3 @@
-import datetime
 from django import forms
 
 from crispy_forms.bootstrap import FormActions
@@ -43,7 +42,28 @@ class SplitDateTimeField(forms.SplitDateTimeField):
     widget = SplitDateTimeWidget
 
 
-class UnitForm(forms.ModelForm):
+unit_form_layout_main = Layout(
+    FloatingField('code'),
+    FloatingField('name'),
+    FloatingField('year'),
+    FloatingField('semester'),
+)
+unit_form_layout_allocator = Layout(
+    Fieldset(
+        'Allocator Settings',
+        Div(
+            Div('preference_submission_start',
+                css_class='col preference_submission_timeframe'),
+            Div('preference_submission_end',
+                css_class='col preference_submission_timeframe'),
+            css_class='row'
+        ),
+        'minimum_preference_limit',
+    ),
+)
+
+
+class CreateUnitForm(forms.ModelForm):
     preference_submission_start = SplitDateTimeField(required=False)
     preference_submission_end = SplitDateTimeField(required=False)
 
@@ -52,23 +72,7 @@ class UnitForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            Fieldset(
-                '',
-                FloatingField('code'),
-                FloatingField('name'),
-                FloatingField('year'),
-                FloatingField('semester'),
-                Fieldset('Preference Submission Timeframe',
-                         Div(
-                             Div('preference_submission_start',
-                                 css_class='col preference_submission_timeframe'),
-                             Div('preference_submission_end',
-                                 css_class='col preference_submission_timeframe'),
-                             css_class='row'
-                         )
-                         ),
-                'minimum_preference_limit',
-            ),
+            unit_form_layout_main,
             FormActions(
                 Submit('submit', 'Save Unit', css_class='btn btn-primary'),
             )
@@ -78,6 +82,21 @@ class UnitForm(forms.ModelForm):
         model = models.Unit
         fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',
                   'preference_submission_end', 'minimum_preference_limit']
+
+
+class UpdateUnitForm(CreateUnitForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper.layout = Layout(
+            unit_form_layout_main,
+            unit_form_layout_allocator,
+            FormActions(
+                Submit('submit', 'Save Unit', css_class='btn btn-primary'),
+                HTML(
+                    """<a href="{% url 'manager:unit-delete' unit.id %}" class="btn btn-danger">Delete Unit</a>""")
+            )
+        )
 
 
 # Students

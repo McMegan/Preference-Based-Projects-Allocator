@@ -1,5 +1,5 @@
 from ortools.linear_solver import pywraplp
-from core.models import Project, EnrolledStudent, ProjectPreference, ProjectAssignment
+from core.models import Project, EnrolledStudent, ProjectPreference
 from django.db.models.query import QuerySet
 
 

@@ -1,16 +1,13 @@
-from typing import Any, Dict, Optional
-from django.db import models
-from django.db.models import Prefetch
-from django.http import HttpRequest, HttpResponse
-from django.urls import reverse, reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
-from django.db.models import Count
-from django.views.generic.edit import FormMixin
-from django.db.models import Q
 
 import csv
 from io import StringIO
+
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db import models
+from django.db.models import Prefetch, Count, Q
+from django.urls import reverse, reverse_lazy
+from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
+from django.views.generic.edit import FormMixin
 
 
 from core import models
@@ -21,41 +18,41 @@ def get_context_for_sidebar(pk_unit):
     unit_queryset = models.Unit.objects.filter(pk=pk_unit).prefetch_related(
         'projects').prefetch_related('enrolled_students').annotate(students_count=Count('enrolled_students', distinct=True)).annotate(projects_count=Count('projects', distinct=True))
     unit = unit_queryset.first()
-    nav_links = [
-        {'url': reverse('manager-unit-detail',
-                        kwargs={'pk': pk_unit}), 'label': unit, 'classes': ''},
-        # Students
-        {'url': reverse('manager-unit-students',
-                        kwargs={'pk_unit': pk_unit}), 'label': f'Student List ({unit.students_count})', 'classes': 'ms-3'},
-        {'url': reverse('manager-unit-students-new-list',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Upload Student List', 'classes': 'ms-5'},
-        {'url': reverse('manager-unit-students-new',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Add Student', 'classes': 'ms-5'},
-        {'url': reverse('manager-unit-students-clear',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Clear Student List', 'classes': 'ms-5 link-danger'},
-        # Projects
-        {'url': reverse('manager-unit-projects',
-                        kwargs={'pk_unit': pk_unit}), 'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
-        {'url': reverse('manager-unit-projects-new-list',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Upload Project List', 'classes': 'ms-5'},
-        {'url': reverse('manager-unit-projects-new',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Add Project', 'classes': 'ms-5'},
-        {'url': reverse('manager-unit-projects-clear',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Clear Project List', 'classes': 'ms-5 link-danger'},
+    nav_items = [
+        {'url': reverse('manager:unit',
+                        kwargs={'pk': pk_unit}), 'label': unit, 'classes': 'fs-6'},
+        # Allocator Settings / Setup
+        {'label': 'Unit Actions', 'classes': 'fw-semibold'},
+        {'url': reverse('manager:unit-students-new-list',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Upload Student List', 'classes': 'ms-3'},
+        {'url': reverse('manager:unit-students-new',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Add Student', 'classes': 'ms-3'},
+        # {'url': reverse('manager:unit-students-clear',kwargs={'pk_unit': pk_unit}), 'label': 'Clear Student List', 'classes': 'ms-3 link-danger'},
 
-        # Preferences
-        {'url': reverse('manager-unit-preferences',
+        {'url': reverse('manager:unit-projects-new-list',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Upload Project List', 'classes': 'ms-3'},
+        {'url': reverse('manager:unit-projects-new',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Add Project', 'classes': 'ms-3'},
+        # {'url': reverse('manager:unit-projects-clear',kwargs={'pk_unit': pk_unit}), 'label': 'Clear Project List', 'classes': 'ms-3 link-danger'},
+        {'url': reverse('manager:unit-projects-new',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Start Allocation', 'classes': 'ms-3'},
+
+        # {'url': reverse('manager:unit-delete',kwargs={'pk': pk_unit}), 'label': 'Delete Unit', 'classes': 'ms-3 link-danger'},
+
+        # Unit ???
+        {'label': 'Unit ???', 'classes': 'fw-semibold'},
+        {'url': reverse('manager:unit-students',
+                        kwargs={'pk_unit': pk_unit}), 'label': f'Student List ({unit.students_count})', 'classes': 'ms-3'},
+        {'url': reverse('manager:unit-projects',
+                        kwargs={'pk_unit': pk_unit}), 'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
+        {'url': reverse('manager:unit-preferences',
                         kwargs={'pk_unit': pk_unit}), 'label': 'Submitted Preferences', 'classes': 'ms-3'},
 
         # Allocation
         {'url': '#', 'label': 'Allocation', 'classes': 'ms-3'},
 
-        # Delete unit
-        {'url': reverse('manager-unit-delete',
-                        kwargs={'pk': pk_unit}), 'label': 'Delete Unit', 'classes': 'ms-3 link-danger'},
-
     ]
-    return {'unit_queryset': unit_queryset, 'unit': unit, 'nav_links': nav_links}
+    return {'unit_queryset': unit_queryset, 'unit': unit, 'nav_items': nav_items}
 
 
 def user_is_manager(user):
@@ -85,11 +82,11 @@ class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
 
 class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
-    form_class = forms.UnitForm
+    form_class = forms.CreateUnitForm
     template_name = 'manager/unit_new.html'
-    success_url = reverse_lazy('manager-index')
+    success_url = reverse_lazy('manager:index')
 
-    def post(self, request: HttpRequest, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
             form.instance.manager_id = request.user.id
@@ -119,10 +116,10 @@ class UnitDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return user_is_manager(self.request.user) and user_manages_unit(self.request.user, self.get_queryset())
 
 
-class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class UnitView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = models.Unit
-    form_class = forms.UnitForm
-    template_name = 'manager/unit_form.html'
+    form_class = forms.UpdateUnitForm
+    template_name = 'manager/unit.html'
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk'])}
@@ -161,7 +158,7 @@ class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('user').prefetch_related(Prefetch('user__project_preferences', queryset=models.ProjectPreference.objects.filter(unit_id=self.kwargs['pk_unit'])))
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit'])
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -175,14 +172,14 @@ class UnitStudentsCreateView(LoginRequiredMixin, UserPassesTestMixin, FormMixin,
     template_name = 'manager/students/unit_students_new.html'
 
     def get_success_url(self):
-        return reverse('manager-unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['pk_unit'] = self.kwargs['pk_unit']
         return kwargs
 
-    def post(self, request: HttpRequest, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
             form.instance.unit_id = self.kwargs['pk_unit']
@@ -214,9 +211,9 @@ class UnitStudentUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMix
     template_name = 'manager/students/unit_students_new_list.html'
 
     def get_success_url(self):
-        return reverse('manager-unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
-    def post(self, request: HttpRequest, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         # form = self.get_form()
         form = forms.StudentListForm(request.POST, request.FILES)
         if form.is_valid():
@@ -270,7 +267,7 @@ class UnitStudentsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView
     template_name = 'manager/students/unit_students_detail.html'
 
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().prefetch_related('user').prefetch_related('user__project_preferences')
+        return super().get_queryset().prefetch_related('user').prefetch_related('project_preferences')
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
@@ -287,7 +284,7 @@ class UnitStudentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView)
     template_name = 'manager/students/unit_student_confirm_delete.html'
 
     def get_success_url(self):
-        return reverse('manager-unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
@@ -315,7 +312,7 @@ class UnitStudentsClearView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, 
             return self.form_invalid(form)
 
     def get_success_url(self):
-        return reverse('manager-unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
@@ -349,14 +346,14 @@ class UnitProjectsCreateView(LoginRequiredMixin, UserPassesTestMixin, FormMixin,
     template_name = 'manager/projects/unit_projects_new.html'
 
     def get_success_url(self):
-        return reverse('manager-unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['pk_unit'] = self.kwargs['pk_unit']
         return kwargs
 
-    def post(self, request: HttpRequest, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
             form.instance.unit_id = self.kwargs['pk_unit']
@@ -383,9 +380,9 @@ class UnitProjectUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMix
     template_name = 'manager/projects/unit_projects_new_list.html'
 
     def get_success_url(self):
-        return reverse('manager-unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
-    def post(self, request: HttpRequest, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         # form = self.get_form()
         form = forms.ProjectListForm(request.POST, request.FILES)
         if form.is_valid():
@@ -441,7 +438,7 @@ class UnitProjectsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView
     template_name = 'manager/projects/unit_projects_detail.html'
 
     def get_success_url(self):
-        return reverse('manager-unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_queryset(self, *args, **kwargs):
         return super().get_queryset()
@@ -461,7 +458,7 @@ class UnitProjectDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView)
     template_name = 'manager/projects/unit_project_confirm_delete.html'
 
     def get_success_url(self):
-        return reverse('manager-unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
@@ -487,7 +484,7 @@ class UnitProjectsClearView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, 
             return self.form_invalid(form)
 
     def get_success_url(self):
-        return reverse('manager-unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
@@ -505,6 +502,46 @@ class UnitPreferencesListView(LoginRequiredMixin, UserPassesTestMixin, ListView)
     """
     model = models.ProjectPreference
     template_name = 'manager/preferences/unit_preferences.html'
+    paginate_by = 25
+
+    def get_context_data(self, **kwargs):
+        context_data = get_context_for_sidebar(self.kwargs['pk_unit'])
+        return {**super().get_context_data(**kwargs), **context_data, 'unit': context_data['unit_queryset'].annotate(
+            submitted_prefs_students_count=Count('enrolled_students__project_preferences', distinct=True)).first()}
+
+    def get_queryset(self):
+        return super().get_queryset().filter(student__unit=self.kwargs['pk_unit']).prefetch_related(Prefetch('student', queryset=models.EnrolledStudent.objects.filter(unit_id=self.kwargs['pk_unit'])))
+
+    def test_func(self):
+        return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
+
+
+# Unit Allocation Views
+
+class UnitAllocationStartView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    """
+        View for starting allocation
+    """
+    template_name = 'manager/allocation/unit_allocation_start.html'
+
+    def get_context_data(self, **kwargs):
+        context_data = get_context_for_sidebar(self.kwargs['pk_unit'])
+        return {**super().get_context_data(**kwargs), **context_data, 'unit': context_data['unit_queryset'].annotate(
+            submitted_prefs_students_count=Count('student_project_preferences__student', distinct=True)).first()}
+
+    def get_queryset(self):
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related(Prefetch('student__enrollments', queryset=models.EnrolledStudent.objects.filter(unit_id=self.kwargs['pk_unit'])))
+
+    def test_func(self):
+        return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
+
+
+class UnitAllocationListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    """
+        List of project assignments for projects in unit
+    """
+    model = models.EnrolledStudent
+    template_name = 'manager/allocation/unit_allocations.html'
     paginate_by = 25
 
     def get_context_data(self, **kwargs):

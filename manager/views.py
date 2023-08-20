@@ -49,7 +49,7 @@ def get_context_for_sidebar(pk_unit):
                         kwargs={'pk_unit': pk_unit}), 'label': 'Preference Distribution', 'classes': 'ms-3'},
 
         # Allocation
-        {'url': '#', 'label': 'Allocation', 'classes': 'ms-3'},
+        {'url': '#', 'label': 'Project Allocation', 'classes': 'ms-3'},
     ]
     return {'unit_queryset': unit_queryset, 'unit': unit, 'nav_items': nav_items}
 
@@ -536,11 +536,13 @@ class UnitPreferencesView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
 # Unit Allocation Views
 
-class UnitAllocationStartView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+
+class UnitAllocationView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """
-        View for starting allocation
+        View for starting/viewing allocation
     """
-    template_name = 'manager/allocation/unit_allocation_start.html'
+    model = models.Project
+    template_name = 'manager/allocation/unit_allocation.html'
 
     def get_context_data(self, **kwargs):
         context_data = get_context_for_sidebar(self.kwargs['pk_unit'])
@@ -555,7 +557,7 @@ class UnitAllocationStartView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
 
 class UnitAllocationListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """
-        List of project assignments for projects in unit
+        List of project allocations for students in unit
     """
     model = models.EnrolledStudent
     template_name = 'manager/allocation/unit_allocations.html'

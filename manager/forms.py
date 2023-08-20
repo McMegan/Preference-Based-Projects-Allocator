@@ -188,6 +188,18 @@ class StudentListClearForm(forms.Form):
 
 
 # Projects
+project_form_layout_main = Layout(
+    Fieldset(
+        '',
+        FloatingField('number'),
+        FloatingField('name'),
+        FloatingField('min_students'),
+        FloatingField('max_students'),
+        'description'
+    ),
+)
+
+
 class ProjectForm(forms.ModelForm):
     """
         Form for adding a single project to a unit
@@ -200,14 +212,7 @@ class ProjectForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            Fieldset(
-                '',
-                FloatingField('number'),
-                FloatingField('name'),
-                FloatingField('min_students'),
-                FloatingField('max_students'),
-                'description'
-            ),
+            project_form_layout_main,
             FormActions(
                 Submit('submit', 'Add Project to Unit',
                        css_class='btn btn-primary'),
@@ -225,6 +230,22 @@ class ProjectForm(forms.ModelForm):
         model = models.Project
         fields = ['number', 'name', 'description',
                   'min_students', 'max_students']
+
+
+class ProjectUpdateForm(ProjectForm):
+    """
+        Form for updating a project in a unit
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper.layout = Layout(
+            project_form_layout_main,
+            FormActions(
+                Submit('submit', 'Save Project',
+                       css_class='btn btn-primary'),
+            )
+        )
 
 
 class ProjectListForm(forms.Form):

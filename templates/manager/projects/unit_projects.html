@@ -2,7 +2,7 @@
 
 {% block page_title %}Project List{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-5 flex-wrap">
+    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
         <div class="d-flex gap-3">
             <div class="fw-semibold">No. Projects</div>
             <div>{{ unit.projects_count }}</div>
@@ -17,50 +17,49 @@
 {% endblock %}
 {% block content %}
     {% if page_obj %}
-        <table class="table table-striped">
+        <table class="table">
             <thead>
                 <tr>
                     <th scope="col">#</th>
                     <th scope="col">Name</th>
+                    <th scope="col"></th>
                     <th scope="col">Group Size</th>
                     <th scope="col"></th>
                 </tr>
             </thead>
             <tbody>
                 {% for project in page_obj %}
+                    <tr>
+                        <th scope="row">{{ project.number }}</th>
+                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id project.id %}">{{ project.name }}</a></td>
+                        <td>{% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}</td>
+                        <td>{{ project.min_students }} - {{ project.max_students }}</td>
+                        <td>
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a class="btn btn-primary btn-sm" href="{% url 'manager:unit-project-update' unit.id project.id %}">Edit</a>
+                                <a class="btn btn-danger btn-sm" href="{% url 'manager:unit-project-remove' unit.id project.id %}">Remove</a>
+                            </div>
+                        </td>
+                    </tr>
                     {% if project.description %}
-                        <tr class="accordion accordion-flush" id="accordian-{{project.id}}">
-                            <th scope="row">{{ project.number }}</th>
-                            <td class="accordion-header">
-                                <button class="accordion-button collapsed gap-2 p-0" style="box-shadow: none; background: transparent;" type="button" data-bs-toggle="collapse" data-bs-target="#accordian-{{project.id}}-description" aria-expanded="false" aria-controls="accordian-{{project.id}}-description">
-                                    {{ project.name }}
-                                </button>
-                                <div id="accordian-{{project.id}}-description" class="accordion-collapse collapse mt-3" data-bs-parent="#accordian-{{project.id}}">
-                                    <div class="accordion-body p-0">
-                                        {{project.description}}
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ project.min_students }} - {{ project.max_students }}</td>
-                            <td>
-                                <div class="d-flex gap-2 justify-content-end">
-                                    <a class="btn btn-primary btn-sm" href="{% url 'manager:unit-projects-edit' unit.id project.id %}">Edit</a>
-                                    <a class="btn btn-danger btn-sm" href="{% url 'manager:unit-project-remove' unit.id project.id %}">Remove</a>
-                                </div>
-                            </td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <th scope="row">{{ project.number }}</th>
-                            <td>{{ project.name }}</td>
-                            <td>{{ project.min_students }} - {{ project.max_students }}</td>
-                            <td>
-                                <div class="d-flex gap-2 justify-content-end">
-                                    <a class="btn btn-primary btn-sm" href="{% url 'manager:unit-projects-edit' unit.id project.id %}">Edit</a>
-                                    <a class="btn btn-danger btn-sm" href="{% url 'manager:unit-project-remove' unit.id project.id %}">Remove</a>
-                                </div>
-                            </td>
-                        </tr>
+                    <tr data-project-id="{{ project.id }}">
+                        <td colspan="12" class="p-0">
+                            <div class="project_info" data-project-id="{{ project.id }}" style="display: none;">
+                                <table class="table table-striped  m-0">
+                                    <tbody>
+                                        {% if project.description %}
+                                        <tr>
+                                            <th>Description</th>
+                                        </tr>
+                                        <tr>
+                                            <td class="project_description">{{ project.description }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
                     {% endif %}
                 {% endfor %}
             </tbody>

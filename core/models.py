@@ -5,7 +5,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import datetime
 
-from django.db.models import Count
+from django.db.models import Count, Sum, Q, F
 
 
 def ordinal(n: int) -> str:
@@ -80,6 +80,10 @@ class Project(models.Model):
     def __str__(self):
         return f'{self.number}: {self.name} ({self.unit.code})'
 
+    def preference_counts(self):
+        return self.student_preferences.all().values('rank').annotate(
+            student_count=Count('student')).order_by('rank')
+
     class Meta:
         ordering = ['number', 'name']
         constraints = [
@@ -117,7 +121,7 @@ class ProjectPreference(models.Model):
     rank = models.PositiveIntegerField()
 
     def __str__(self):
-        return f'Student_{self.student}-Unit_{self.unit.code}-Rank_{self.rank}-Project_{self.project.number}'
+        return f'Student_{self.student}-Unit_{self.student.unit.code}-Rank_{self.rank}-Project_{self.project.number}'
 
     def clean(self) -> None:
         errors = {}

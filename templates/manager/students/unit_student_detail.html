@@ -1,8 +1,8 @@
 {% extends 'manager/base.html' %}
 
-{% block page_title %}Student - {{ enrolledstudent.student_id }}{% endblock %}
+{% block page_title %}Student: {{ enrolledstudent.student_id }}{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-5 flex-wrap">
+    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
         <div class="d-flex gap-3">
             <div class="fw-semibold">Student ID</div>
             <div>{{ enrolledstudent.student_id }}</div>
@@ -22,7 +22,7 @@
     <hr class="my-4">
 {% endblock %}
 {% block content %}
-    {% if enrolledstudent.user and enrolledstudent.project_preferences.exists %}
+    {% if enrolledstudent.project_preferences.exists %}
         <div class="mb-4 mt-5">
             <h4>Preferences</h4>
         </div>
@@ -37,7 +37,7 @@
                 {% for preference in enrolledstudent.project_preferences.all %}
                     <tr>
                         <th class="text-center" scope="row">{{ preference.rank }}</th>
-                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-projects-edit' unit.id preference.project.id %}">{{ preference.project.number }}: {{ preference.project.name }}</a></td>
+                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-update' unit.id preference.project.id %}">{{ preference.project.number }}: {{ preference.project.name }}</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

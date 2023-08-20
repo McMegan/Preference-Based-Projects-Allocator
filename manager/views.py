@@ -4,7 +4,7 @@ from io import StringIO
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
-from django.db.models import Prefetch, Count, Q
+from django.db.models import Prefetch, Count, Sum, Q, F
 from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.edit import FormMixin
@@ -46,11 +46,10 @@ def get_context_for_sidebar(pk_unit):
         {'url': reverse('manager:unit-projects',
                         kwargs={'pk_unit': pk_unit}), 'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
         {'url': reverse('manager:unit-preferences',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Submitted Preferences', 'classes': 'ms-3'},
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Preference Distribution', 'classes': 'ms-3'},
 
         # Allocation
         {'url': '#', 'label': 'Allocation', 'classes': 'ms-3'},
-
     ]
     return {'unit_queryset': unit_queryset, 'unit': unit, 'nav_items': nav_items}
 
@@ -264,7 +263,7 @@ class UnitStudentsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView
         View a single student in a unit
     """
     model = models.EnrolledStudent
-    template_name = 'manager/students/unit_students_detail.html'
+    template_name = 'manager/students/unit_student_detail.html'
 
     def get_queryset(self, *args, **kwargs):
         return super().get_queryset().prefetch_related('user').prefetch_related('project_preferences')
@@ -433,15 +432,32 @@ class UnitProjectUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMix
 
 
 class UnitProjectsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    form_class = forms.ProjectForm
+    form_class = forms.ProjectUpdateForm
     model = models.Project
-    template_name = 'manager/projects/unit_projects_detail.html'
+    template_name = 'manager/projects/unit_project_update.html'
+
+    def get_success_url(self):
+        return reverse('manager:unit-project-detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
+
+    def get_queryset(self, *args, **kwargs):
+        return super().get_queryset()
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+
+    def test_func(self):
+        return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
+
+
+class UnitProjectsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = models.Project
+    template_name = 'manager/projects/unit_project_detail.html'
 
     def get_success_url(self):
         return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset()
+        return super().get_queryset().prefetch_related('student_preferences').prefetch_related('student_preferences__student')
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
@@ -496,21 +512,23 @@ class UnitProjectsClearView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, 
 # Unit Preference Views
 
 
-class UnitPreferencesListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+class UnitPreferencesView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """
-        List of preferences for projects in unit
+        Show the distribution of preferences for projects in unit
     """
-    model = models.ProjectPreference
+    model = models.Project
     template_name = 'manager/preferences/unit_preferences.html'
     paginate_by = 25
 
     def get_context_data(self, **kwargs):
-        context_data = get_context_for_sidebar(self.kwargs['pk_unit'])
-        return {**super().get_context_data(**kwargs), **context_data, 'unit': context_data['unit_queryset'].annotate(
-            submitted_prefs_students_count=Count('enrolled_students__project_preferences', distinct=True)).first()}
+        context = get_context_for_sidebar(self.kwargs['pk_unit'])
+        return {**super().get_context_data(**kwargs), **context, 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(
+            unit=self.kwargs['pk_unit']).annotate(project_preference_count=Count('project_preferences')).filter(project_preference_count__gt=0).count()}
 
     def get_queryset(self):
-        return super().get_queryset().filter(student__unit=self.kwargs['pk_unit']).prefetch_related(Prefetch('student', queryset=models.EnrolledStudent.objects.filter(unit_id=self.kwargs['pk_unit'])))
+        total_projects = models.Project.objects.filter(
+            unit_id=self.kwargs['pk_unit']).count()
+        return super().get_queryset().filter(unit_id=self.kwargs['pk_unit']).prefetch_related('student_preferences').annotate(popularity=Sum(total_projects - F('student_preferences__rank')))
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -526,8 +544,7 @@ class UnitAllocationStartView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
 
     def get_context_data(self, **kwargs):
         context_data = get_context_for_sidebar(self.kwargs['pk_unit'])
-        return {**super().get_context_data(**kwargs), **context_data, 'unit': context_data['unit_queryset'].annotate(
-            submitted_prefs_students_count=Count('student_project_preferences__student', distinct=True)).first()}
+        return {**super().get_context_data(**kwargs), **context_data}
 
     def get_queryset(self):
         return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related(Prefetch('student__enrollments', queryset=models.EnrolledStudent.objects.filter(unit_id=self.kwargs['pk_unit'])))
@@ -546,8 +563,7 @@ class UnitAllocationListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context_data = get_context_for_sidebar(self.kwargs['pk_unit'])
-        return {**super().get_context_data(**kwargs), **context_data, 'unit': context_data['unit_queryset'].annotate(
-            submitted_prefs_students_count=Count('student_project_preferences__student', distinct=True)).first()}
+        return {**super().get_context_data(**kwargs), **context_data}
 
     def get_queryset(self):
         return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related(Prefetch('student__enrollments', queryset=models.EnrolledStudent.objects.filter(unit_id=self.kwargs['pk_unit'])))

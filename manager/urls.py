@@ -22,7 +22,7 @@ urlpatterns = [
     re_path(r'^units/(?P<pk_unit>[0-9]+)/students/new$',
             views.UnitStudentsCreateView.as_view(), name='unit-students-new'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/students/(?P<pk>[0-9]+)$',
-            views.UnitStudentsDetailView.as_view(), name='unit-students-detail'),
+            views.UnitStudentsDetailView.as_view(), name='unit-student-detail'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/students/(?P<pk>[0-9]+)/remove$',
             views.UnitStudentDeleteView.as_view(), name='unit-student-remove'),
     # Unit project views
@@ -35,12 +35,14 @@ urlpatterns = [
     re_path(r'^units/(?P<pk_unit>[0-9]+)/projects/new$',
             views.UnitProjectsCreateView.as_view(), name='unit-projects-new'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/projects/(?P<pk>[0-9]+)$',
-            views.UnitProjectsUpdateView.as_view(), name='unit-projects-edit'),
+            views.UnitProjectsDetailView.as_view(), name='unit-project-detail'),
+    re_path(r'^units/(?P<pk_unit>[0-9]+)/projects/(?P<pk>[0-9]+)/update$',
+            views.UnitProjectsUpdateView.as_view(), name='unit-project-update'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/projects/(?P<pk>[0-9]+)/remove$',
             views.UnitProjectDeleteView.as_view(), name='unit-project-remove'),
     # Unit preference views
     re_path(r'^units/(?P<pk_unit>[0-9]+)/preferences$',
-            views.UnitPreferencesListView.as_view(), name='unit-preferences'),
+            views.UnitPreferencesView.as_view(), name='unit-preferences'),
     # Unit allocation views
     re_path(r'^units/(?P<pk_unit>[0-9]+)/allocation/start$',
             views.UnitAllocationStartView.as_view(), name='unit-allocation-start'),

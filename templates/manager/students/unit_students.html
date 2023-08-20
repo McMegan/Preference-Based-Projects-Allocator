@@ -2,7 +2,7 @@
 
 {% block page_title %}Student List{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-5 flex-wrap">
+    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
         <div class="d-flex gap-3">
             <div class="fw-semibold">No. Students</div>
             <div>{{ unit.students_count }}</div>
@@ -29,12 +29,11 @@
             <tbody>
                 {% for student in page_obj %}
                     <tr>
-                        <th scope="row">{{ student.student_id }}</th>
+                        <th scope="row"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-student-detail' unit.id student.id %}">{{ student.student_id }}</a></th>
                         <td><span class ="badge rounded-pill text-bg-{% if student.user %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user %}check{% else %}x{% endif %}-lg"></i></span></td>
                         <td><span class ="badge rounded-pill text-bg-{% if student.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></td>
                         <td>
-                            <div class="d-flex gap-2 justify-content-end">
-                                <a class="btn btn-primary btn-sm" href="{% url 'manager:unit-students-detail' unit.id student.id %}">View</a>
+                            <div class="d-flex justify-content-end">
                                 <a class="btn btn-danger btn-sm" href="{% url 'manager:unit-student-remove' unit.id student.id %}">Remove</a>
                             </div>
                         </td>

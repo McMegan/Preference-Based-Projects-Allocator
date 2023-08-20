@@ -5,7 +5,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import datetime
 
-from django.db.models import Count, Sum, Q, F
+from django.db.models import Prefetch, Avg, Count, Sum, Q, F
 
 
 def ordinal(n: int) -> str:
@@ -35,6 +35,8 @@ class Unit(models.Model):
     preference_submission_end = models.DateTimeField(null=True, blank=True)
     minimum_preference_limit = models.IntegerField(null=True, blank=True)
 
+    # is_allocating = models.BooleanField(default=False)
+
     manager = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name='managed_units', limit_choices_to={'is_manager': True})
 
@@ -50,6 +52,9 @@ class Unit(models.Model):
             raise ValidationError(errors)
         return super().clean()
 
+    def preference_submission_set(self) -> bool:
+        return self.preference_submission_start != None and self.preference_submission_end != None
+
     def preference_submission_open(self) -> bool:
         return self.preference_submission_started() and not self.preference_submission_ended()
 
@@ -58,6 +63,9 @@ class Unit(models.Model):
 
     def preference_submission_ended(self) -> bool:
         return timezone.now() > self.preference_submission_end
+
+    def is_allocated(self) -> bool:
+        return self.projects.annotate(allocated_count=Count('assigned_students')).filter(allocated_count__gt=0).exists()
 
     class Meta:
         ordering = ['code', 'name']
@@ -83,6 +91,14 @@ class Project(models.Model):
     def preference_counts(self):
         return self.student_preferences.all().values('rank').annotate(
             student_count=Count('student')).order_by('rank')
+
+    def is_allocated(self) -> bool:
+        return self.assigned_students.count() > 0
+
+    def average_allocated_preference(self):
+        assigned_student_preferences = [preference.rank for student in self.assigned_students.prefetch_related(
+            Prefetch('project_preferences', queryset=ProjectPreference.objects.filter(project_id=self.id))).all()for preference in student.project_preferences.all()]
+        return round(sum(assigned_student_preferences) / len(assigned_student_preferences), 2) if len(assigned_student_preferences) != 0 else ''
 
     class Meta:
         ordering = ['number', 'name']

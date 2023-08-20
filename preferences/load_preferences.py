@@ -4,12 +4,15 @@ from core import models
 
 from . import preferences_full
 
-LOAD_PREFS = True
+LOAD_PREFS = False
 
 
 def load_prefs():
     if LOAD_PREFS:
         print('\n\n ########## ')
+
+        load_prefs_for_unit(unit_code='SMALL',
+                            pref_list=preferences_full.pref_list)
 
         load_prefs_for_unit(unit_code='FULL00001',
                             pref_list=preferences_full.pref_list)

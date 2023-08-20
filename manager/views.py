@@ -4,7 +4,7 @@ from io import StringIO
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
-from django.db.models import Prefetch, Count, Sum, Q, F
+from django.db.models import Prefetch, Count, Sum, Q, F, Avg
 from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.edit import FormMixin
@@ -12,6 +12,8 @@ from django.views.generic.edit import FormMixin
 
 from core import models
 from . import forms
+
+from .allocator import Allocator
 
 
 def get_context_for_sidebar(pk_unit):
@@ -49,7 +51,8 @@ def get_context_for_sidebar(pk_unit):
                         kwargs={'pk_unit': pk_unit}), 'label': 'Preference Distribution', 'classes': 'ms-3'},
 
         # Allocation
-        {'url': '#', 'label': 'Project Allocation', 'classes': 'ms-3'},
+        {'url': reverse('manager:unit-allocation',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Project Allocation', 'classes': 'ms-3'},
     ]
     return {'unit_queryset': unit_queryset, 'unit': unit, 'nav_items': nav_items}
 
@@ -537,19 +540,37 @@ class UnitPreferencesView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 # Unit Allocation Views
 
 
-class UnitAllocationView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+class UnitAllocationView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListView):
     """
         View for starting/viewing allocation
     """
     model = models.Project
     template_name = 'manager/allocation/unit_allocation.html'
+    paginate_by = 25
+
+    form_class = forms.StartAllocationForm
+
+    def get_success_url(self):
+        return self.request.path
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'pk_unit': self.kwargs['pk_unit'], 'unit': get_context_for_sidebar(self.kwargs['pk_unit'])['unit']}
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            allocator = Allocator()
+            result = allocator.allocate(unit=models.Unit.objects.filter(pk=self.kwargs['pk_unit']).prefetch_related('projects').prefetch_related(
+                'enrolled_students').prefetch_related('enrolled_students__project_preferences').first())
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
-        context_data = get_context_for_sidebar(self.kwargs['pk_unit'])
-        return {**super().get_context_data(**kwargs), **context_data}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related(Prefetch('student__enrollments', queryset=models.EnrolledStudent.objects.filter(unit_id=self.kwargs['pk_unit'])))
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('assigned_students')
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -564,8 +585,7 @@ class UnitAllocationListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 25
 
     def get_context_data(self, **kwargs):
-        context_data = get_context_for_sidebar(self.kwargs['pk_unit'])
-        return {**super().get_context_data(**kwargs), **context_data}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
 
     def get_queryset(self):
         return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related(Prefetch('student__enrollments', queryset=models.EnrolledStudent.objects.filter(unit_id=self.kwargs['pk_unit'])))

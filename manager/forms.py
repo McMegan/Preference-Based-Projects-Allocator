@@ -309,3 +309,36 @@ class ProjectListForm(forms.Form):
                                  self.cleaned_data.get('max_students_column'))
 
         return super().clean()
+
+
+class StartAllocationForm(forms.Form):
+    """
+        Form for starting the allocation process
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.pk_unit = kwargs.pop('pk_unit', None)
+        self.unit = kwargs.pop('unit', None)
+
+        super().__init__(*args, **kwargs)
+
+        submit_text = 'Start Allocation'
+        submit_btn_colour = 'btn-primary'
+        warning = ''
+        if self.unit.is_allocated():
+            submit_text = 'Override Allocation'
+            submit_btn_colour = 'btn-danger'
+            warning = """
+                <div class="alert alert-danger" role="alert">
+                    This unit has already been allocated, allocating again will override the current allocation.
+                </div>
+            """
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            HTML(warning),
+            FormActions(
+                Submit('submit', submit_text,
+                       css_class=f'btn {submit_btn_colour}'),
+            ),
+        )

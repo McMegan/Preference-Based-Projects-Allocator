@@ -323,6 +323,8 @@ class ProjectListForm(forms.Form):
 
         return super().clean()
 
+# Allocation forms
+
 
 class StartAllocationForm(forms.Form):
     """
@@ -352,5 +354,22 @@ class StartAllocationForm(forms.Form):
             FormActions(
                 Submit('submit', submit_text,
                        css_class=f'btn {submit_btn_colour}'),
+            ),
+        )
+
+
+class ExportAllocationForm(forms.Form):
+    """
+        Form for exporting the allocation results
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            FormActions(
+                Submit('submit', 'Export Allocation Results as CSV',
+                       css_class='btn btn-primary'),
             ),
         )

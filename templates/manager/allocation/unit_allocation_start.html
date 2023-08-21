@@ -17,12 +17,10 @@
 {% block content %}
     {% if unit.preference_submission_set and unit.preference_submission_ended %}
         <div>
-            {% block form %}
-                {% load crispy_forms_tags %} 
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %} {% crispy form %}
-                </form>
-            {% endblock %}
+            {% load crispy_forms_tags %} 
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %} {% crispy form %}
+            </form>
         </div>
     {% else %}
         {% if not unit.preference_submission_set %}

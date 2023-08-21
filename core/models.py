@@ -1,11 +1,10 @@
-from django.contrib.auth.models import AbstractUser, Group
+from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from django.utils import timezone
-from datetime import datetime
 
-from django.db.models import Prefetch, Avg, Count, Sum, Q, F
+from django.db.models import Count
 
 
 def ordinal(n: int) -> str:
@@ -98,11 +97,6 @@ class Project(models.Model):
 
     def is_allocated(self) -> bool:
         return self.assigned_students.count() > 0
-
-    def average_allocated_preference(self):
-        assigned_student_preferences = [preference.rank for student in self.assigned_students.prefetch_related(
-            Prefetch('project_preferences', queryset=ProjectPreference.objects.filter(project_id=self.id))).all()for preference in student.project_preferences.all()]
-        return round(sum(assigned_student_preferences) / len(assigned_student_preferences), 2) if len(assigned_student_preferences) != 0 else ''
 
     class Meta:
         ordering = ['number', 'name']

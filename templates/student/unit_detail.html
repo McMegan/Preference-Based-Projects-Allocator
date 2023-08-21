@@ -1,11 +1,12 @@
-{% extends 'core/base.html' %} 
+{% extends 'core/base.html' %}
+{% load static %}
 
 {% block main %}
     <div>
         <a class="nav-link d-flex gap-2 align-items-center" href="{% url 'index' %}">
             <i class="bi bi-chevron-left"></i><span>Unit List</span>
         </a>
-        <h2 class="mt-3">{{ unit }}</h2>
+        <h1 class="mt-3">{{ unit }}</h1>
         <hr class="my-4">
         <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
             <div class="d-flex gap-3">
@@ -36,4 +37,4 @@
     {% endif %}
 {% endblock %}
 
-{% block extrascripts %}{% load static %}<script src='{% static 'scripts/preference_submission.js' %}'> {% endblock %}
+{% block extrascripts %}<script type="text/javascript" src="{% static 'scripts/preference_submission.js' %}"></script>{% endblock %}

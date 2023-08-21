@@ -45,5 +45,7 @@ urlpatterns = [
             views.UnitPreferencesView.as_view(), name='unit-preferences'),
     # Unit allocation views
     re_path(r'^units/(?P<pk_unit>[0-9]+)/allocation$',
-            views.UnitAllocationView.as_view(), name='unit-allocation'),
+            views.UnitAllocationStartView.as_view(), name='unit-allocation-start'),
+    re_path(r'^units/(?P<pk_unit>[0-9]+)/allocation/results$',
+            views.UnitAllocationResultsView.as_view(), name='unit-allocation-results'),
 ]

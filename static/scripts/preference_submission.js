@@ -73,6 +73,7 @@ const add_project_to_prefs = (project_id) => {
 	project_row.addClass('d-none');
 	project_row = project_row.clone();
 	project_row.removeClass('d-none');
+	project_row.removeClass('stripe');
 	project_row.removeClass('project_row');
 	project_row.addClass('preference_row');
 	project_row.attr('data-rank', rank);
@@ -125,6 +126,7 @@ const add_project_to_prefs = (project_id) => {
 	$('#id_form-TOTAL_FORMS').val(rank);
 
 	fix_up_down_arrows();
+	fix_striped_tables();
 };
 
 const remove_project_from_prefs = (project_id) => {
@@ -164,6 +166,7 @@ const remove_project_from_prefs = (project_id) => {
 	$('#id_form-TOTAL_FORMS').val(preference_count - 1);
 
 	fix_up_down_arrows();
+	fix_striped_tables();
 };
 
 const move_preference = (project_id, move_up = true) => {
@@ -208,13 +211,10 @@ const move_preference = (project_id, move_up = true) => {
 	}
 
 	fix_up_down_arrows();
-};
-
-const toggle_info = (project_id) => {
-	$(`.project_info[data-project-id="${project_id}"]`).slideToggle();
-	$(`#project-${project_id} .project_info_toggle_button`).toggleClass('open');
+	fix_striped_tables();
 };
 
 window.onload = () => {
 	fix_up_down_arrows();
+	fix_striped_tables();
 };

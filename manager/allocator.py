@@ -86,13 +86,11 @@ class Allocator:
         self.solver.Minimize(self.solver.Sum(allocated_preferences))
 
     def save_allocation(self):
-        allocated_project_preference_ranks = {}
-        all_allocated_preference_ranks = []
+        project_updated = []
         student_allocated = []
         for project in self.projects:
             if self.project_vars[project.id]:
-                if project.id not in allocated_project_preference_ranks:
-                    allocated_project_preference_ranks[project.id] = []
+                project_allocated_ranks = []
                 for student in self.students:
                     if self.student_vars[student.id, project.id].solution_value() > 0.5:
                         student.assigned_project_id = project.id
@@ -103,17 +101,16 @@ class Allocator:
                         if student.project_preferences.filter(project=project).exists():
                             rank = student.project_preferences.filter(
                                 project=project).first().rank
-                            allocated_project_preference_ranks[project.id].append(
-                                rank)
-                            all_allocated_preference_ranks.append(rank)
-
-        print(all_allocated_preference_ranks)
-        print(allocated_project_preference_ranks)
+                            project_allocated_ranks.append(rank)
+                if len(project_allocated_ranks) != 0:
+                    project.avg_allocated_pref = sum(
+                        project_allocated_ranks) / len(project_allocated_ranks)
+                    project_updated.append(project)
 
         models.EnrolledStudent.objects.bulk_update(
             student_allocated, fields=['assigned_project'])
-        
-        # unit_avg_allocated_rank
+        models.Project.objects.bulk_update(
+            project_updated, fields=['avg_allocated_pref'])
 
     def get_preference_rank(self, student, project):
         """

@@ -26,7 +26,7 @@
             <tbody>
                 {% for project in page_obj %}
                     <tr>
-                        <th scope="row"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id project.id %}">{{ project.number }}: {{ project.name }}</a></th>
+                        <td scope="row"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id project.id %}">{{ project.number }}: {{ project.name }}</a></td>
                         <td>{{ project.popularity }}</td>
                     </tr>
                 {% endfor %}

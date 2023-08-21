@@ -9,11 +9,11 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.edit import FormMixin
 
+from django.db.models.functions import Round
+
 
 from core import models
 from . import forms
-
-from .allocator import Allocator
 
 
 def get_context_for_sidebar(pk_unit):
@@ -51,8 +51,10 @@ def get_context_for_sidebar(pk_unit):
                         kwargs={'pk_unit': pk_unit}), 'label': 'Preference Distribution', 'classes': 'ms-3'},
 
         # Allocation
-        {'url': reverse('manager:unit-allocation',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Project Allocation', 'classes': 'ms-3'},
+        {'url': reverse('manager:unit-allocation-start',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Start Allocation', 'classes': 'ms-3'},
+        {'url': reverse('manager:unit-allocation-results',
+                        kwargs={'pk_unit': pk_unit}), 'label': 'Allocation Results', 'classes': 'ms-3'},
     ]
     return {'unit_queryset': unit_queryset, 'unit': unit, 'nav_items': nav_items}
 
@@ -540,12 +542,12 @@ class UnitPreferencesView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 # Unit Allocation Views
 
 
-class UnitAllocationView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListView):
+class UnitAllocationStartView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
     """
         View for starting/viewing allocation
     """
     model = models.Project
-    template_name = 'manager/allocation/unit_allocation.html'
+    template_name = 'manager/allocation/unit_allocation_start.html'
     paginate_by = 25
 
     form_class = forms.StartAllocationForm
@@ -559,33 +561,29 @@ class UnitAllocationView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, Lis
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
-            allocator = Allocator()
-            result = allocator.allocate(unit=models.Unit.objects.filter(pk=self.kwargs['pk_unit']).prefetch_related('projects').prefetch_related(
-                'enrolled_students').prefetch_related('enrolled_students__project_preferences').first())
-            # Email with result...??
-
-            del allocator
-
-            # from .tasks import start_allocation
-            # result = start_allocation.delay(unit_id=self.kwargs['pk_unit'])
-
+            from .tasks import start_allocation
+            start_allocation.delay(unit_id=self.kwargs['pk_unit'])
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        context = get_context_for_sidebar(self.kwargs['pk_unit'])
+        context['unit_queryset'] = context['unit_queryset'].annotate(
+            avg_allocated_pref_rounded=Round(Avg('projects__avg_allocated_pref'), 2))
+        return {**super().get_context_data(**kwargs), **context, 'unit': context['unit_queryset'].first(), 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(unit=self.kwargs['pk_unit']).annotate(project_preference_count=Count('project_preferences')).filter(project_preference_count__gt=0).count()}
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('assigned_students')
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('assigned_students').annotate(
+            avg_allocated_pref_rounded=Round(F('avg_allocated_pref'), 2))
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
 
 
-class UnitAllocationListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+class UnitAllocationResultsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """
-        List of project allocations for students in unit
+        View allocation results & stats
     """
     model = models.EnrolledStudent
     template_name = 'manager/allocation/unit_allocations.html'

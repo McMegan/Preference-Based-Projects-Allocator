@@ -23,7 +23,7 @@
     <tr class="{% if not is_preferred %}{% if project in preferred_projects %} d-none{% endif %}{% endif %} project_info_container" data-project-id="{{ project.id }}">
         <td colspan="12" class="p-0">
             <div class="project_info" data-project-id="{{ project.id }}" style="display: none;">
-                <table class="table table-striped  m-0">
+                <table class="table m-0">
                     <tbody>
                         {% if project.description %}
                         <tr>

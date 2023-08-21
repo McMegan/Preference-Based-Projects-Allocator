@@ -1,8 +1,7 @@
 {% extends 'manager/base.html' %}
 
-{% block page_title %}Project Allocation{% endblock %}
+{% block page_title %}Start Project Allocation{% endblock %}
 {% block content %}
-    <h3 class="mb-4">Start Allocation</h3>
     {% if unit.preference_submission_set and unit.preference_submission_ended %}
         <div>
             {% block form %}

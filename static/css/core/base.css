@@ -36,6 +36,12 @@ nav.navbar {
 	border-bottom: transparent;
 }
 
+/* FIX STRIPING */
+.stripe {
+	--bs-table-color-type: var(--bs-table-striped-color);
+	--bs-table-bg-type: var(--bs-table-striped-bg);
+}
+
 /* TABLES */
 #preference_table > tbody > tr:last-child {
 	border-bottom: transparent;

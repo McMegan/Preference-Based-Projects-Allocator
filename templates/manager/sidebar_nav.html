@@ -1,0 +1,22 @@
+<li class="nav-item">
+    <a class="nav-link d-flex gap-2 align-items-center" href="{% url 'index' %}">
+        <i class="bi bi-chevron-left"></i><span>Unit List</span>
+    </a>
+</li>
+
+{% if nav_items %}
+{% for nav_item in nav_items %}
+<li class="nav-item">
+    {% if nav_item.url %}
+        {% url nav_item.url unit.id as url %}
+        <a href="{{ url }}" class="nav-link {{ nav_item.classes }} {% if request.path == url %}active fw-bold{% endif %}" {% if request.path == url %}aria-current="page"{% endif %}>
+            {{ nav_item.label }}
+        </a>
+    {% else %}
+        <span class="nav-link {{ nav_item.classes }}">
+            {{ nav_item.label }}
+        </span>
+    {% endif %}
+</li>
+{% endfor %}
+{% endif %}

@@ -8,26 +8,7 @@
                 <div class="card bg-body-tertiary">
                     <div class="card-body">
                         <ul class="navbar-nav">
-                            <li class="nav-item">
-                                <a class="nav-link d-flex gap-2 align-items-center" href="{% url 'index' %}">
-                                    <i class="bi bi-chevron-left"></i><span>Unit List</span>
-                                </a>
-                            </li>
-                            {% if nav_items %}
-                            {% for nav_item in nav_items %}
-                            <li class="nav-item">
-                                {% if nav_item.url %}
-                                    <a href="{{ nav_item.url }}" class="nav-link {{ nav_item.classes }} {% if request.path == nav_item.url %}active fw-bold{% endif %}" {% if request.path == nav_item.url %}aria-current="page"{% endif %}>
-                                        {{ nav_item.label }}
-                                    </a>
-                                {% else %}
-                                    <span class="nav-link {{ nav_item.classes }}">
-                                        {{ nav_item.label }}
-                                    </span>
-                                {% endif %}
-                            </li>
-                            {% endfor %}
-                            {% endif %}
+                            {% include 'manager/sidebar_nav.html' %}
                         </ul>
                     </div>
                 </div>

@@ -330,7 +330,6 @@ class StartAllocationForm(forms.Form):
     """
 
     def __init__(self, *args, **kwargs):
-        self.pk_unit = kwargs.pop('pk_unit', None)
         self.unit = kwargs.pop('unit', None)
 
         super().__init__(*args, **kwargs)

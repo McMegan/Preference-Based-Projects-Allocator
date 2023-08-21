@@ -1,6 +1,19 @@
 {% extends 'manager/base.html' %}
 
 {% block page_title %}Start Project Allocation{% endblock %}
+{% block extra_header %}
+    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Total No. Students</div>
+            <div>{{ unit.students_count }}</div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Total No. Students who Submitted Preferences</div>
+            <div>{{ submitted_prefs_students_count }}</div>
+        </div>
+    </div>
+    <hr class="my-4">
+{% endblock %}
 {% block content %}
     {% if unit.preference_submission_set and unit.preference_submission_ended %}
         <div>
@@ -22,9 +35,5 @@
                 Allocation can only start once the preference submission timeframe for this unit has ended.
             </div>
         {% endif %}
-    {% endif %}
-
-    {% if unit.is_allocated and page_obj %}
-        {% include 'manager/allocation/unit_allocation_finished.html' with projects=page_obj %}
     {% endif %}
 {% endblock content %}

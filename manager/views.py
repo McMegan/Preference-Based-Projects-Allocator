@@ -16,47 +16,42 @@ from core import models
 from . import forms
 
 
-def get_context_for_sidebar(pk_unit):
-    unit_queryset = models.Unit.objects.filter(pk=pk_unit).prefetch_related(
-        'projects').prefetch_related('enrolled_students').annotate(students_count=Count('enrolled_students', distinct=True)).annotate(projects_count=Count('projects', distinct=True))
-    unit = unit_queryset.first()
+def get_unit_queryset(pk_unit):
+    return models.Unit.objects.filter(pk=pk_unit).annotate(students_count=Count(
+        'enrolled_students', distinct=True)).annotate(projects_count=Count('projects', distinct=True))
+
+
+def get_unit_object(unit_queryset):
+    return unit_queryset.first()
+
+
+def get_context_for_sidebar(unit):
     nav_items = [
-        {'url': reverse('manager:unit',
-                        kwargs={'pk': pk_unit}), 'label': unit, 'classes': 'fs-6'},
+        {'url': 'manager:unit', 'label': unit, 'classes': 'fs-6'},
         # Allocator Settings / Setup
         {'label': 'Unit Actions', 'classes': 'fw-semibold'},
-        {'url': reverse('manager:unit-students-new-list',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Upload Student List', 'classes': 'ms-3'},
-        {'url': reverse('manager:unit-students-new',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Add Student', 'classes': 'ms-3'},
-        # {'url': reverse('manager:unit-students-clear',kwargs={'pk_unit': pk_unit}), 'label': 'Clear Student List', 'classes': 'ms-3 link-danger'},
-
-        {'url': reverse('manager:unit-projects-new-list',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Upload Project List', 'classes': 'ms-3'},
-        {'url': reverse('manager:unit-projects-new',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Add Project', 'classes': 'ms-3'},
-        # {'url': reverse('manager:unit-projects-clear',kwargs={'pk_unit': pk_unit}), 'label': 'Clear Project List', 'classes': 'ms-3 link-danger'},
-        {'url': reverse('manager:unit-projects-new',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Start Allocation', 'classes': 'ms-3'},
-
-        # {'url': reverse('manager:unit-delete',kwargs={'pk': pk_unit}), 'label': 'Delete Unit', 'classes': 'ms-3 link-danger'},
-
-        # Unit ???
-        {'label': 'Unit ???', 'classes': 'fw-semibold'},
-        {'url': reverse('manager:unit-students',
-                        kwargs={'pk_unit': pk_unit}), 'label': f'Student List ({unit.students_count})', 'classes': 'ms-3'},
-        {'url': reverse('manager:unit-projects',
-                        kwargs={'pk_unit': pk_unit}), 'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
-        {'url': reverse('manager:unit-preferences',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Preference Distribution', 'classes': 'ms-3'},
-
-        # Allocation
-        {'url': reverse('manager:unit-allocation-start',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Start Allocation', 'classes': 'ms-3'},
-        {'url': reverse('manager:unit-allocation-results',
-                        kwargs={'pk_unit': pk_unit}), 'label': 'Allocation Results', 'classes': 'ms-3'},
+        {'url': 'manager:unit-students-new-list',
+            'label': 'Upload Student List', 'classes': 'ms-3'},
+        {'url': 'manager:unit-students-new',
+            'label': 'Add Student', 'classes': 'ms-3'},
+        {'url': 'manager:unit-projects-new-list',
+            'label': 'Upload Project List', 'classes': 'ms-3'},
+        {'url': 'manager:unit-projects-new',
+            'label': 'Add Project', 'classes': 'ms-3'},
+        {'url': 'manager:unit-allocation-start',
+            'label': 'Start Allocation', 'classes': 'ms-3'},
+        # Unit Information
+        {'label': 'Unit Information', 'classes': 'fw-semibold'},
+        {'url': 'manager:unit-students',
+            'label': f'Student List ({unit.students_count})', 'classes': 'ms-3'},
+        {'url': 'manager:unit-projects',
+            'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
+        {'url': 'manager:unit-preferences',
+            'label': 'Preference Distribution', 'classes': 'ms-3'},
+        {'url': 'manager:unit-allocation-results', 'url': 'manager:unit-allocation-results',
+            'label': 'Allocation Results', 'classes': 'ms-3'},
     ]
-    return {'unit_queryset': unit_queryset, 'unit': unit, 'nav_items': nav_items}
+    return {'unit': unit, 'nav_items': nav_items}
 
 
 def user_is_manager(user):
@@ -111,7 +106,7 @@ class UnitDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     template_name = 'manager/unit_confirm_delete.html'
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk'])))}
 
     def get_queryset(self):
         return self.request.user.managed_units.all()
@@ -126,7 +121,7 @@ class UnitView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = 'manager/unit.html'
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk'])))}
 
     def get_success_url(self):
         return self.request.path
@@ -159,10 +154,10 @@ class UnitStudentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 25
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit'])
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('user').prefetch_related('project_preferences')
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -198,7 +193,7 @@ class UnitStudentsCreateView(LoginRequiredMixin, UserPassesTestMixin, FormMixin,
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('user').filter(unit=self.kwargs['pk_unit'])
@@ -257,7 +252,7 @@ class UnitStudentUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMix
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -274,7 +269,7 @@ class UnitStudentsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView
         return super().get_queryset().prefetch_related('user').prefetch_related('project_preferences')
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -291,7 +286,7 @@ class UnitStudentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView)
         return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -319,7 +314,7 @@ class UnitStudentsClearView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, 
         return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -336,7 +331,7 @@ class UnitProjectsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 25
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('unit').filter(unit=self.kwargs['pk_unit'])
@@ -367,7 +362,7 @@ class UnitProjectsCreateView(LoginRequiredMixin, UserPassesTestMixin, FormMixin,
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def get_queryset(self):
         return super().get_queryset().filter(unit=self.kwargs['pk_unit'])
@@ -430,7 +425,7 @@ class UnitProjectUploadListView(LoginRequiredMixin, UserPassesTestMixin, FormMix
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -448,7 +443,7 @@ class UnitProjectsUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView
         return super().get_queryset()
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -465,7 +460,7 @@ class UnitProjectsDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView
         return super().get_queryset().prefetch_related('student_preferences').prefetch_related('student_preferences__student')
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -482,7 +477,7 @@ class UnitProjectDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView)
         return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -508,7 +503,7 @@ class UnitProjectsClearView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, 
         return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(get_unit_object(get_unit_queryset(self.kwargs['pk_unit'])))}
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -526,8 +521,8 @@ class UnitPreferencesView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 25
 
     def get_context_data(self, **kwargs):
-        context = get_context_for_sidebar(self.kwargs['pk_unit'])
-        return {**super().get_context_data(**kwargs), **context, 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(
+        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(
+            get_unit_object(get_unit_queryset(self.kwargs['pk_unit']))), 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(
             unit=self.kwargs['pk_unit']).annotate(project_preference_count=Count('project_preferences')).filter(project_preference_count__gt=0).count()}
 
     def get_queryset(self):
@@ -546,17 +541,14 @@ class UnitAllocationStartView(LoginRequiredMixin, UserPassesTestMixin, FormMixin
     """
         View for starting/viewing allocation
     """
-    model = models.Project
-    template_name = 'manager/allocation/unit_allocation_start.html'
-    paginate_by = 25
-
     form_class = forms.StartAllocationForm
+    template_name = 'manager/allocation/unit_allocation_start.html'
 
     def get_success_url(self):
         return self.request.path
 
     def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), 'pk_unit': self.kwargs['pk_unit'], 'unit': get_context_for_sidebar(self.kwargs['pk_unit'])['unit']}
+        return {**super().get_form_kwargs(), 'unit': get_unit_object(get_unit_queryset(self.kwargs['pk_unit']))}
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
@@ -568,14 +560,10 @@ class UnitAllocationStartView(LoginRequiredMixin, UserPassesTestMixin, FormMixin
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
-        context = get_context_for_sidebar(self.kwargs['pk_unit'])
-        context['unit_queryset'] = context['unit_queryset'].annotate(
+        unit_queryset = get_unit_queryset(self.kwargs['pk_unit']).prefetch_related('projects').annotate(
             avg_allocated_pref_rounded=Round(Avg('projects__avg_allocated_pref'), 2))
-        return {**super().get_context_data(**kwargs), **context, 'unit': context['unit_queryset'].first(), 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(unit=self.kwargs['pk_unit']).annotate(project_preference_count=Count('project_preferences')).filter(project_preference_count__gt=0).count()}
-
-    def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('assigned_students').annotate(
-            avg_allocated_pref_rounded=Round(F('avg_allocated_pref'), 2))
+        context = get_context_for_sidebar(get_unit_object(unit_queryset))
+        return {**super().get_context_data(**kwargs), **context, 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(unit=self.kwargs['pk_unit']).annotate(project_preference_count=Count('project_preferences')).filter(project_preference_count__gt=0).count()}
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])
@@ -585,15 +573,19 @@ class UnitAllocationResultsView(LoginRequiredMixin, UserPassesTestMixin, ListVie
     """
         View allocation results & stats
     """
-    model = models.EnrolledStudent
-    template_name = 'manager/allocation/unit_allocations.html'
+    model = models.Project
+    template_name = 'manager/allocation/unit_allocation_results.html'
     paginate_by = 25
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **get_context_for_sidebar(self.kwargs['pk_unit'])}
+        unit_queryset = get_unit_queryset(self.kwargs['pk_unit']).prefetch_related('projects').annotate(
+            avg_allocated_pref_rounded=Round(Avg('projects__avg_allocated_pref'), 2))
+        context = get_context_for_sidebar(get_unit_object(unit_queryset))
+        return {**super().get_context_data(**kwargs), **context, 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(unit=self.kwargs['pk_unit']).annotate(project_preference_count=Count('project_preferences')).filter(project_preference_count__gt=0).count()}
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related(Prefetch('student__enrollments', queryset=models.EnrolledStudent.objects.filter(unit_id=self.kwargs['pk_unit'])))
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('assigned_students').annotate(
+            avg_allocated_pref_rounded=Round(F('avg_allocated_pref'), 2))
 
     def test_func(self):
         return user_is_manager(self.request.user) and user_manages_unit_pk(self.request.user, self.kwargs['pk_unit'])

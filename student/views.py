@@ -2,6 +2,7 @@ from typing import Any, Dict, Type
 from django.db import models
 from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models.query import QuerySet
 from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, ListView, TemplateView
@@ -10,19 +11,6 @@ from django.forms import BaseFormSet, formset_factory
 
 from core import models
 from . import forms
-
-
-def user_is_student(user):
-    return user.is_student
-
-
-def user_enrolled_in_unit(user, unit_id):
-    return user.enrollments.filter(unit_id=unit_id).exists()
-
-
-class UserIsStudentMixin(LoginRequiredMixin, UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_student
 
 
 class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
@@ -35,21 +23,38 @@ class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             enrolled_students__user__id=self.request.user.id)
 
     def test_func(self):
-        return user_is_student(self.request.user)
+        return self.request.user.is_student
 
 
-class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
+class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListView):
+    model = models.Project
     template_name = "student/unit_detail.html"
 
+    def get_unit(self):
+        if not hasattr(self, 'unit'):
+            self.unit = models.Unit.objects.filter(
+                pk=self.kwargs['pk']).first()
+        return self.unit
+
     def get_student_enrollment(self):
-        return self.request.user.enrollments.get(
-            unit_id=self.kwargs['pk'])
+        if not hasattr(self, 'enrollment'):
+            enrollment = self.request.user.enrollments.filter(
+                unit_id=self.kwargs['pk'])
+            if enrollment.exists():
+                self.enrollment = enrollment.first()
+            else:
+                return False
+        return self.enrollment
 
     def get_students_preferences(self):
-        return self.get_student_enrollment().project_preferences.all()
+        if not hasattr(self, 'preferences'):
+            self.preferences = self.get_student_enrollment(
+            ).project_preferences.all().select_related('project')
+        return self.preferences
 
     def get_form_class(self):
-        return formset_factory(formset=forms.PreferenceFormSet, form=forms.PreferenceForm, extra=0, min_num=self.get_unit().minimum_preference_limit if self.get_unit().minimum_preference_limit else 0, validate_min=True if self.get_unit().minimum_preference_limit else False)
+        min_preference_limit = self.get_unit().minimum_preference_limit
+        return formset_factory(formset=forms.PreferenceFormSet, form=forms.PreferenceForm, extra=0, min_num=min_preference_limit if min_preference_limit else 0, validate_min=True if min_preference_limit else False)
 
     def get_initial(self):
         return [{'rank': preference.rank, 'project': preference.project, 'project_id': preference.project.id}
@@ -116,15 +121,14 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, Templat
             return self.form_invalid(formset)
 
     def get_context_data(self, **kwargs):
-        unit = self.get_unit(kwargs)
+        unit = self.get_unit()
         preferences = self.get_students_preferences()
         preferred_projects = [preference.project for preference in preferences]
         helper = forms.PreferenceFormSetHelper()
         return {**super().get_context_data(**kwargs), 'unit': unit, 'preferences': preferences, 'preferred_projects': preferred_projects, 'helper': helper}
 
-    def get_unit(self, *args, **kwargs):
-        return models.Unit.objects.filter(pk=self.kwargs['pk']).prefetch_related(
-            'projects').annotate(projects_count=Count('projects', distinct=True)).first()
+    def get_queryset(self):
+        return super().get_queryset().filter(unit_id=self.kwargs['pk'])
 
     def test_func(self):
-        return user_is_student(self.request.user) and self.get_unit().enrolled_students.filter(user=self.request.user).exists()
+        return self.request.user.is_student and self.get_student_enrollment()

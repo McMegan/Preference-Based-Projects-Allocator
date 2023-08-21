@@ -12,6 +12,8 @@ cryptography = "*"
 django-crispy-forms = "*"
 crispy-bootstrap5 = "*"
 ortools = "*"
+redis = "*"
+celery = "*"
 
 [dev-packages]
 

@@ -120,3 +120,4 @@ class Allocator:
                         student_allocated.append(student)
         models.EnrolledStudent.objects.bulk_update(
             student_allocated, fields=['assigned_project'])
+

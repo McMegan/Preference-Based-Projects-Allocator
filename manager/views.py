@@ -84,7 +84,7 @@ class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return self.request.user.managed_units.all()
+        return self.request.user.managed_units.all().order_by('-is_active')
 
     def test_func(self):
         return user_is_manager(self.request.user)

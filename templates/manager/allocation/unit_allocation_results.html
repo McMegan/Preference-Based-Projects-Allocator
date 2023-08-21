@@ -4,10 +4,6 @@
 {% block extra_header %}
     <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
         <div class="d-flex gap-3">
-            <div class="fw-semibold">Average Allocated Preference</div>
-            <div>{{ unit.avg_allocated_pref_rounded }}</div>
-        </div>
-        <div class="d-flex gap-3">
             <div class="fw-semibold">Total No. Students</div>
             <div>{{ unit.students_count }}</div>
         </div>
@@ -15,101 +11,107 @@
             <div class="fw-semibold">Total No. Students who Submitted Preferences</div>
             <div>{{ submitted_prefs_students_count }}</div>
         </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Average Allocated Preference</div>
+            <div>{{ unit.avg_allocated_pref_rounded }}</div>
+        </div>
     </div>
     <div class="my-3 mx-3">
-        {% load crispy_forms_tags %} 
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %} {% crispy form %}
-        </form>
     </div>
     <hr class="my-4">
 {% endblock %}
 {% block content %}
-    
-<ul class="nav nav-tabs" id="myTab" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#view-tab-pane" type="button" role="tab" aria-controls="view-tab-pane" aria-selected="true">View Results</button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="export-tab" data-bs-toggle="tab" data-bs-target="#export-tab-pane" type="button" role="tab" aria-controls="export-tab-pane" aria-selected="false">Export Results</button>
-    </li>
-    </li>
-</ul>
-<div class="tab-content" id="myTabContent">
-<div class="tab-pane fade show active" id="view-tab-pane" role="tabpanel" aria-labelledby="view-tab" tabindex="0">
-    {% if page_obj %}
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Name</th>
-                <th scope="col"></th>
-                <th scope="col">Group Size</th>
-                <th scope="col">No. Students</th>
-                <th scope="col">Allocated Students</th>
-                <th scope="col">Average Allocated Preference</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for project in page_obj %}
-                <tr id="project-{{project.id}}" data-project-id="{{ project.id }}">
-                    <th scope="row">{{ project.number }}</th>
-                    <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id project.id %}">{{ project.name }}</a></td>
-                    <td>{% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}</td>
-                    <td>{{ project.min_students }} - {{ project.max_students }}</td>
-                    <td>{{ project.assigned_students.count }}</td>
-                    <td>
-                        {% if project.assigned_students %}
-                        {% for student in project.assigned_students.all %}
-                            <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-student-detail' unit.id student.id %}">{{ student.student_id }}</a>{% if not forloop.last %}, {% endif %}
-                        {% endfor %}
+        <ul class="nav nav-tabs border-0" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#view-tab-pane" type="button" role="tab" aria-controls="view-tab-pane" aria-selected="true">View Results</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="export-tab" data-bs-toggle="tab" data-bs-target="#export-tab-pane" type="button" role="tab" aria-controls="export-tab-pane" aria-selected="false">Export Results</button>
+            </li>
+            </li>
+        </ul>
+        <div class="tab-content border rounded-bottom overflow-hidden" id="myTabContent">
+            <div class="tab-pane fade show active" id="view-tab-pane" role="tabpanel" aria-labelledby="view-tab" tabindex="0">
+                {% if page_obj %}
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Group Size</th>
+                                <th scope="col">No. Allocated Students</th>
+                                <th scope="col">Average Allocated Preference</th>
+                                <th scope="col">Allocated Students</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in page_obj %}
+                                <tr id="project-{{project.id}}" data-project-id="{{ project.id }}">
+                                    <th scope="row" class="text-center">{{ project.number }}</th>
+                                    <td><div class="d-flex align-items-center">
+                                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id project.id %}">{{ project.name }}</a>
+                                        {% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}
+                                    </div></td>
+                                    <td class="text-center">{{ project.min_students }} - {{ project.max_students }}</td>
+                                    <td class="text-center">{{ project.assigned_students.count }}</td>
+                                    <td class="text-center">
+                                        {% if project.avg_allocated_pref_rounded %}
+                                            {{ project.avg_allocated_pref_rounded }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if project.assigned_students %}
+                                        {% for student in project.assigned_students.all %}
+                                            <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-student-detail' unit.id student.id %}">{{ student.student_id }}</a>{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if project.description %}
+                                <tr class="project_info_container" data-project-id="{{ project.id }}">
+                                    <td colspan="12" class="p-0">
+                                        <div class="project_info" data-project-id="{{ project.id }}" style="display: none;">
+                                            <table class="table m-0">
+                                                <tbody>
+                                                    {% if project.description %}
+                                                    <tr>
+                                                        <th>Description</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="project_description">{{ project.description }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="my-5 d-flex gap-3 justify-content-center align-items-center">
+                        {% if page_obj.has_previous %}
+                            <a class="btn btn-sm btn-outline-secondary" href="?page=1">&laquo; first</a>
+                            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.previous_page_number }}">previous</a>
                         {% endif %}
-                    </td>
-                    <td>
-                        {% if project.avg_allocated_pref_rounded %}
-                            {{ project.avg_allocated_pref_rounded }}
+                        <span class="current">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+                        {% if page_obj.has_next %}
+                            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.next_page_number }}">next</a>
+                            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
                         {% endif %}
-                    </td>
-                </tr>
-                {% if project.description %}
-                <tr class="project_info_container" data-project-id="{{ project.id }}">
-                    <td colspan="12" class="p-0">
-                        <div class="project_info" data-project-id="{{ project.id }}" style="display: none;">
-                            <table class="table m-0">
-                                <tbody>
-                                    {% if project.description %}
-                                    <tr>
-                                        <th>Description</th>
-                                    </tr>
-                                    <tr>
-                                        <td class="project_description">{{ project.description }}</td>
-                                    </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </td>
-                </tr>
+                    </div>
                 {% endif %}
-            {% endfor %}
-        </tbody>
-    </table>
-    <div class="my-5 d-flex gap-3 justify-content-center align-items-center">
-        {% if page_obj.has_previous %}
-            <a class="btn btn-sm btn-outline-secondary" href="?page=1">&laquo; first</a>
-            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.previous_page_number }}">previous</a>
-        {% endif %}
-        <span class="current">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-        </span>
-        {% if page_obj.has_next %}
-            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.next_page_number }}">next</a>
-            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-        {% endif %}
-    </div>
-{% else %}
-{% endif %}
-</div>
-<div class="tab-pane fade" id="export-tab-pane" role="tabpanel" aria-labelledby="export-tab" tabindex="0">...</div>
-</div>
+            </div>
+            <div class="tab-pane fade" id="export-tab-pane" role="tabpanel" aria-labelledby="export-tab" tabindex="0">
+                <div class="m-3">
+                    {% load crispy_forms_tags %} 
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %} {% crispy form %}
+                    </form>
+                </div>
+            </div>
+        </div>
 {% endblock content %}

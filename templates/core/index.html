@@ -7,6 +7,11 @@
         {% for unit in object_list %}
             <div class="col">
                 <div class="card">
+                    {% if not unit.is_active %}
+                    <div class="card-header bg-warning-subtle text-center text-uppercase" style="font-size: 0.75rem;">
+                        This unit is inactive.
+                    </div>
+                    {% endif %}
                     <div class="card-body">
                         <h4 class="card-title mb-0">
                             {% if user.is_manager or user.is_student %}

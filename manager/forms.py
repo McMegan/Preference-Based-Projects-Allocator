@@ -94,16 +94,20 @@ class CreateUnitForm(forms.ModelForm):
     class Meta:
         model = models.Unit
         fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',
-                  'preference_submission_end', 'minimum_preference_limit']
+                  'preference_submission_end', 'minimum_preference_limit', 'is_active']
 
 
 class UpdateUnitForm(CreateUnitForm):
+    is_active = forms.BooleanField(
+        label='Unit is current/active', required=False)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.helper.layout = Layout(
             unit_form_layout_main,
             unit_form_layout_allocator,
+            'is_active',
             FormActions(
                 Submit('submit', 'Save Unit', css_class='btn btn-primary'),
                 HTML(

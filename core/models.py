@@ -31,14 +31,16 @@ class Unit(models.Model):
     name = models.CharField(max_length=255)
     year = models.CharField(max_length=4)
     semester = models.CharField(max_length=50)
+
     preference_submission_start = models.DateTimeField(null=True, blank=True)
     preference_submission_end = models.DateTimeField(null=True, blank=True)
     minimum_preference_limit = models.IntegerField(null=True, blank=True)
 
-    # is_allocating = models.BooleanField(default=False)
-
     manager = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name='managed_units', limit_choices_to={'is_manager': True})
+
+    is_active = models.BooleanField(default=True)
+    is_allocating = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.code}: {self.name}'
@@ -81,6 +83,8 @@ class Project(models.Model):
     description = models.TextField(null=True, blank=True)
     min_students = models.IntegerField()
     max_students = models.IntegerField()
+
+    avg_allocated_pref = models.FloatField(null=True)
 
     unit = models.ForeignKey(
         Unit, on_delete=models.CASCADE, related_name='projects')

@@ -559,8 +559,16 @@ class UnitAllocationView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, Lis
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
-            from .tasks import start_allocation
-            result = start_allocation.delay(unit_id=self.kwargs['pk_unit'])
+            allocator = Allocator()
+            result = allocator.allocate(unit=models.Unit.objects.filter(pk=self.kwargs['pk_unit']).prefetch_related('projects').prefetch_related(
+                'enrolled_students').prefetch_related('enrolled_students__project_preferences').first())
+            # Email with result...??
+
+            del allocator
+
+            # from .tasks import start_allocation
+            # result = start_allocation.delay(unit_id=self.kwargs['pk_unit'])
+
             return self.form_valid(form)
         else:
             return self.form_invalid(form)

@@ -3,99 +3,119 @@ from django.db.models.query import QuerySet
 
 from core import models
 
-# Include for each model:
-# Projects -> id, min_students & max_students
-# Enrolled student -> id
-# Preferences -> project_id, student_id, rank
-
 
 class Allocator:
-    def __init__(self):
+    def allocate(self, unit: QuerySet):
         self.solver = pywraplp.Solver.CreateSolver('SCIP')
 
-    def allocate(self, unit: QuerySet):
-        projects = unit.projects.all()
-        students = unit.enrolled_students.all()
+        self.unit = unit
+        self.projects = unit.projects.all()
+        self.students = unit.enrolled_students.all()
 
         # Make variables for projects & students
-        project_vars, student_vars = self.make_vars(projects, students)
+        self.make_vars()
 
         # Set constraints for projects & students
-        self.make_student_constraints(
-            projects, students, student_vars)
-        self.make_project_constraints(
-            projects, students, project_vars, student_vars)
+        self.make_student_constraints()
+        self.make_project_constraints()
 
         # Set objective
-        self.make_objective(
-            projects, students, project_vars, student_vars)
+        self.make_objective()
 
         # Solve
         status = self.solver.Solve()
         if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
             # Save allocation
-            self.save_allocation(unit, projects, students,
-                                 project_vars, student_vars)
+            self.save_allocation()
             return True
         return False
 
-    def make_vars(self, projects, students):
-        project_vars = {}
-        student_vars = {}
-        for project in projects:
-            project_vars[project.id] = self.solver.BoolVar(
+    def make_vars(self):
+        self.project_vars = {}
+        self.student_vars = {}
+        for project in self.projects:
+            self.project_vars[project.id] = self.solver.BoolVar(
                 'Pr_{}'.format(project.id))
-            for student in students:
-                student_vars[student.id, project.id] = self.solver.BoolVar('St_{}_{}'.format(
+            for student in self.students:
+                self.student_vars[student.id, project.id] = self.solver.BoolVar('St_{}_{}'.format(
                     student.id, project.id))
-        return project_vars, student_vars
 
-    def make_student_constraints(self, projects, students, student_vars):
-        for student in students:
+    def make_student_constraints(self):
+        for student in self.students:
             allocation = []
             allocation_preference = []
-            for project in projects:
-                allocation.append(student_vars[student.id, project.id])
+            for project in self.projects:
+                allocation.append(self.student_vars[student.id, project.id])
                 student_project_preference = self.get_preference_rank(
-                    projects, student, project)
+                    student, project)
                 if student_project_preference != None:
                     allocation_preference.append(
-                        student_vars[student.id, project.id] * student_project_preference)
+                        self.student_vars[student.id, project.id] * student_project_preference)
             # Each student must be assigned to a project
             self.solver.Add(self.solver.Sum(allocation) == 1)
             # Student must have selected the project
             self.solver.Add(self.solver.Sum(allocation_preference) >= 1)
 
-    def make_project_constraints(self, projects, students, project_vars, student_vars):
-        for project in projects:
+    def make_project_constraints(self):
+        for project in self.projects:
             # Make a list of the student variables for this project
-            projects_student_vars = [student_vars[student.id, project.id]
-                                     for student in students]
+            projects_student_vars = [self.student_vars[student.id, project.id]
+                                     for student in self.students]
 
             # .... CHECK!!!!!
             # self.solver.Add(projects_student_vars >= 1 and self.solver.Sum(
             #     [projects_student_vars * 9999]) >= self.solver.Sum(projects_student_vars))
-            self.solver.Add(project_vars[project.id] == 1 and self.solver.Sum(
-                [project_vars[project.id] * 9999]) >= self.solver.Sum(projects_student_vars))
+            self.solver.Add(self.project_vars[project.id] == 1 and self.solver.Sum(
+                [self.project_vars[project.id] * 9999]) >= self.solver.Sum(projects_student_vars))
 
             # Each project must be allocated to a permissable number of students
             self.solver.Add(self.solver.Sum(projects_student_vars)
                             <= project.max_students)
             self.solver.Add(self.solver.Sum(projects_student_vars) >=
-                            project.min_students * project_vars[project.id])
+                            project.min_students * self.project_vars[project.id])
 
-    def make_objective(self, projects, students, project_vars, student_vars):
+    def make_objective(self):
         allocated_preferences = []
-        for project in projects:
-            for student in students:
+        for project in self.projects:
+            for student in self.students:
                 student_project_preference = self.get_preference_rank(
-                    projects, student, project)
+                    student, project)
                 if student_project_preference != None:
-                    allocated_preferences.append(student_vars[student.id, project.id] *
+                    allocated_preferences.append(self.student_vars[student.id, project.id] *
                                                  student_project_preference)
         self.solver.Minimize(self.solver.Sum(allocated_preferences))
 
-    def get_preference_rank(self, projects, student, project):
+    def save_allocation(self):
+        allocated_project_preference_ranks = {}
+        all_allocated_preference_ranks = []
+        student_allocated = []
+        for project in self.projects:
+            if self.project_vars[project.id]:
+                if project.id not in allocated_project_preference_ranks:
+                    allocated_project_preference_ranks[project.id] = []
+                for student in self.students:
+                    if self.student_vars[student.id, project.id].solution_value() > 0.5:
+                        student.assigned_project_id = project.id
+                        student_allocated.append(student)
+
+                        rank = student.project_preferences.filter(
+                            project=project)
+                        if student.project_preferences.filter(project=project).exists():
+                            rank = student.project_preferences.filter(
+                                project=project).first().rank
+                            allocated_project_preference_ranks[project.id].append(
+                                rank)
+                            all_allocated_preference_ranks.append(rank)
+
+        print(all_allocated_preference_ranks)
+        print(allocated_project_preference_ranks)
+
+        models.EnrolledStudent.objects.bulk_update(
+            student_allocated, fields=['assigned_project'])
+        
+        # unit_avg_allocated_rank
+
+    def get_preference_rank(self, student, project):
         """
             Get the value for the preference for this student and this project
         """
@@ -108,16 +128,4 @@ class Allocator:
             else:
                 return None
         else:
-            return projects.count() + 1
-
-    def save_allocation(self, unit, projects, students, project_vars, student_vars):
-        student_allocated = []
-        for project in projects:
-            if project_vars[project.id]:
-                for student in students:
-                    if student_vars[student.id, project.id].solution_value() > 0.5:
-                        student.assigned_project_id = project.id
-                        student_allocated.append(student)
-        models.EnrolledStudent.objects.bulk_update(
-            student_allocated, fields=['assigned_project'])
-
+            return self.projects.count() + 1

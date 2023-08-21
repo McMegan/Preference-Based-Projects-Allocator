@@ -78,6 +78,19 @@ class CreateUnitForm(forms.ModelForm):
             )
         )
 
+    def clean(self):
+        preference_submission_start = self.cleaned_data.get(
+            'preference_submission_start')
+        preference_submission_end = self.cleaned_data.get(
+            'preference_submission_end')
+        if preference_submission_start > preference_submission_end:
+            raise forms.ValidationError(
+                {'preference_submission_end': 'The preference submission end must be after the preference submission start.'})
+        if preference_submission_start == preference_submission_end:
+            raise forms.ValidationError(
+                {'preference_submission_end': 'The preference submission end must not be the same as the preference submission start.'})
+        return super().clean()
+
     class Meta:
         model = models.Unit
         fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',

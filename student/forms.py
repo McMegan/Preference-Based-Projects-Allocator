@@ -28,9 +28,6 @@ class PreferenceForm(forms.ModelForm):
             )
         )
 
-    def clean(self):
-        return super().clean()
-
     class Meta:
         model = models.ProjectPreference
         fields = ['rank']

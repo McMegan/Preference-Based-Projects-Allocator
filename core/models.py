@@ -118,8 +118,14 @@ class Unit(models.Model):
         ordering = ['code', 'name']
         constraints = [
             models.UniqueConstraint(
-                fields=['code', 'year', 'semester'], name='%(app_label)s_%(class)s_unique')
+                fields=['code', 'year', 'semester'], name='%(app_label)s_%(class)s_unique'),
+            models.CheckConstraint(check=Q(preference_submission_start__isnull=True) | Q(preference_submission_end__isnull=True) | Q(
+                preference_submission_start__lt=F('preference_submission_end')), name='preference_submission_start_lt_end', violation_error_message='The preference submission end must be after the preference submission start.')
         ]
+
+
+project_min_lte_max_constraint = models.CheckConstraint(check=Q(min_students__isnull=True) | Q(max_students__isnull=True) | Q(
+    min_students__lte=F('max_students')), name='min_lte_max', violation_error_message='The minimum number of students for a project must not be less than the maximum number of students.')
 
 
 class Project(models.Model):
@@ -150,9 +156,8 @@ class Project(models.Model):
         ordering = ['number', 'name']
         constraints = [
             models.UniqueConstraint(
-                fields=['unit', 'number'], name='%(app_label)s_%(class)s_rank_unique'),
-            models.CheckConstraint(check=Q(min_students__isnull=True) | Q(max_students__isnull=True) | Q(
-                min_students__lte=F('max_students')), name='min_lte_max', violation_error_message='The minimum number of students must not be less than the maximum.')
+                fields=['unit', 'number'], name='%(app_label)s_%(class)s_rank_unique', violation_error_message='Each project in a unit must have a unique number. A project with that number is already included in this unit.'),
+            project_min_lte_max_constraint
         ]
 
 

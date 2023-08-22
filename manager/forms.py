@@ -345,12 +345,12 @@ class StartAllocationForm(forms.Form):
         submit_text = 'Start Allocation'
         submit_btn_colour = 'btn-primary'
         warning = ''
-        if self.unit.get_is_allocated():
+        if self.unit.is_allocated():
             submit_text = 'Override Allocation'
             submit_btn_colour = 'btn-danger'
             warning = """
                 <div class="alert alert-danger" role="alert">
-                    This unit has already been allocated, allocating again will override the current allocation.
+                    This unit has already been allocated, allocating again will override the current allocation.<br>If this allocation fails, the previous successful allocation will be retained.
                 </div>
             """
 

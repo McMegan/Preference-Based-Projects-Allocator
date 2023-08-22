@@ -154,7 +154,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 # EMAIL -> BACKEND
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-
 # Celery Settings
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 CELERY_TIMEZONE = 'Australia/Melbourne'

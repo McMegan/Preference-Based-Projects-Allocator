@@ -61,7 +61,7 @@ class UnitMixin:
                 'label': 'Preference Distribution', 'classes': 'ms-3'},
 
         ]
-        if unit.get_is_allocated():
+        if unit.is_allocated():
             nav_items.append({'url': 'manager:unit-allocation-results',
                               'url': 'manager:unit-allocation-results', 'label': 'Allocation Results', 'classes': 'ms-3'})
         return {'unit': unit, 'nav_items': nav_items}
@@ -466,20 +466,43 @@ class UnitAllocationStartView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
+            unit = self.get_unit_object()
+            unit.allocation_status = models.Unit.ALLOCATING
+            unit.save()
+
             from .tasks import start_allocation
-            start_allocation.delay(unit_id=self.kwargs['pk_unit'])
+            start_allocation.delay(
+                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit-allocation-results', kwargs={'pk_unit': self.kwargs['pk_unit']})))
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
         enrolled_students_list = models.EnrolledStudent.objects.filter(
             unit=self.kwargs['pk_unit'])
+        enrolled_students_count = enrolled_students_list.count()
+
+        # Calculate number of students who have submitted preferences
         submitted_prefs_count = enrolled_students_list.annotate(project_preference_count=Count(
             'project_preferences')).filter(project_preference_count__gt=0).count()
-        not_submitted_prefs_count = enrolled_students_list.count() - \
-            submitted_prefs_count
-        return {**super().get_context_data(**kwargs), 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count}
+        not_submitted_prefs_count = enrolled_students_count - submitted_prefs_count
+
+        # Calculate min & max number of project spaces
+        project_spaces = {}
+        projects_list = models.Project.objects.filter(
+            unit=self.kwargs['pk_unit'])
+        if projects_list.exists():
+            min_spaces = []
+            max_spaces = []
+            for project in projects_list.all():
+                min_spaces.append(project.min_students)
+                max_spaces.append(project.max_students)
+            project_spaces = {'too_few_students': min(min_spaces) > enrolled_students_count, 'min_project_space': min(min_spaces),
+                              'too_many_students': sum(max_spaces) < enrolled_students_count, 'max_project_spaces': sum(max_spaces)}
+
+        return {**context, 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count, **project_spaces}
 
 
 class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListView):
@@ -517,7 +540,7 @@ class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
         return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('assigned_students').annotate(avg_allocated_pref_rounded=Round(F('avg_allocated_pref'), 2))
 
     def test_func(self):
-        return super().test_func() and self.get_unit_object().get_is_allocated()
+        return super().test_func() and self.get_unit_object().is_allocated()
 
     def get_context_data(self, **kwargs):
         enrolled_students_list = models.EnrolledStudent.objects.filter(

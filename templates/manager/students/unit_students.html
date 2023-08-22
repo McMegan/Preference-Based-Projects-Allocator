@@ -23,7 +23,7 @@
                     <th scope="col">Student ID</th>
                     <th scope="col">Registered</th>
                     <th scope="col">Submitted Preferences</th>
-                    {% if unit.get_is_allocated %}
+                    {% if unit.is_allocated %}
                     <th>Allocated Project</th>
                     <th>Preference for Allocated Project</th>
                     {% endif %}
@@ -36,7 +36,7 @@
                         <th scope="row"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-student-detail' unit.id student.id %}">{{ student.student_id }}</a></th>
                         <td><span class ="badge rounded-pill text-bg-{% if student.user_id %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user_id %}check{% else %}x{% endif %}-lg"></i></span></td>
                         <td><span class ="badge rounded-pill text-bg-{% if student.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></td>
-                        {% if unit.get_is_allocated %}
+                        {% if unit.is_allocated %}
                             <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id student.assigned_project.id %}">{{ student.assigned_project.number }}: {{ student.assigned_project.name }}</a></td>
                             <td>{{student.assigned_preference_rank}}</td>
                         {% endif %}

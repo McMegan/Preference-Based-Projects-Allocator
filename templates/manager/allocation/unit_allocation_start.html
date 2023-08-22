@@ -19,23 +19,77 @@
     <hr class="my-4">
 {% endblock %}
 {% block content %}
-    {% if unit.preference_submission_set and unit.preference_submission_ended %}
-        <div>
-            {% load crispy_forms_tags %} 
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %} {% crispy form %}
-            </form>
-        </div>
+    {% if unit.projects.count and unit.enrolled_students.count %}
+        {% if too_few_students or too_many_students %}
+            {% if too_few_students %}
+                <div class="alert alert-danger" role="alert">
+                    <p>There are too few students enrolled in the unit compared to the minimum project spaces.</p>
+                    <p>
+                        <div><span class="fw-semibold">Students:</span> {{ unit.students_count }}</div>
+                        <div><span class="fw-semibold">Minimum Spaces:</span> {{ min_project_space}}</div>
+                    </p>
+                    <p class="mb-0">To fix this:</p>
+                    <ul class="my-0">
+                        <li>change the minimum students spaces for a project,</li>
+                        <li>or add students to the student list.</li>
+                    </ul>
+                </div>
+            {% endif %}
+            {% if too_many_students %}
+                <div class="alert alert-danger" role="alert">
+                    <p>There are too many students enrolled in the unit compared to the maximum project spaces.</p>
+                    <p>
+                        <div><span class="fw-semibold">Students:</span> {{ unit.students_count }}</div>
+                        <div><span class="fw-semibold">Maximum Spaces:</span> {{ max_project_spaces}}</div>
+                    </p>
+                    <p class="mb-0">To fix this:</p>
+                    <ul class="my-0">
+                        <li>change the maximum students spaces for a project,</li>
+                        <li>add projects to the project list,</li>
+                        <li>or remove students from the student list.</li>
+                    </ul>
+                </div>
+            {% endif %}
+        {% else %}
+            {% if unit.is_allocating %}
+                <div class="alert alert-secondary" role="alert">
+                    This unit is currently allocating students to projects.
+                </div>
+            {% else %}
+                {% if unit.is_allocated %}
+                    <div class="alert alert-{% if unit.allocation_successful %}success{% else %}danger{% endif %}" role="alert">
+                        <div class="fw-bold">Allocation: {{ unit.get_allocation_descriptive }}</div>
+                        {% if unit.allocation_successful %}
+                            The allocation of students to projects was completed successfully.
+                        {% else %}
+                            The allocation of students to projects failed.
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {% if unit.preference_submission_set and unit.preference_submission_ended %}
+                    <div>
+                        {% load crispy_forms_tags %} 
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %} {% crispy form %}
+                        </form>
+                    </div>
+                {% else %}
+                    {% if not unit.preference_submission_set %}
+                        <div class="alert alert-danger" role="alert">
+                            A preference submission timeframe for this unit has not been set.
+                        </div>
+                    {% endif %}
+                    {% if not unit.preference_submission_ended %}
+                        <div class="alert alert-danger" role="alert">
+                            Allocation can only start once the preference submission timeframe for this unit has ended.
+                        </div>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        {% endif %}
     {% else %}
-        {% if not unit.preference_submission_set %}
-            <div class="alert alert-danger" role="alert">
-                A preference submission timeframe for this unit has not been set.
-            </div>
-        {% endif %}
-        {% if not unit.preference_submission_ended %}
-            <div class="alert alert-danger" role="alert">
-                Allocation can only start once the preference submission timeframe for this unit has ended.
-            </div>
-        {% endif %}
+        <div class="alert alert-danger" role="alert">
+            You must add students and projects to the unit before allocating.
+        </div>
     {% endif %}
 {% endblock content %}

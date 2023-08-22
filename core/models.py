@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Q, F
 from django.utils import timezone
 
 
@@ -37,7 +37,46 @@ class Unit(models.Model):
         User, on_delete=models.SET_NULL, null=True, related_name='managed_units', limit_choices_to={'is_manager': True})
 
     is_active = models.BooleanField(default=True)
-    is_allocating = models.BooleanField(default=False)
+
+    NOT_STARTED = 'NS'
+    ALLOCATING = 'AL'
+
+    OPTIMAL = 'OP'
+    FEASIBLE = 'FS'
+    INFEASIBLE = 'IF'
+    UNBOUNDED = 'UN'
+    ABNORMAL = 'AB'
+    MODEL_INVALID = 'MI'
+    NOT_SOLVED = 'NO'
+    ALLOCATION_STATUS = {
+        NOT_STARTED: 'Not Started',
+        ALLOCATING: 'Currently Allocating',
+
+        OPTIMAL: 'Successful (Optimal)',
+        FEASIBLE: 'Successful (Feasible)',
+        INFEASIBLE: 'Failed (Proven Infeasible)',
+        UNBOUNDED: 'Failed (Proven Unbounded)',
+        ABNORMAL: 'Failed (Abnormal)',
+        MODEL_INVALID: 'Failed (Model Invalid)',
+        NOT_SOLVED: 'Failed (Not Solved)',
+    }
+    ALLOCATION_STATUS_CHOICES = [
+        (NOT_STARTED, ALLOCATION_STATUS[NOT_STARTED]),
+        (ALLOCATING, ALLOCATION_STATUS[ALLOCATING]),
+
+        (OPTIMAL, ALLOCATION_STATUS[OPTIMAL]),
+        (FEASIBLE, ALLOCATION_STATUS[FEASIBLE]),
+        (INFEASIBLE, ALLOCATION_STATUS[INFEASIBLE]),
+        (UNBOUNDED, ALLOCATION_STATUS[UNBOUNDED]),
+        (ABNORMAL, ALLOCATION_STATUS[ABNORMAL]),
+        (MODEL_INVALID, ALLOCATION_STATUS[MODEL_INVALID]),
+        (NOT_SOLVED, ALLOCATION_STATUS[NOT_SOLVED]),
+    ]
+    allocation_status = models.CharField(
+        max_length=2,
+        choices=ALLOCATION_STATUS_CHOICES,
+        default=NOT_STARTED,
+    )
 
     def __str__(self):
         return f'{self.code}: {self.name}'
@@ -63,11 +102,17 @@ class Unit(models.Model):
     def preference_submission_ended(self) -> bool:
         return timezone.now() > self.preference_submission_end
 
-    def get_is_allocated(self) -> bool:
-        if not hasattr(self, 'is_allocated'):
-            self.is_allocated = self.projects.annotate(allocated_count=Count(
-                'assigned_students')).filter(allocated_count__gt=0).exists()
-        return self.is_allocated
+    def is_allocating(self):
+        return self.allocation_status == self.ALLOCATING
+
+    def is_allocated(self):
+        return self.allocation_status in {self.OPTIMAL, self.FEASIBLE}
+
+    def allocation_successful(self):
+        return self.is_allocated() and self.allocation_status in {self.OPTIMAL, self.FEASIBLE}
+
+    def get_allocation_descriptive(self):
+        return self.ALLOCATION_STATUS[self.allocation_status]
 
     class Meta:
         ordering = ['code', 'name']
@@ -106,6 +151,8 @@ class Project(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['unit', 'number'], name='%(app_label)s_%(class)s_rank_unique'),
+            models.CheckConstraint(check=Q(min_students__isnull=True) | Q(max_students__isnull=True) | Q(
+                min_students__lte=F('max_students')), name='min_lte_max', violation_error_message='The minimum number of students must not be less than the maximum.')
         ]
 
 

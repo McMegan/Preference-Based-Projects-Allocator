@@ -1,10 +1,16 @@
 from ortools.linear_solver import pywraplp
 
+
 from core import models
 
 
 class Allocator:
-    def allocate(self, unit):
+    def __init__(self, unit: models.Unit):
+        previous_allocation_status = unit.allocation_status
+
+        unit.allocation_status = models.Unit.ALLOCATING
+        unit.save()
+
         self.solver = pywraplp.Solver.CreateSolver('SCIP')
 
         self.unit = unit
@@ -23,11 +29,22 @@ class Allocator:
 
         # Solve
         status = self.solver.Solve()
-        if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
-            # Save allocation
+        result = {
+            pywraplp.Solver.OPTIMAL: models.Unit.OPTIMAL,
+            pywraplp.Solver.FEASIBLE: models.Unit.FEASIBLE,
+            pywraplp.Solver.INFEASIBLE: models.Unit.INFEASIBLE,
+            pywraplp.Solver.UNBOUNDED: models.Unit.UNBOUNDED,
+            pywraplp.Solver.ABNORMAL: models.Unit.ABNORMAL,
+            pywraplp.Solver.MODEL_INVALID: models.Unit.MODEL_INVALID,
+            pywraplp.Solver.NOT_SOLVED: models.Unit.NOT_SOLVED,
+        }[status]
+
+        allocation_successful = result == models.Unit.OPTIMAL or result == models.Unit.FEASIBLE
+        previous_allocation_successful = previous_allocation_status == models.Unit.OPTIMAL or previous_allocation_status == models.Unit.FEASIBLE
+        if allocation_successful:
             self.save_allocation()
-            return True
-        return False
+        unit.allocation_status = result if allocation_successful or not previous_allocation_successful else previous_allocation_status
+        unit.save()
 
     def make_vars(self):
         self.project_vars = {}

@@ -79,10 +79,10 @@ const add_project_to_prefs = (project_id) => {
 	project_row.attr('data-rank', rank);
 
 	// Add preference stuff
+	//     <button type="button" class="project_drag_preference border-0 btn btn-sm p-0"><i class="bi bi-grip-vertical"></i></button>
 	project_row.prepend(`
         <td scope="row">
             <div class="d-flex gap-1">
-                <button type="button" class="project_drag_preference border-0 btn btn-sm p-0"><i class="bi bi-grip-vertical"></i></button>
                 <button type="button"onclick="move_preference(${project_id})" class="project_move_up_preference border-0 btn btn-sm p-0"><i class="bi bi-arrow-up"></i></button>
                 <button type="button" onclick="move_preference(${project_id}, false)" class="project_move_down_preference border-0 btn btn-sm p-0"><i class="bi bi-arrow-down"></i></button>
             </div>

@@ -28,13 +28,44 @@ class PreferenceForm(forms.ModelForm):
             )
         )
 
+    def clean(self):
+        return super().clean()
+
     class Meta:
         model = models.ProjectPreference
         fields = ['rank']
 
 
 class PreferenceFormSet(BaseFormSet):
-    pass
+    def clean(self):
+        """ Checks that all projects are listed only once & that submitted ranks are valid. """
+        if any(self.errors):
+            return
+        projects = []
+        ranks = []
+        for form in self.forms:
+            if self.can_delete and self._should_delete_form(form):
+                continue
+            """ Validate project ids """
+            project_id = form.cleaned_data.get('project_id')
+            if project_id in projects:
+                raise forms.ValidationError(
+                    'You can only choose each project once.')
+            projects.append(project_id)
+            """ Validate ranks """
+            rank = form.cleaned_data.get('rank')
+            if rank in ranks:
+                raise forms.ValidationError(
+                    'Each preference rank must be unique.')
+            ranks.append(rank)
+        ranks_sorted = sorted(ranks)
+        if ranks_sorted[0] != 1:
+            raise forms.ValidationError(
+                'Your first preference rank must be 1.')
+        if not all(ranks_sorted[i] == ranks_sorted[i-1] +
+                   1 for i in range(1, len(ranks_sorted))):
+            raise forms.ValidationError(
+                'Submitted preferences must be consecutive.')
 
 
 class PreferenceFormSetHelper(FormHelper):

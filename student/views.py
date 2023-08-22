@@ -59,6 +59,7 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
         return self.request.path
 
     def post(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
         formset = self.get_form()
         if formset.is_valid():
             students_preferences = self.get_students_preferences()

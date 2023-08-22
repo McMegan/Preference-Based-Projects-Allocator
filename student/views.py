@@ -1,13 +1,8 @@
-from typing import Any, Dict, Type
 from django.db import models
-from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models.query import QuerySet
-from django.http import HttpResponse
-from django.urls import reverse_lazy
-from django.views.generic import DetailView, ListView, TemplateView
+from django.forms import formset_factory
+from django.views.generic import ListView
 from django.views.generic.edit import FormMixin
-from django.forms import BaseFormSet, formset_factory
 
 from core import models
 from . import forms

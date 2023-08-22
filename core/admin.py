@@ -1,15 +1,12 @@
-from typing import Any, Optional
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.http.request import HttpRequest
-from django.utils.html import format_html, urlencode
+from django.contrib.auth.forms import PasswordResetForm
 from django.db.models import Count
 from django.urls import reverse
-from django.utils.safestring import mark_safe
-from django.contrib.auth.models import Group
-
-from django.contrib.auth.forms import PasswordResetForm
 from django.utils.crypto import get_random_string
+from django.utils.html import format_html, urlencode
+from django.utils.safestring import mark_safe
+
 
 from . import models
 from . import forms

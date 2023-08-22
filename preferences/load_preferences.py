@@ -1,7 +1,6 @@
 from django.db.models import Count
 
 from core import models
-
 from . import preferences_full
 
 LOAD_PREFS = False

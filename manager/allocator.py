@@ -1,11 +1,10 @@
 from ortools.linear_solver import pywraplp
-from django.db.models.query import QuerySet
 
 from core import models
 
 
 class Allocator:
-    def allocate(self, unit: QuerySet):
+    def allocate(self, unit):
         self.solver = pywraplp.Solver.CreateSolver('SCIP')
 
         self.unit = unit

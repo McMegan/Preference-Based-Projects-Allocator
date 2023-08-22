@@ -15,6 +15,10 @@ from core import models
 from . import forms
 
 
+def user_is_manager(user):
+    return user.is_manager
+
+
 class UnitMixin:
     unit_id_arg = 'pk_unit'
 
@@ -71,10 +75,6 @@ class UnitMixin:
 
     def test_func(self):
         return user_is_manager(self.request.user) and self.unit_managed_by_user()
-
-
-def user_is_manager(user):
-    return user.is_manager
 
 
 class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):

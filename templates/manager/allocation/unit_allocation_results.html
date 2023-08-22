@@ -2,18 +2,30 @@
 
 {% block page_title %}Project Allocation Results{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
+    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-column">
         <div class="d-flex gap-3">
             <div class="fw-semibold">Total No. Students</div>
             <div>{{ unit.students_count }}</div>
         </div>
         <div class="d-flex gap-3">
             <div class="fw-semibold">Total No. Students who Submitted Preferences</div>
-            <div>{{ submitted_prefs_students_count }}</div>
+            <div>{{ submitted_prefs_count }}</div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Total No. Students who did not Submit Preferences</div>
+            <div>{{ not_submitted_prefs_count }}</div>
         </div>
         <div class="d-flex gap-3">
             <div class="fw-semibold">Average Allocated Preference</div>
             <div>{{ unit.avg_allocated_pref_rounded }}</div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Worst Allocated Preference</div>
+            <div>{{ unit.max_allocated_pref }}</div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Best Allocated Preference</div>
+            <div>{{ unit.min_allocated_pref }}</div>
         </div>
     </div>
     <div class="my-3 mx-3">
@@ -36,12 +48,12 @@
                     <table class="table table-striped align-middle">
                         <thead>
                             <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Name</th>
-                                <th scope="col">Group Size</th>
-                                <th scope="col">No. Allocated Students</th>
-                                <th scope="col">Average Allocated Preference</th>
-                                <th scope="col">Allocated Students</th>
+                                <th scope="col" class="text-center">#</th>
+                                <th scope="col" class="text-center">Name</th>
+                                <th scope="col" class="text-center">Group Size</th>
+                                <th scope="col" class="text-center">No. Allocated Students</th>
+                                <th scope="col" class="text-center">Average Allocated Preference</th>
+                                <th scope="col" class="text-center">Allocated Students</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -54,11 +66,7 @@
                                     </div></td>
                                     <td class="text-center">{{ project.min_students }} - {{ project.max_students }}</td>
                                     <td class="text-center">{{ project.assigned_students.count }}</td>
-                                    <td class="text-center">
-                                        {% if project.avg_allocated_pref_rounded %}
-                                            {{ project.avg_allocated_pref_rounded }}
-                                        {% endif %}
-                                    </td>
+                                    <td class="text-center">{% if project.avg_allocated_pref_rounded %}{{ project.avg_allocated_pref_rounded }}{% endif %}</td>
                                     <td>
                                         {% if project.assigned_students %}
                                         {% for student in project.assigned_students.all %}

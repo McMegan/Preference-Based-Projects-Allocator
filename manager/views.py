@@ -3,7 +3,7 @@ from io import StringIO
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
-from django.db.models import Count, Sum,  F, Avg
+from django.db.models import Count, Sum, F, Avg, Min, Max
 from django.db.models.functions import Round
 from django.http import HttpResponse
 from django.urls import reverse, reverse_lazy
@@ -61,7 +61,7 @@ class UnitMixin:
                 'label': 'Preference Distribution', 'classes': 'ms-3'},
 
         ]
-        if unit.is_allocated():
+        if unit.get_is_allocated():
             nav_items.append({'url': 'manager:unit-allocation-results',
                               'url': 'manager:unit-allocation-results', 'label': 'Allocation Results', 'classes': 'ms-3'})
         return {'unit': unit, 'nav_items': nav_items}
@@ -143,7 +143,7 @@ class UnitStudentsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, L
     paginate_by = 25
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('user').prefetch_related('project_preferences')
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('project_preferences').select_related('assigned_project')
 
 
 class UnitStudentsCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
@@ -421,13 +421,24 @@ class UnitPreferencesView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, Li
     paginate_by = 25
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(
-            unit=self.kwargs['pk_unit']).annotate(project_preference_count=Count('project_preferences')).filter(project_preference_count__gt=0).count()}
+        enrolled_students_list = models.EnrolledStudent.objects.filter(
+            unit=self.kwargs['pk_unit'])
+        submitted_prefs_count = enrolled_students_list.annotate(project_preference_count=Count(
+            'project_preferences')).filter(project_preference_count__gt=0).count()
+        not_submitted_prefs_count = enrolled_students_list.count() - \
+            submitted_prefs_count
+        return {**super().get_context_data(**kwargs), 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count}
 
     def get_queryset(self):
         total_projects = models.Project.objects.filter(
             unit_id=self.kwargs['pk_unit']).count()
-        return super().get_queryset().filter(unit_id=self.kwargs['pk_unit']).prefetch_related('student_preferences').annotate(popularity=Sum(total_projects - F('student_preferences__rank')))
+
+        project_queryset = super().get_queryset().filter(unit_id=self.kwargs['pk_unit']).prefetch_related(
+            'student_preferences').annotate(popularity=Sum(total_projects - F('student_preferences__rank'))).order_by('number', 'name')
+        for project in project_queryset:
+            project.popularity = project.popularity if project.popularity else 0
+
+        return project_queryset
 
 
 # Unit Allocation Views
@@ -462,8 +473,13 @@ class UnitAllocationStartView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(
-            unit=self.kwargs['pk_unit']).annotate(project_preference_count=Count('project_preferences')).filter(project_preference_count__gt=0).count()}
+        enrolled_students_list = models.EnrolledStudent.objects.filter(
+            unit=self.kwargs['pk_unit'])
+        submitted_prefs_count = enrolled_students_list.annotate(project_preference_count=Count(
+            'project_preferences')).filter(project_preference_count__gt=0).count()
+        not_submitted_prefs_count = enrolled_students_list.count() - \
+            submitted_prefs_count
+        return {**super().get_context_data(**kwargs), 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count}
 
 
 class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListView):
@@ -491,19 +507,27 @@ class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
 
     def get_unit_queryset(self):
         if not hasattr(self, 'unit_queryset'):
-            self.unit_queryset = super().get_unit_queryset().prefetch_related('projects').annotate(
-                avg_allocated_pref_rounded=Round(Avg('projects__avg_allocated_pref'), 2))
+            self.unit_queryset = super().get_unit_queryset().prefetch_related('projects').prefetch_related('enrolled_students').annotate(
+                avg_allocated_pref_rounded=Round(Avg('projects__avg_allocated_pref'), 2)).annotate(
+                max_allocated_pref=Max('enrolled_students__assigned_preference_rank')).annotate(
+                min_allocated_pref=Min('enrolled_students__assigned_preference_rank'))
         return self.unit_queryset
 
     def get_queryset(self):
         return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('assigned_students').annotate(avg_allocated_pref_rounded=Round(F('avg_allocated_pref'), 2))
 
     def test_func(self):
-        return super().test_func() and self.get_unit_object().is_allocated()
+        return super().test_func() and self.get_unit_object().get_is_allocated()
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(
-            unit=self.kwargs['pk_unit']).annotate(project_preference_count=Count('project_preferences')).filter(project_preference_count__gt=0).count()}
+        enrolled_students_list = models.EnrolledStudent.objects.filter(
+            unit=self.kwargs['pk_unit'])
+        submitted_prefs_count = enrolled_students_list.annotate(project_preference_count=Count(
+            'project_preferences')).filter(project_preference_count__gt=0).count()
+        not_submitted_prefs_count = enrolled_students_list.count() - \
+            submitted_prefs_count
+
+        return {**super().get_context_data(**kwargs), 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count}
 
     def make_allocation_results_csv(self):
         unit = self.get_unit_object()
@@ -524,3 +548,11 @@ class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
                 [student.student_id, student.assigned_project.number, student.assigned_project.name])
 
         return response
+
+
+"""
+• The lowest preference rank that was allocated.
+• The number of students who did not make a preference nomination.
+• The number of students who were allocated to a project that was one of their preferences.
+• The number of students who were not allocated to a project that was one of their preferences.
+"""

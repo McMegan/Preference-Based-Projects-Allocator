@@ -344,7 +344,7 @@ class StartAllocationForm(forms.Form):
         submit_text = 'Start Allocation'
         submit_btn_colour = 'btn-primary'
         warning = ''
-        if self.unit.is_allocated():
+        if self.unit.get_is_allocated():
             submit_text = 'Override Allocation'
             submit_btn_colour = 'btn-danger'
             warning = """

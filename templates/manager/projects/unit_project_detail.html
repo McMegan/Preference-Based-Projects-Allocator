@@ -29,7 +29,7 @@
     <hr class="my-4">
 {% endblock %}
 {% block content %}
-    {% if project.preference_counts %}
+    {% if project.get_preference_counts %}
         <div class="mb-4 mt-5">
             <h4>Preferences</h4>
         </div>
@@ -41,7 +41,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for preference in project.preference_counts %}
+                {% for preference in project.get_preference_counts %}
                     <tr>
                         <th class="text-center" scope="row">{{ preference.rank }}</th>
                         <td>{{preference.student_count}}</td>

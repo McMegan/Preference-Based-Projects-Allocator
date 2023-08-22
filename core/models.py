@@ -63,8 +63,11 @@ class Unit(models.Model):
     def preference_submission_ended(self) -> bool:
         return timezone.now() > self.preference_submission_end
 
-    def is_allocated(self) -> bool:
-        return self.projects.annotate(allocated_count=Count('assigned_students')).filter(allocated_count__gt=0).exists()
+    def get_is_allocated(self) -> bool:
+        if not hasattr(self, 'is_allocated'):
+            self.is_allocated = self.projects.annotate(allocated_count=Count(
+                'assigned_students')).filter(allocated_count__gt=0).exists()
+        return self.is_allocated
 
     class Meta:
         ordering = ['code', 'name']
@@ -89,9 +92,11 @@ class Project(models.Model):
     def __str__(self):
         return f'{self.number}: {self.name} ({self.unit.code})'
 
-    def preference_counts(self):
-        return self.student_preferences.all().values('rank').annotate(
-            student_count=Count('student')).order_by('rank')
+    def get_preference_counts(self):
+        if not hasattr(self, 'preference_counts'):
+            self.preference_counts = self.student_preferences.all().values('rank').annotate(
+                student_count=Count('student')).order_by('rank')
+        return self.preference_counts
 
     def is_allocated(self) -> bool:
         return self.assigned_students.count() > 0
@@ -113,6 +118,7 @@ class EnrolledStudent(models.Model):
 
     assigned_project = models.ForeignKey(
         Project, on_delete=models.SET_NULL, null=True, related_name='assigned_students')
+    assigned_preference_rank = models.PositiveIntegerField(null=True)
 
     def __str__(self):
         return f'{self.unit.code}-{self.student_id}'

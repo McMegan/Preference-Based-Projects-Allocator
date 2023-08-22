@@ -92,22 +92,25 @@ class Allocator:
                 project_allocated_ranks = []
                 for student in self.students:
                     if self.student_vars[student.id, project.id].solution_value() > 0.5:
-                        student.assigned_project_id = project.id
-                        student_allocated.append(student)
-
                         rank = student.project_preferences.filter(
                             project=project)
                         if student.project_preferences.filter(project=project).exists():
                             rank = student.project_preferences.filter(
                                 project=project).first().rank
                             project_allocated_ranks.append(rank)
+                        else:
+                            rank = None
+
+                        student.assigned_project_id = project.id
+                        student.assigned_preference_rank = rank
+                        student_allocated.append(student)
                 if len(project_allocated_ranks) != 0:
                     project.avg_allocated_pref = sum(
                         project_allocated_ranks) / len(project_allocated_ranks)
                     project_updated.append(project)
 
         models.EnrolledStudent.objects.bulk_update(
-            student_allocated, fields=['assigned_project'])
+            student_allocated, fields=['assigned_project', 'assigned_preference_rank'])
         models.Project.objects.bulk_update(
             project_updated, fields=['avg_allocated_pref'])
 

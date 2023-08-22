@@ -22,7 +22,6 @@
                 <tr>
                     <th scope="col">#</th>
                     <th scope="col">Name</th>
-                    <th scope="col"></th>
                     <th scope="col">Group Size</th>
                     <th scope="col"></th>
                 </tr>
@@ -31,8 +30,10 @@
                 {% for project in page_obj %}
                     <tr id="project-{{project.id}}" data-project-id="{{ project.id }}">
                         <th scope="row">{{ project.number }}</th>
-                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id project.id %}">{{ project.name }}</a></td>
-                        <td>{% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}</td>
+                        <td><div class="d-flex align-items-center justify-content-between">
+                            <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id project.id %}">{{ project.name }}</a>
+                            {% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}
+                        </div></td>
                         <td>{{ project.min_students }} - {{ project.max_students }}</td>
                         <td>
                             <div class="d-flex gap-2 justify-content-end">

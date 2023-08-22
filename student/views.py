@@ -108,7 +108,6 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
                         preference_at_current_rank.save()
                     else:
                         # Create new record
-                        form.instance.rank = form.instance.rank
                         form.instance.student = self.get_student_enrollment()
                         form.instance.save()
 
@@ -118,9 +117,24 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
 
     def get_context_data(self, **kwargs):
         unit = self.get_unit()
-        preferences = self.get_students_preferences()
-        preferred_projects = [preference.project for preference in preferences]
+        preference_querset = self.get_students_preferences()
         helper = forms.PreferenceFormSetHelper()
+
+        formset = kwargs.get('form')
+        preference_from_form = []
+        if formset:
+            # Reload with form values
+            for form in formset:
+                form.instance.project = models.Project.objects.get(
+                    id=form.cleaned_data.get('project_id'))
+                form.instance.student = self.get_student_enrollment()
+                preference_from_form.append(form.instance)
+
+        preferences = preference_from_form if len(
+            preference_from_form) else preference_querset
+        preferred_projects = [
+            preference.project for preference in preferences]
+
         return {**super().get_context_data(**kwargs), 'unit': unit, 'preferences': preferences, 'preferred_projects': preferred_projects, 'helper': helper}
 
     def get_queryset(self):

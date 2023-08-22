@@ -55,7 +55,7 @@ class Unit(models.Model):
         return self.preference_submission_start != None and self.preference_submission_end != None
 
     def preference_submission_open(self) -> bool:
-        return self.preference_submission_started() and not self.preference_submission_ended()
+        return self.preference_submission_set() and self.preference_submission_started() and not self.preference_submission_ended()
 
     def preference_submission_started(self) -> bool:
         return timezone.now() > self.preference_submission_start

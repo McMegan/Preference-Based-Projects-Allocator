@@ -83,12 +83,13 @@ class CreateUnitForm(forms.ModelForm):
             'preference_submission_start')
         preference_submission_end = self.cleaned_data.get(
             'preference_submission_end')
-        if preference_submission_start > preference_submission_end:
-            raise forms.ValidationError(
-                {'preference_submission_end': 'The preference submission end must be after the preference submission start.'})
-        if preference_submission_start == preference_submission_end:
-            raise forms.ValidationError(
-                {'preference_submission_end': 'The preference submission end must not be the same as the preference submission start.'})
+        if preference_submission_start != None and preference_submission_end != None:
+            if preference_submission_start > preference_submission_end:
+                raise forms.ValidationError(
+                    {'preference_submission_end': 'The preference submission end must be after the preference submission start.'})
+            if preference_submission_start == preference_submission_end:
+                raise forms.ValidationError(
+                    {'preference_submission_end': 'The preference submission end must not be the same as the preference submission start.'})
         return super().clean()
 
     class Meta:
@@ -323,8 +324,8 @@ class ProjectListForm(forms.Form):
                              self.cleaned_data.get('max_students_column'))
 
         if self.cleaned_data.get('description_column') != '':
-            column_exists_in_csv(self.cleaned_data.get('file'), 'max_students_column',
-                                 self.cleaned_data.get('max_students_column'))
+            column_exists_in_csv(self.cleaned_data.get('file'), 'description_column',
+                                 self.cleaned_data.get('description_column'))
 
         return super().clean()
 

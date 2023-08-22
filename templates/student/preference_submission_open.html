@@ -7,9 +7,7 @@
             <table id="project_table" class="table table-striped align-middle">
                 <thead>
                     <tr>
-                        <th scope="col" class="text-center">#</th>
-                        <th scope="col" class="px-3 py-2">Name</th>
-                        <th scope="col"></th>
+                        <th scope="col">Project</th>
                         <th scope="col">Group Size</th>
                         <th scope="col"></th>
                     </tr>
@@ -35,23 +33,23 @@
                         </ul>
                     </div>
                 {% endif %}
-                <div class="border rounded overflow-hidden">
-                    <table id="preference_table" class="table table-sm align-middle m-0">
+                <div class="border rounded overflow-hidden" style="min-height: 200px;">
+                    <table id="preference_table" class="table table align-middle m-0">
                         <thead class="table-light">
                             <tr>
                                 <th scope="col"></th>
                                 <th scope="col">Rank</th>
-                                <th scope="col" class="text-center">#</th>
-                                <th scope="col" class="px-3 py-2">Name</th>
-                                <th scope="col"></th>
+                                <th scope="col">Project</th>
                                 <th scope="col">Group Size</th>
                                 <th scope="col"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for preference in preferences %}
-                                {% include 'student/project_row.html' with is_preferred=True project=preference.project rank=preference.rank %}
-                            {% endfor %}
+                            {% if preferences %}
+                                {% for preference in preferences %}
+                                    {% include 'student/project_row.html' with is_preferred=True project=preference.project rank=preference.rank %}
+                                {% endfor %}
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>

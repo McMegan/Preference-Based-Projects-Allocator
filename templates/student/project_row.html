@@ -10,9 +10,11 @@
         <td class="preference_rank text-center">{{ rank }}</td>
     {% endif %}
 
-    <th scope="row" class="project_number">{{ project.number }}</th>
-    <td class="project_name px-3 py-2">{{ project.name }}</td>
-    <td class="project_info_toggle">{% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}</td>
+    <td><div class="d-flex align-items-center justify-content-between">
+        <span><span class="project_number fw-bold">{{ project.number }}</span><span class="project_number">:</span> {{ project.name }}</span>
+        {% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}
+    </div></td>
+
     <td class="project_capacity">{{ project.min_students }} - {{ project.max_students }}</td>
     <td>
         <button type="button" onclick="remove_project_from_prefs({{ project.id }})" class="remove_project_from_prefs btn btn-sm {% if not is_preferred %}disabled d-none{% endif %}" {% if not is_preferred %}aria-disabled="true"{% endif %}><i class="bi bi-x-lg"></i></button>

@@ -1,15 +1,14 @@
-
 import csv
 from io import StringIO
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
-from django.db.models import Prefetch, Count, Sum, Q, F, Avg
+from django.db.models import Count, Sum,  F, Avg
+from django.db.models.functions import Round
+from django.http import HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.edit import FormMixin
-
-from django.db.models.functions import Round
 
 
 from core import models
@@ -483,10 +482,12 @@ class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
-            print('MAKE CSV FILE')
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
+
+    def form_valid(self, form):
+        return self.make_allocation_results_csv()
 
     def get_unit_queryset(self):
         if not hasattr(self, 'unit_queryset'):
@@ -503,3 +504,23 @@ class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), 'submitted_prefs_students_count': models.EnrolledStudent.objects.filter(
             unit=self.kwargs['pk_unit']).annotate(project_preference_count=Count('project_preferences')).filter(project_preference_count__gt=0).count()}
+
+    def make_allocation_results_csv(self):
+        unit = self.get_unit_object()
+
+        response = HttpResponse(
+            content_type="text/csv",
+            headers={
+                "Content-Disposition": f'attachment; filename="{unit.code}-project-allocation.csv"'},
+        )
+
+        # Write to file
+        writer = csv.writer(response)
+        # Add headers to file
+        writer.writerow(['student_id', 'project_number', 'project_name'])
+        # Write students to file
+        for student in unit.enrolled_students.all():
+            writer.writerow(
+                [student.student_id, student.assigned_project.number, student.assigned_project.name])
+
+        return response

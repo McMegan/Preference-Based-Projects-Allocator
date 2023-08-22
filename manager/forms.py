@@ -199,7 +199,8 @@ class StudentListClearForm(forms.Form):
         self.helper.layout = Layout(
             HTML('<p>Are you sure you want to remove all students from this unit?</p>'),
             FormActions(
-                Submit('submit', 'Confirm', css_class='btn btn-danger'),
+                Submit('submit', 'Remove All Students from Unit',
+                       css_class='btn btn-danger'),
             )
         )
 

@@ -1,46 +1,45 @@
 {% extends 'manager/base.html' %}
 
-{% block page_title %}Student: {{ enrolledstudent.student_id }}{% endblock %}
+{% load render_table from django_tables2 %}
+
+{% block page_title %}Student: {{ student.student_id }}{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
+    <div class="my-3 mx-3 d-grid gap-5 row-gap-3">
         <div class="d-flex gap-3">
             <div class="fw-semibold">Student ID</div>
-            <div>{{ enrolledstudent.student_id }}</div>
+            <div>{{ student.student_id }}</div>
         </div>
         <div class="d-flex gap-3">
             <div class="fw-semibold">Registered</div>
-            <div><span class ="badge rounded-pill text-bg-{% if enrolledstudent.user %}success{% else %}danger{% endif %}"><i class="bi bi-{% if enrolledstudent.user %}check{% else %}x{% endif %}-lg"></i></span></div>
+            <div><span class ="badge rounded-pill text-bg-{% if student.user %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user %}check{% else %}x{% endif %}-lg"></i></span></div>
         </div>
         <div class="d-flex gap-3">
             <div class="fw-semibold">Submitted Preferences</div>
-            <div><span class ="badge rounded-pill text-bg-{% if enrolledstudent.user and enrolledstudent.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if enrolledstudent.user and enrolledstudent.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></div>
+            <div><span class ="badge rounded-pill text-bg-{% if student.user and student.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user and student.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></div>
         </div>
+        {% if student.assigned_project %}
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Allocated Project</div>
+            <div><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id student.assigned_project_id %}">{{student.assigned_project.number}}: {{student.assigned_project.name}}</a></div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="fw-semibold">Allocated Preference</div>
+            <div>{{student.assigned_preference_rank}}</div>
+        </div>
+        {% endif %}
     </div>
     <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
-        <a class="btn btn-danger" href="{% url 'manager:unit-student-remove' enrolledstudent.unit.id enrolledstudent.id %}">Remove Student From Unit</a>
+        <a class="btn btn-danger" href="{% url 'manager:unit-student-remove' unit.id student.id %}">Remove Student From Unit</a>
     </div>
     <hr class="my-4">
 {% endblock %}
 {% block content %}
-    {% if enrolledstudent.project_preferences.exists %}
+    {% if table and table.data %}
         <div class="mb-4 mt-5">
             <h4>Preferences</h4>
         </div>
-        <table class="table table-striped ">
-            <thead>
-                <tr>
-                    <th scope="col">Rank</th>
-                    <th scope="col">Project</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for preference in enrolledstudent.project_preferences.all %}
-                    <tr>
-                        <th class="text-center" scope="row">{{ preference.rank }}</th>
-                        <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-update' unit.id preference.project.id %}">{{ preference.project.number }}: {{ preference.project.name }}</a></td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {% block table %}
+            {% render_table table %}
+        {% endblock %}
     {% endif %}
 {% endblock %}

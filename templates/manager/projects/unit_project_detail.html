@@ -1,5 +1,7 @@
 {% extends 'manager/base.html' %}
 
+{% load render_table from django_tables2 %}
+
 {% block page_title %}{{project.number}}: {{project.name}}{% endblock %}
 {% block extra_header %}
     <div class="my-3 mx-3 d-flex gap-3 flex-column">
@@ -30,63 +32,22 @@
 {% endblock %}
 {% block content %}
     <ul class="nav nav-tabs border-0" id="tab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active fs-6" id="preference-tab" data-bs-toggle="tab" data-bs-target="#preference-tab-pane" type="button" role="tab" aria-controls="preference-tab-pane" aria-selected="true">Preference Distribution</button>
-        </li>
-        {% if project.assigned_students %}
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fs-6" id="allocation-tab" data-bs-toggle="tab" data-bs-target="#allocation-tab-pane" type="button" role="tab" aria-controls="allocation-tab-pane" aria-selected="false">Allocated Students</button>
-        </li>
+        {% for table in tables %}
+        {% if table and table.data %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if forloop.first %}active{% endif %} fs-6" id="{{table.id}}-tab" data-bs-toggle="tab" data-bs-target="#{{table.id}}-tab-pane" type="button" role="tab" aria-controls="{{table.id}}-tab-pane" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{table.name}}</button>
+            </li>
         {% endif %}
+        {% endfor %}
     </ul>
     <div class="tab-content border rounded-bottom overflow-hidden" id="tabContent">
-        {% if project.get_preference_counts %}
-        <div class="tab-pane fade show active" id="preference-tab-pane" role="tabpanel" aria-labelledby="preference-tab" tabindex="0">
-            <table class="table table-striped mb-0">
-                <thead>
-                    <tr>
-                        <th scope="col">Rank</th>
-                        <th scope="col">Number of Preferences</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for preference in project.get_preference_counts %}
-                        <tr>
-                            <th class="text-center" scope="row">{{ preference.rank }}</th>
-                            <td>{{preference.student_count}}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        {% for table in tables %}
+        {% if table and table.data %}
+        
+            <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="{{table.id}}-tab-pane" role="tabpanel" aria-labelledby="{{table.id}}-tab" tabindex="0">
+                {% render_table table %}
+            </div>
         {% endif %}
-        {% if project.assigned_students %}
-        <div class="tab-pane fade" id="allocation-tab-pane" role="tabpanel" aria-labelledby="allocation-tab" tabindex="0">
-            <table class="table table-striped mb-0">
-                <thead>
-                    <tr>
-                        <th scope="col">Student ID</th>
-                        <th scope="col">Submitted Preferences</th>
-                        <th>Allocated Preference</th>
-                        <th scope="col"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in project.assigned_students.all %}
-                        <tr>
-                            <th scope="row"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-student-detail' unit.id student.id %}">{{ student.student_id }}</a></th>
-                            <td><span class ="badge rounded-pill text-bg-{% if student.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></td>
-                            <td>{{student.assigned_preference_rank}}</td>
-                            <td>
-                                <div class="d-flex justify-content-end">
-                                    <a class="btn btn-danger btn-sm" href="{% url 'manager:unit-student-remove' unit.id student.id %}">Remove</a>
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
+        {% endfor %}
     </div>
 {% endblock %}

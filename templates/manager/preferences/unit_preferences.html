@@ -15,39 +15,10 @@
             <div class="fw-semibold">Total No. Students who did not Submit Preferences</div>
             <div>{{ not_submitted_prefs_count }}</div>
         </div>
+        <div class="d-grid gap-3">
+            <div class="fw-semibold">Project Popularity</div>
+            <div>The popularity of a project is calculated by summing the of number of students who preferred a project multiplied by the rank at which they preferred the project. Projects with a higher popularity index were more popular.</div>
+        </div>
     </div>
     <hr class="my-4">
-{% endblock %}
-{% block content %}
-    {% if page_obj %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th scope="col">Project</th>
-                    <th scope="col" class="text-nowrap">Popularity<span class="badge rounded-pill text-secondary fs-6" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="left" data-bs-title="Project Popularity" data-bs-content="The popularity of a project is calculated by summing the of number of students who preferred a project multiplied by the rank at which they preferred the project. Projects with a higher popularity index were more popular."><i class="bi bi-info-lg"></i></span></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for project in page_obj %}
-                    <tr>
-                        <td scope="row"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id project.id %}">{{ project.number }}: {{ project.name }}</a></td>
-                        <td>{{ project.popularity }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <div class="my-5 d-flex gap-3 justify-content-center align-items-center">
-            {% if page_obj.has_previous %}
-                <a class="btn btn-sm btn-outline-secondary" href="?page=1">&laquo; first</a>
-                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.previous_page_number }}">previous</a>
-            {% endif %}
-            <span class="current">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-            </span>
-            {% if page_obj.has_next %}
-                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.next_page_number }}">next</a>
-                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-            {% endif %}
-        </div>
-    {% endif %}
 {% endblock %}

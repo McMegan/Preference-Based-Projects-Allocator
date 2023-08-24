@@ -12,8 +12,8 @@ from django.views.generic import TemplateView, DetailView, ListView, CreateView,
 from django.views.generic.edit import FormMixin
 
 
-from django_filters.views import FilterView
-from django_tables2 import SingleTableView, SingleTableMixin
+from django_filters.views import FilterView, FilterMixin
+from django_tables2 import SingleTableMixin, MultiTableMixin
 
 
 from core import models
@@ -22,19 +22,42 @@ from . import forms
 from . import tables
 
 
-class FilteredTableView(SingleTableMixin, FilterView):
+class FilteredTableMixin(SingleTableMixin, FilterMixin):
     formhelper_class = None
+
+    def get_formhelper_class(self):
+        if self.formhelper_class:
+            return self.formhelper_class
 
     def get_filterset(self, filterset_class):
         kwargs = self.get_filterset_kwargs(filterset_class)
         filterset = filterset_class(**kwargs)
-        filterset.form.helper = self.formhelper_class()
+        filterset.form.helper = self.get_formhelper_class()()
         return filterset
 
     def get_context_data(self, **kwargs):
-        f = self.get_filterset(self.filterset_class)
+        f = self.get_filterset(self.get_filterset_class())
         self.table_data = f.qs
-        f.form.helper = self.formhelper_class()
+        return {**super().get_context_data(**kwargs), 'filter': f, 'has_filter': any(
+            field in self.request.GET for field in set(f.get_fields()))}
+
+
+class FilteredTableView(SingleTableMixin, FilterView):
+    formhelper_class = None
+
+    def get_formhelper_class(self):
+        if self.formhelper_class:
+            return self.formhelper_class
+
+    def get_filterset(self, filterset_class):
+        kwargs = self.get_filterset_kwargs(filterset_class)
+        filterset = filterset_class(**kwargs)
+        filterset.form.helper = self.get_formhelper_class()()
+        return filterset
+
+    def get_context_data(self, **kwargs):
+        f = self.get_filterset(self.get_filterset_class())
+        self.table_data = f.qs
         return {**super().get_context_data(**kwargs), 'filter': f, 'has_filter': any(
             field in self.request.GET for field in set(f.get_fields()))}
 
@@ -165,8 +188,11 @@ class UnitStudentsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, F
     model = models.EnrolledStudent
     template_name = 'manager/students/unit_students.html'
 
-    filterset_class = filters.StudentFilter
-    formhelper_class = filters.StudentFilterFormHelper
+    def get_formhelper_class(self):
+        return filters.StudentAllocatedFilterFormHelper if self.get_unit_object().is_allocated() else filters.StudentFilterFormHelper
+
+    def get_filterset_class(self):
+        return filters.StudentAllocatedFilter if self.get_unit_object().is_allocated() else filters.StudentFilter
 
     def get_table_class(self):
         return tables.StudentAllocatedTable if self.get_unit_object().is_allocated() else tables.StudentTable
@@ -175,7 +201,7 @@ class UnitStudentsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, F
         return super().get_queryset().filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('assigned_project')
 
 
-class UnitStudentsCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
+class UnitStudentCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
     """
         Add a single student to the unit's student list
     """
@@ -203,7 +229,7 @@ class UnitStudentsCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin,
             return self.form_invalid(form)
 
 
-class UnitStudentUploadListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
+class UnitStudentsUploadListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
     """
         Upload list of students to a unit
     """
@@ -253,15 +279,20 @@ class UnitStudentUploadListView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
             return self.form_invalid(form)
 
 
-class UnitStudentsDetailView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, DetailView):
+class UnitStudentDetailView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, SingleTableMixin, ListView):
     """
         View a single student in a unit
     """
-    model = models.EnrolledStudent
+    model = models.ProjectPreference
     template_name = 'manager/students/unit_student_detail.html'
 
+    table_class = tables.StudentPreferencesTable
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), 'student': models.EnrolledStudent.objects.filter(pk=self.kwargs['pk']).prefetch_related('user').first()}
+
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().prefetch_related('user').prefetch_related('project_preferences').prefetch_related('project_preferences__project')
+        return super().get_queryset().filter(student=self.kwargs['pk']).prefetch_related('project')
 
 
 class UnitStudentDeleteView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -306,17 +337,20 @@ class UnitProjectsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, F
     model = models.Project
     template_name = 'manager/projects/unit_projects.html'
 
-    filterset_class = filters.ProjectFilter
-    formhelper_class = filters.ProjectFilterFormHelper
+    def get_formhelper_class(self):
+        return filters.ProjectAllocatedFilterFormHelper if self.get_unit_object().is_allocated() else filters.ProjectFilterFormHelper
+
+    def get_filterset_class(self):
+        return filters.ProjectAllocatedFilter if self.get_unit_object().is_allocated() else filters.ProjectFilter
 
     def get_table_class(self):
         return tables.ProjectAllocatedTable if self.get_unit_object().is_allocated() else tables.ProjectTable
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('unit').filter(unit=self.kwargs['pk_unit'])
+        return super().get_queryset().prefetch_related('unit').filter(unit=self.kwargs['pk_unit']).prefetch_related('assigned_students')
 
 
-class UnitProjectsCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
+class UnitProjectCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
     form_class = forms.ProjectForm
     template_name = 'manager/projects/unit_projects_new.html'
 
@@ -336,7 +370,7 @@ class UnitProjectsCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin,
             return self.form_invalid(form)
 
 
-class UnitProjectUploadListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
+class UnitProjectsUploadListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
     """
         Upload list of projects
     """
@@ -390,12 +424,35 @@ class UnitProjectUploadListView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
             return self.form_invalid(form)
 
 
-class UnitProjectDetailView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, DetailView):
+class UnitProjectDetailView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, MultiTableMixin, DetailView):
     """
         View a project in a unit
     """
     model = models.Project
     template_name = 'manager/projects/unit_project_detail.html'
+
+    tables = [
+        tables.ProjectPreferencesTable,
+    ]
+
+    def get_tables(self):
+        project_tables = []
+        project = self.get_object()
+
+        preference_table = tables.ProjectPreferencesTable(
+            data=project.get_preference_counts())
+        preference_table.name = 'Preference Distribution'
+        preference_table.id = 'preferences'
+        project_tables.append(preference_table)
+
+        if project.assigned_students:
+            allocated_students_table = tables.AllocatedStudentsTable(
+                data=project.assigned_students.all())
+            allocated_students_table.name = 'Allocated Students'
+            allocated_students_table.id = 'allocated'
+            project_tables.append(allocated_students_table)
+
+        return project_tables
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('assigned_students')
@@ -446,13 +503,16 @@ class UnitProjectsClearView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, 
 
 # Unit Preference Views
 
-class UnitPreferencesView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, ListView):
+class UnitPreferencesView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FilteredTableView):
     """
         Show the distribution of preferences for projects in unit
     """
     model = models.Project
     template_name = 'manager/preferences/unit_preferences.html'
-    paginate_by = 25
+
+    table_class = tables.PreferencesTable
+    filterset_class = filters.PreferenceFilter
+    formhelper_class = filters.PreferenceFilterFormHelper
 
     def get_context_data(self, **kwargs):
         enrolled_students_list = models.EnrolledStudent.objects.filter(
@@ -539,14 +599,11 @@ class UnitAllocationStartView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin
         return {**context, 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count, **project_spaces}
 
 
-class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListView):
+class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
     """
         View allocation results & stats
     """
-    model = models.Project
     template_name = 'manager/allocation/unit_allocation_results.html'
-    paginate_by = 25
-
     form_class = forms.ExportAllocationForm
 
     def get_success_url(self):
@@ -569,9 +626,6 @@ class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
                 max_allocated_pref=Max('enrolled_students__assigned_preference_rank')).annotate(
                 min_allocated_pref=Min('enrolled_students__assigned_preference_rank'))
         return self.unit_queryset
-
-    def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('assigned_students').annotate(avg_allocated_pref_rounded=Round(F('avg_allocated_pref'), 2))
 
     def test_func(self):
         return super().test_func() and self.get_unit_object().is_allocated()
@@ -605,11 +659,3 @@ class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
                 [student.student_id, student.assigned_project.number, student.assigned_project.name])
 
         return response
-
-
-"""
-• The lowest preference rank that was allocated.
-• The number of students who did not make a preference nomination.
-• The number of students who were allocated to a project that was one of their preferences.
-• The number of students who were not allocated to a project that was one of their preferences.
-"""

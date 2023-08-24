@@ -1,8 +1,5 @@
 {% extends 'manager/base.html' %}
 
-{% load render_table from django_tables2 %}
-{% load crispy_forms_tags %}
-
 {% block page_title %}Project List{% endblock %}
 {% block extra_header %}
     <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
@@ -14,15 +11,7 @@
     <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
         <a class="btn btn-primary" href="{% url 'manager:unit-projects-new-list' unit.id %}">Upload Project List</a>
         <a class="btn btn-primary" href="{% url 'manager:unit-projects-new' unit.id %}">Add Project</a>
-        <a class="btn btn-danger {% if not page_obj %}disabled{% endif %}" href="{% url 'manager:unit-projects-clear' unit.id %}" {% if not page_obj %}aria-disabled="true"{% endif %}>Clear Project List</a>
+        <a class="btn btn-danger {% if not table.data %}disabled{% endif %}" href="{% url 'manager:unit-projects-clear' unit.id %}" {% if not table.data %}aria-disabled="true"{% endif %}>Clear Project List</a>
     </div>
     <hr class="my-4">
-{% endblock %}
-{% block content %}
-    {% if filter %}
-        <div class="my-2">
-            {% crispy filter.form filter.form.helper %}
-        </div>
-    {% endif %}
-    {% render_table table %}
 {% endblock %}

@@ -2,9 +2,6 @@
 nav.navbar {
 	height: 70px;
 }
-.navbar_sticky {
-	/* z-index: 9999; */
-}
 .preferences_sticky {
 	top: 70px;
 }
@@ -58,4 +55,30 @@ nav.navbar {
 	#sidebar_container:is(.col-md-1, .col-lg-1) {
 		width: 100px;
 	}
+}
+
+/* TABLES - ORDERING */
+table.table thead th.orderable a::after {
+	display: inline-block;
+	font-family: bootstrap-icons !important;
+	font-style: normal;
+	font-weight: normal !important;
+	font-variant: normal;
+	text-transform: none;
+	line-height: 1;
+	vertical-align: -0.125em;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+
+	color: inherit;
+
+	margin-left: 5px;
+}
+table.table thead th.asc a::after {
+	/* sort down */
+	content: '\f575';
+}
+table.table thead th.desc a::after {
+	/* sort up */
+	content: '\F57B';
 }

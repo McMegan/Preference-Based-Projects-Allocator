@@ -143,7 +143,7 @@ class Project(models.Model):
         Unit, on_delete=models.CASCADE, related_name='projects')
 
     def __str__(self):
-        return f'{self.number}: {self.name} ({self.unit.code})'
+        return f'{self.number}: {self.name}'
 
     def get_preference_counts(self):
         if not hasattr(self, 'preference_counts'):

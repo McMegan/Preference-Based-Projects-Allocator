@@ -13,13 +13,30 @@ from django.views.generic.edit import FormMixin
 
 
 from django_filters.views import FilterView
-from django_tables2 import SingleTableView
+from django_tables2 import SingleTableView, SingleTableMixin
 
 
 from core import models
 from . import filters
 from . import forms
 from . import tables
+
+
+class FilteredTableView(SingleTableMixin, FilterView):
+    formhelper_class = None
+
+    def get_filterset(self, filterset_class):
+        kwargs = self.get_filterset_kwargs(filterset_class)
+        filterset = filterset_class(**kwargs)
+        filterset.form.helper = self.formhelper_class()
+        return filterset
+
+    def get_context_data(self, **kwargs):
+        f = self.get_filterset(self.filterset_class)
+        self.table_data = f.qs
+        f.form.helper = self.formhelper_class()
+        return {**super().get_context_data(**kwargs), 'filter': f, 'has_filter': any(
+            field in self.request.GET for field in set(f.get_fields()))}
 
 
 def user_is_manager(user):
@@ -141,16 +158,21 @@ class UnitView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 # Unit student views
 
 
-class UnitStudentsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, ListView):
+class UnitStudentsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FilteredTableView):
     """
         List of students in unit
     """
     model = models.EnrolledStudent
     template_name = 'manager/students/unit_students.html'
-    paginate_by = 25
+
+    filterset_class = filters.StudentFilter
+    formhelper_class = filters.StudentFilterFormHelper
+
+    def get_table_class(self):
+        return tables.StudentAllocatedTable if self.get_unit_object().is_allocated() else tables.StudentTable
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('project_preferences').select_related('assigned_project')
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('assigned_project')
 
 
 class UnitStudentsCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
@@ -277,24 +299,21 @@ class UnitStudentsClearView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, 
 # Unit project views
 
 
-class UnitProjectsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, SingleTableView, FilterView):
+class UnitProjectsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FilteredTableView):
     """
         List of projects in unit
     """
     model = models.Project
     template_name = 'manager/projects/unit_projects.html'
 
-    table_class = tables.ProjectTable
     filterset_class = filters.ProjectFilter
+    formhelper_class = filters.ProjectFilterFormHelper
+
+    def get_table_class(self):
+        return tables.ProjectAllocatedTable if self.get_unit_object().is_allocated() else tables.ProjectTable
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('unit').filter(unit=self.kwargs['pk_unit'])
-
-    def get_context_data(self, **kwargs):
-        f = self.get_filterset(self.filterset_class)
-        self.table_data = f.qs
-        return {**super().get_context_data(**kwargs), 'filter': f, 'has_filter': any(
-            field in self.request.GET for field in set(f.get_fields()))}
 
 
 class UnitProjectsCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):

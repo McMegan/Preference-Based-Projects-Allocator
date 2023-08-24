@@ -1,7 +1,7 @@
 {% extends 'manager/base.html' %}
 
 {% load render_table from django_tables2 %}
-{% load django_bootstrap5 %}
+{% load crispy_forms_tags %}
 
 {% block page_title %}Project List{% endblock %}
 {% block extra_header %}
@@ -20,80 +20,9 @@
 {% endblock %}
 {% block content %}
     {% if filter %}
-        <div class="my-4">
-            <form action="" method="get" class="form d-flex flex-wrap gap-2">
-                {% bootstrap_form filter.form layout='inline' %}
-                {% bootstrap_button 'Filter Projects' type="submit" %}
-                {% if has_filter %}<a class="btn" href="{%  url 'manager:unit-projects' unit.id %}">Clear Filters</a>{% endif %}
-            </form>
+        <div class="my-2">
+            {% crispy filter.form filter.form.helper %}
         </div>
     {% endif %}
-
     {% render_table table %}
-
-
-    {% if page_obj %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Group Size</th>
-                    <th scope="col"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for project in page_obj %}
-                    <tr id="project-{{project.id}}" data-project-id="{{ project.id }}">
-                        <th scope="row">{{ project.number }}</th>
-                        <td><div class="d-flex align-items-center justify-content-between">
-                            <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id project.id %}">{{ project.name }}</a>
-
-                            {% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}
-                        </div></td>
-                        <td>{{ project.min_students }} - {{ project.max_students }}</td>
-                        <td>
-                            <div class="d-flex gap-2 justify-content-end">
-                                <a class="btn btn-primary btn-sm" href="{% url 'manager:unit-project-update' unit.id project.id %}">Edit</a>
-                                <a class="btn btn-danger btn-sm" href="{% url 'manager:unit-project-remove' unit.id project.id %}">Remove</a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% if project.description %}
-                    <tr class="project_info_container" data-project-id="{{ project.id }}">
-                        <td colspan="12" class="p-0">
-                            <div class="project_info" data-project-id="{{ project.id }}" style="display: none;">
-                                <table class="table m-0">
-                                    <tbody>
-                                        {% if project.description %}
-                                        <tr>
-                                            <th>Description</th>
-                                        </tr>
-                                        <tr>
-                                            <td class="project_description">{{ project.description }}</td>
-                                        </tr>
-                                        {% endif %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
-        <div class="my-5 d-flex gap-3 justify-content-center align-items-center">
-            {% if page_obj.has_previous %}
-                <a class="btn btn-sm btn-outline-secondary" href="?page=1">&laquo; first</a>
-                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.previous_page_number }}">previous</a>
-            {% endif %}
-            <span class="current">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-            </span>
-            {% if page_obj.has_next %}
-                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.next_page_number }}">next</a>
-                <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-            {% endif %}
-        </div>
-    {% endif %}
 {% endblock %}

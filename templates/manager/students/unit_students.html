@@ -1,5 +1,8 @@
 {% extends 'manager/base.html' %}
 
+{% load render_table from django_tables2 %}
+{% load crispy_forms_tags %}
+
 {% block page_title %}Student List{% endblock %}
 {% block extra_header %}
     <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
@@ -16,6 +19,13 @@
     <hr class="my-4">
 {% endblock %}
 {% block content %}
+    {% if filter %}
+        <div class="my-2">
+            {% crispy filter.form filter.form.helper %}
+        </div>
+    {% endif %}
+    {% render_table table %}
+
     {% if page_obj %}
         <table class="table table-striped">
             <thead>
@@ -35,7 +45,9 @@
                     <tr>
                         <th scope="row"><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-student-detail' unit.id student.id %}">{{ student.student_id }}</a></th>
                         <td><span class ="badge rounded-pill text-bg-{% if student.user_id %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user_id %}check{% else %}x{% endif %}-lg"></i></span></td>
+
                         <td><span class ="badge rounded-pill text-bg-{% if student.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></td>
+                        
                         {% if unit.is_allocated %}
                             <td><a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id student.assigned_project.id %}">{{ student.assigned_project.number }}: {{ student.assigned_project.name }}</a></td>
                             <td>{{student.assigned_preference_rank}}</td>

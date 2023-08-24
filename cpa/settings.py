@@ -33,6 +33,10 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
 
+    'django_tables2',
+    'django_filters',
+    'django_bootstrap5',
+
     'celery',
 
     'django_browser_reload',

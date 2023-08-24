@@ -33,6 +33,8 @@ class Unit(models.Model):
     preference_submission_end = models.DateTimeField(null=True, blank=True)
     minimum_preference_limit = models.IntegerField(null=True, blank=True)
 
+    # area
+
     manager = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name='managed_units', limit_choices_to={'is_manager': True})
 
@@ -150,7 +152,9 @@ class Project(models.Model):
         return self.preference_counts
 
     def is_allocated(self) -> bool:
-        return self.assigned_students.count() > 0
+        if not hasattr(self, 'allocated'):
+            self.allocated = self.assigned_students.count() > 0
+        return self.allocated
 
     class Meta:
         ordering = ['number', 'name']

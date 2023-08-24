@@ -26,6 +26,14 @@ const fix_striped_tables = () => {
 	});
 };
 
+const toggle_sidebar = () => {
+	$('#sidebar').slideToggle();
+	$('#sidebar_container').toggleClass('col-md-4');
+	$('#sidebar_container').toggleClass('col-lg-3');
+	$('#sidebar_container').toggleClass('col-md-1');
+	$('#sidebar_container').toggleClass('col-lg-1');
+};
+
 window.onload = () => {
 	fix_striped_tables();
 };

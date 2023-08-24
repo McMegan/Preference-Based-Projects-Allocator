@@ -2,12 +2,13 @@
 {% load crispy_forms_tags %} 
 
 {% block main %}
-    <div class="d-flex gap-5 flex-wrap">
-        <div>
-            <div class="container-fluid p-0">
-                <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar" aria-expanded="true" aria-controls="sidebar"><i class="bi bi-list"></i></button>
-                <div class="collapse collapse-horizontal show" id="sidebar">
-                    <div class="card bg-body-tertiary" style="width: 250px;">
+<div class="row g-5">
+    <div class="col-sm-12 col-md-4 col-lg-3" id="sidebar_container">
+        <div class="sticky-top z-1 py-3" style="top: 70px;">
+            <div class="d-grid bg-body-tertiary border rounded">
+                <button class="btn fs-5" type="button" data-toggle="collapse" data-target="#sidebar" aria-expanded="true" aria-controls="sidebar" onclick="toggle_sidebar()"><i class="bi bi-list"></i></button>
+                <div id="sidebar">
+                    <div class="card bg-body-tertiary border-0 border-top rounded-0 rounded-bottom">
                         <div class="card-body">
                             <ul class="navbar-nav">
                                 {% include 'manager/sidebar_nav.html' %}
@@ -17,28 +18,30 @@
                 </div>
             </div>
         </div>
-        <div class="col" style="min-width: 500px;">
-            <div class="container-fluid p-0">
-                <div>
-                    <h1>{% block page_title %}{% endblock %}</h1>
-                    <hr class="my-4">
-                    {% block extra_header %}{% endblock %}
-                </div>
-                <div>
-                    {% block content %}
-                        {% if form %}
-                            <div>
-                                {% block form %}
-                                    {% load crispy_forms_tags %} 
-                                    <form method="post" enctype="multipart/form-data">
-                                        {% csrf_token %} {% crispy form %}
-                                    </form>
-                                {% endblock %}
-                            </div>
-                        {% endif %}
-                    {% endblock %}
-                </div>
+    </div>
+
+    <div class="col">
+        <div class="container-fluid px-0 py-3">
+            <div>
+                <h1>{% block page_title %}{% endblock %}</h1>
+                <hr class="my-4">
+                {% block extra_header %}{% endblock %}
+            </div>
+            <div>
+                {% block content %}
+                    {% if form %}
+                        <div>
+                            {% block form %}
+                                {% load crispy_forms_tags %} 
+                                <form method="post" enctype="multipart/form-data">
+                                    {% csrf_token %} {% crispy form %}
+                                </form>
+                            {% endblock %}
+                        </div>
+                    {% endif %}
+                {% endblock %}
             </div>
         </div>
     </div>
+</div>
 {% endblock %}

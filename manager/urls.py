@@ -35,9 +35,9 @@ urlpatterns = [
     re_path(r'^units/(?P<pk_unit>[0-9]+)/projects/new$',
             views.UnitProjectsCreateView.as_view(), name='unit-projects-new'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/projects/(?P<pk>[0-9]+)$',
-            views.UnitProjectsDetailView.as_view(), name='unit-project-detail'),
+            views.UnitProjectDetailView.as_view(), name='unit-project-detail'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/projects/(?P<pk>[0-9]+)/update$',
-            views.UnitProjectsUpdateView.as_view(), name='unit-project-update'),
+            views.UnitProjectUpdateView.as_view(), name='unit-project-update'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/projects/(?P<pk>[0-9]+)/remove$',
             views.UnitProjectDeleteView.as_view(), name='unit-project-remove'),
     # Unit preference views

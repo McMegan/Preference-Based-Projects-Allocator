@@ -3,7 +3,7 @@ nav.navbar {
 	height: 70px;
 }
 .navbar_sticky {
-	z-index: 9999;
+	/* z-index: 9999; */
 }
 .preferences_sticky {
 	top: 70px;
@@ -45,4 +45,17 @@ nav.navbar {
 /* TABLES */
 #preference_table > tbody > tr:last-child {
 	border-bottom: transparent;
+}
+
+/* SIDEBAR NAV */
+#sidebar_container {
+	transition: width 1s;
+}
+@media (min-width: 768px) {
+	#sidebar_container {
+		max-width: 270px;
+	}
+	#sidebar_container:is(.col-md-1, .col-lg-1) {
+		width: 100px;
+	}
 }

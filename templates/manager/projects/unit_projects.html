@@ -1,5 +1,8 @@
 {% extends 'manager/base.html' %}
 
+{% load render_table from django_tables2 %}
+{% load django_bootstrap5 %}
+
 {% block page_title %}Project List{% endblock %}
 {% block extra_header %}
     <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
@@ -16,6 +19,19 @@
     <hr class="my-4">
 {% endblock %}
 {% block content %}
+    {% if filter %}
+        <div class="my-4">
+            <form action="" method="get" class="form d-flex flex-wrap gap-2">
+                {% bootstrap_form filter.form layout='inline' %}
+                {% bootstrap_button 'Filter Projects' type="submit" %}
+                {% if has_filter %}<a class="btn" href="{%  url 'manager:unit-projects' unit.id %}">Clear Filters</a>{% endif %}
+            </form>
+        </div>
+    {% endif %}
+
+    {% render_table table %}
+
+
     {% if page_obj %}
         <table class="table table-striped">
             <thead>
@@ -32,6 +48,7 @@
                         <th scope="row">{{ project.number }}</th>
                         <td><div class="d-flex align-items-center justify-content-between">
                             <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id project.id %}">{{ project.name }}</a>
+
                             {% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}
                         </div></td>
                         <td>{{ project.min_students }} - {{ project.max_students }}</td>

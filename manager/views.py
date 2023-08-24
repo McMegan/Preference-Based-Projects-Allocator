@@ -1,5 +1,6 @@
 import csv
 from io import StringIO
+from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
@@ -11,8 +12,14 @@ from django.views.generic import TemplateView, DetailView, ListView, CreateView,
 from django.views.generic.edit import FormMixin
 
 
+from django_filters.views import FilterView
+from django_tables2 import SingleTableView
+
+
 from core import models
+from . import filters
 from . import forms
+from . import tables
 
 
 def user_is_manager(user):
@@ -270,16 +277,24 @@ class UnitStudentsClearView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, 
 # Unit project views
 
 
-class UnitProjectsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, ListView):
+class UnitProjectsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, SingleTableView, FilterView):
     """
         List of projects in unit
     """
     model = models.Project
     template_name = 'manager/projects/unit_projects.html'
-    paginate_by = 25
+
+    table_class = tables.ProjectTable
+    filterset_class = filters.ProjectFilter
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('unit').filter(unit=self.kwargs['pk_unit'])
+
+    def get_context_data(self, **kwargs):
+        f = self.get_filterset(self.filterset_class)
+        self.table_data = f.qs
+        return {**super().get_context_data(**kwargs), 'filter': f, 'has_filter': any(
+            field in self.request.GET for field in set(f.get_fields()))}
 
 
 class UnitProjectsCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
@@ -356,18 +371,18 @@ class UnitProjectUploadListView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
             return self.form_invalid(form)
 
 
-class UnitProjectsDetailView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, DetailView):
+class UnitProjectDetailView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, DetailView):
     """
         View a project in a unit
     """
     model = models.Project
     template_name = 'manager/projects/unit_project_detail.html'
 
-    def get_success_url(self):
-        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('assigned_students')
 
 
-class UnitProjectsUpdateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class UnitProjectUpdateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """
         Update a project in a unit
     """

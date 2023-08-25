@@ -1,12 +1,13 @@
 import csv
 from io import StringIO
-from typing import Any
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
 from django.db.models import Count, Sum, F, Avg, Min, Max
 from django.db.models.functions import Round
 from django.http import HttpResponse
+from django.shortcuts import render, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.edit import FormMixin
@@ -15,11 +16,11 @@ from django.views.generic.edit import FormMixin
 from django_filters.views import FilterView, FilterMixin
 from django_tables2 import SingleTableMixin, MultiTableMixin
 
-
 from core import models
 from . import filters
 from . import forms
 from . import tables
+from . import tasks
 
 
 class FilteredTableMixin(SingleTableMixin, FilterMixin):
@@ -73,9 +74,9 @@ class UnitMixin:
         unit_pk = self.kwargs[self.unit_id_arg]
         if not hasattr(self, 'unit_queryset'):
             self.unit_queryset = models.Unit.objects.filter(pk=unit_pk).annotate(students_count=Count(
-                'enrolled_students', distinct=True)).annotate(projects_count=Count('projects', distinct=True))
-        return models.Unit.objects.filter(pk=unit_pk).annotate(students_count=Count(
-            'enrolled_students', distinct=True)).annotate(projects_count=Count('projects', distinct=True))
+                'enrolled_students', distinct=True)).annotate(projects_count=Count('projects', distinct=True)).annotate(
+                preference_count=Count('enrolled_students__project_preferences'))
+        return self.unit_queryset
 
     def get_unit_object(self):
         if not hasattr(self, 'unit'):
@@ -83,9 +84,11 @@ class UnitMixin:
         return self.unit
 
     def get_context_for_sidebar(self):
+        link_classes = 'link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover'
         unit = self.get_unit_object()
         nav_items = [
-            {'url': 'manager:unit', 'label': unit, 'classes': 'fs-6'},
+            {'url': 'manager:unit', 'label': unit,
+                'classes': f'fs-6 {link_classes}'},
             # Allocator Settings / Setup
             {'label': 'Unit Actions', 'classes': 'fw-semibold'},
             {'url': 'manager:unit-students-new-list',
@@ -105,12 +108,10 @@ class UnitMixin:
             {'url': 'manager:unit-projects',
                 'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
             {'url': 'manager:unit-preferences',
-                'label': 'Preference Distribution', 'classes': 'ms-3'},
-
+             'label': 'Preference Distribution', 'classes': 'ms-3', 'disabled': not unit.preference_count},
+            {'url': 'manager:unit-allocation-results', 'label': 'Allocation Results',
+                'classes': 'ms-3', 'disabled': not unit.is_allocated()},
         ]
-        if unit.is_allocated():
-            nav_items.append({'url': 'manager:unit-allocation-results',
-                              'url': 'manager:unit-allocation-results', 'label': 'Allocation Results', 'classes': 'ms-3'})
         return {'unit': unit, 'nav_items': nav_items}
 
     def get_context_data(self, **kwargs):
@@ -439,13 +440,15 @@ class UnitProjectDetailView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, 
         project_tables = []
         project = self.get_object()
 
-        preference_table = tables.ProjectPreferencesTable(
-            data=project.get_preference_counts())
-        preference_table.name = 'Preference Distribution'
-        preference_table.id = 'preferences'
-        project_tables.append(preference_table)
+        preference_counts = project.get_preference_counts()
+        if preference_counts.exists():
+            preference_table = tables.ProjectPreferencesTable(
+                data=project.get_preference_counts())
+            preference_table.name = 'Preference Distribution'
+            preference_table.id = 'preferences'
+            project_tables.append(preference_table)
 
-        if project.assigned_students:
+        if project.assigned_students.exists():
             allocated_students_table = tables.AllocatedStudentsTable(
                 data=project.assigned_students.all())
             allocated_students_table.name = 'Allocated Students'
@@ -564,8 +567,7 @@ class UnitAllocationStartView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin
             unit.allocation_status = models.Unit.ALLOCATING
             unit.save()
 
-            from .tasks import start_allocation
-            start_allocation.delay(
+            tasks.start_allocation.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit-allocation-results', kwargs={'pk_unit': self.kwargs['pk_unit']})))
             return self.form_valid(form)
         else:
@@ -612,12 +614,18 @@ class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
+
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
 
     def form_valid(self, form):
-        return self.make_allocation_results_csv()
+        from . import export
+        if form.cleaned_data.get('email_results'):
+            export.email_allocation_results_csv(
+                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
+            return super().form_valid(form)
+        return export.download_allocation_results_csv(unit_id=self.kwargs['pk_unit'])
 
     def get_unit_queryset(self):
         if not hasattr(self, 'unit_queryset'):
@@ -631,31 +639,12 @@ class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
         return super().test_func() and self.get_unit_object().is_allocated()
 
     def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
         enrolled_students_list = models.EnrolledStudent.objects.filter(
             unit=self.kwargs['pk_unit'])
         submitted_prefs_count = enrolled_students_list.annotate(project_preference_count=Count(
             'project_preferences')).filter(project_preference_count__gt=0).count()
-        not_submitted_prefs_count = enrolled_students_list.count() - \
-            submitted_prefs_count
+        not_submitted_prefs_count = enrolled_students_list.count() - submitted_prefs_count
 
-        return {**super().get_context_data(**kwargs), 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count}
-
-    def make_allocation_results_csv(self):
-        unit = self.get_unit_object()
-
-        response = HttpResponse(
-            content_type="text/csv",
-            headers={
-                "Content-Disposition": f'attachment; filename="{unit.code}-project-allocation.csv"'},
-        )
-
-        # Write to file
-        writer = csv.writer(response)
-        # Add headers to file
-        writer.writerow(['student_id', 'project_number', 'project_name'])
-        # Write students to file
-        for student in unit.enrolled_students.all():
-            writer.writerow(
-                [student.student_id, student.assigned_project.number, student.assigned_project.name])
-
-        return response
+        return {**context, 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count}

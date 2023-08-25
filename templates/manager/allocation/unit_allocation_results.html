@@ -33,6 +33,7 @@
     <hr class="my-4">
 {% endblock %}
 {% block content %}
+    {% if unit.completed_allocation %}
     <div class="alert alert-{% if unit.allocation_successful %}success{% else %}danger{% endif %}" role="alert">
         <div class="fw-bold">Allocation: {{ unit.get_allocation_descriptive }}</div>
         {% if unit.allocation_successful %}
@@ -41,6 +42,7 @@
             The allocation of students to projects failed.
         {% endif %}
     </div>
+    {% endif %}
     {% if unit.allocation_successful %}
         <div class="my-5">View the allocation by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-students' unit.id %}">students</a> or by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-projects' unit.id %}">projects</a>.</div>
         <form method="post" enctype="multipart/form-data">

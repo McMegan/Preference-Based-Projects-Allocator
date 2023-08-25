@@ -26,12 +26,12 @@
                     <p>There are too few students enrolled in the unit compared to the minimum project spaces.</p>
                     <p>
                         <div><span class="fw-semibold">Students:</span> {{ unit.students_count }}</div>
-                        <div><span class="fw-semibold">Minimum Spaces:</span> {{ min_project_space}}</div>
+                        <div><span class="fw-semibold">Minimum Spaces:</span> {{ min_project_space }}</div>
                     </p>
                     <p class="mb-0">To fix this:</p>
                     <ul class="my-0">
-                        <li>change the minimum students spaces for a project,</li>
-                        <li>or add students to the student list.</li>
+                        <li>change the minimum group size for a project, or</li>
+                        <li>add students to the student list.</li>
                     </ul>
                 </div>
             {% endif %}
@@ -40,13 +40,13 @@
                     <p>There are too many students enrolled in the unit compared to the maximum project spaces.</p>
                     <p>
                         <div><span class="fw-semibold">Students:</span> {{ unit.students_count }}</div>
-                        <div><span class="fw-semibold">Maximum Spaces:</span> {{ max_project_spaces}}</div>
+                        <div><span class="fw-semibold">Maximum Spaces:</span> {{ max_project_spaces }}</div>
                     </p>
                     <p class="mb-0">To fix this:</p>
                     <ul class="my-0">
-                        <li>change the maximum students spaces for a project,</li>
-                        <li>add projects to the project list,</li>
-                        <li>or remove students from the student list.</li>
+                        <li>change the maximum group size for a project, or</li>
+                        <li>add projects to the project list, or</li>
+                        <li>remove students from the student list.</li>
                     </ul>
                 </div>
             {% endif %}
@@ -56,15 +56,15 @@
                     This unit is currently allocating students to projects.
                 </div>
             {% else %}
-                {% if unit.is_allocated %}
-                    <div class="alert alert-{% if unit.allocation_successful %}success{% else %}danger{% endif %}" role="alert">
-                        <div class="fw-bold">Allocation: {{ unit.get_allocation_descriptive }}</div>
-                        {% if unit.allocation_successful %}
-                            The allocation of students to projects was completed successfully.
-                        {% else %}
-                            The allocation of students to projects failed.
-                        {% endif %}
-                    </div>
+                {% if unit.completed_allocation %}
+                <div class="alert alert-{% if unit.allocation_successful %}success{% else %}danger{% endif %}" role="alert">
+                    <div class="fw-bold">Allocation: {{ unit.get_allocation_descriptive }}</div>
+                    {% if unit.allocation_successful %}
+                        The allocation of students to projects was completed successfully.
+                    {% else %}
+                        The allocation of students to projects failed.
+                    {% endif %}
+                </div>
                 {% endif %}
                 {% if unit.preference_submission_set and unit.preference_submission_ended %}
                     <div>

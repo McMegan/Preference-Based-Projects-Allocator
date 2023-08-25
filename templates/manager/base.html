@@ -12,9 +12,7 @@
                 <div id="sidebar">
                     <div class="card bg-body-tertiary border-0 border-top rounded-0 rounded-bottom">
                         <div class="card-body">
-                            <ul class="navbar-nav">
-                                {% include 'manager/sidebar_nav.html' %}
-                            </ul>
+                            {% include 'manager/sidebar_nav.html' %}
                         </div>
                     </div>
                 </div>
@@ -24,6 +22,9 @@
     <div class="col">
         <div class="container-fluid px-0 py-3">
             <div>
+                {% if not unit.is_active %}
+                    <div class="alert alert-warning text-center text-uppercase" role="alert" style="font-size: 0.75rem;">This unit is inactive.</div>
+                {% endif %}
                 <h1>{% block page_title %}{% endblock %}</h1>
                 <hr class="my-4">
                 {% block extra_header %}{% endblock %}

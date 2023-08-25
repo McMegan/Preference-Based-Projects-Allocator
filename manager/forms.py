@@ -370,14 +370,17 @@ class ExportAllocationForm(forms.Form):
     """
         Form for exporting the allocation results
     """
+    email_results = forms.BooleanField(
+        label='Send file via email', required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.helper = FormHelper()
         self.helper.layout = Layout(
+            'email_results',
             FormActions(
-                Submit('submit', 'Export Allocation Results as CSV',
+                Submit('submit', 'Download Allocation Results as CSV',
                        css_class='btn btn-primary'),
             ),
         )

@@ -104,6 +104,9 @@ class Unit(models.Model):
     def preference_submission_ended(self) -> bool:
         return timezone.now() > self.preference_submission_end
 
+    def completed_allocation(self):
+        return self.allocation_status not in {self.NOT_STARTED, self.ALLOCATING}
+
     def is_allocating(self):
         return self.allocation_status == self.ALLOCATING
 

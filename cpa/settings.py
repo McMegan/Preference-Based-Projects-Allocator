@@ -164,6 +164,5 @@ CELERY_TIMEZONE = 'Australia/Melbourne'
 
 DJANGO_CELERY_RESULTS_TASK_ID_MAX_LENGTH = 191
 
-
 # Tables
 DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5-responsive.html'

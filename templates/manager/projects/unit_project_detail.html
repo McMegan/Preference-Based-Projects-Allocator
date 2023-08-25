@@ -2,7 +2,7 @@
 
 {% load render_table from django_tables2 %}
 
-{% block page_title %}{{project.number}}: {{project.name}}{% endblock %}
+{% block page_title %}{{ project.number }}: {{ project.name }}{% endblock %}
 {% block extra_header %}
     <div class="my-3 mx-3 d-flex gap-3 flex-column">
         <div class="d-flex gap-3">
@@ -31,11 +31,12 @@
     <hr class="my-4">
 {% endblock %}
 {% block content %}
+    {% if tables %}
     <ul class="nav nav-tabs border-0" id="tab" role="tablist">
         {% for table in tables %}
         {% if table and table.data %}
             <li class="nav-item" role="presentation">
-                <button class="nav-link {% if forloop.first %}active{% endif %} fs-6" id="{{table.id}}-tab" data-bs-toggle="tab" data-bs-target="#{{table.id}}-tab-pane" type="button" role="tab" aria-controls="{{table.id}}-tab-pane" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{table.name}}</button>
+                <button class="nav-link {% if forloop.first %}active{% endif %} fs-6" id="{{ table.id }}-tab" data-bs-toggle="tab" data-bs-target="#{{ table.id }}-tab-pane" type="button" role="tab" aria-controls="{{ table.id }}-tab-pane" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{ table.name }}</button>
             </li>
         {% endif %}
         {% endfor %}
@@ -44,10 +45,11 @@
         {% for table in tables %}
         {% if table and table.data %}
         
-            <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="{{table.id}}-tab-pane" role="tabpanel" aria-labelledby="{{table.id}}-tab" tabindex="0">
+            <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="{{ table.id }}-tab-pane" role="tabpanel" aria-labelledby="{{ table.id }}-tab" tabindex="0">
                 {% render_table table %}
             </div>
         {% endif %}
         {% endfor %}
     </div>
+    {% endif %}
 {% endblock %}

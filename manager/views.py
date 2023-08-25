@@ -1,6 +1,5 @@
 import csv
 from io import StringIO
-from typing import Any, Callable, Type
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
@@ -76,6 +75,7 @@ class UnitMixin:
                 'enrolled_students', distinct=True)).annotate(projects_count=Count('projects', distinct=True)).annotate(
                 preference_count=Count('enrolled_students__project_preferences'))
         return self.unit_queryset
+    # enrolled_students__assigned_project
 
     def get_unit_object(self):
         if not hasattr(self, 'unit'):
@@ -199,6 +199,11 @@ class UnitStudentsListView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, F
 
     def get_queryset(self):
         return super().get_queryset().filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('assigned_project')
+
+    def get_context_data(self, **kwargs):
+        allocated_student_count = self.get_unit_object().enrolled_students.filter(
+            assigned_project__isnull=False).count()
+        return {**super().get_context_data(**kwargs), 'allocated_student_count': allocated_student_count, 'unallocated_student_count': self.get_unit_object().enrolled_students.count()-allocated_student_count}
 
 
 class UnitStudentCreateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
@@ -658,8 +663,12 @@ class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMix
 
         enrolled_students_list = models.EnrolledStudent.objects.filter(
             unit=self.kwargs['pk_unit'])
+        student_count = enrolled_students_list.count()
         submitted_prefs_count = enrolled_students_list.annotate(project_preference_count=Count(
             'project_preferences')).filter(project_preference_count__gt=0).count()
         not_submitted_prefs_count = enrolled_students_list.count() - submitted_prefs_count
 
-        return {**context, 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count}
+        allocated_student_count = self.get_unit_object().enrolled_students.filter(
+            assigned_project__isnull=False).count()
+
+        return {**context, 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count, 'submitted_prefs_perc': round((submitted_prefs_count/student_count)*100, 1), 'allocated_student_count': allocated_student_count, 'unallocated_student_count': self.get_unit_object().enrolled_students.count()-allocated_student_count}

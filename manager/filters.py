@@ -17,7 +17,7 @@ from core import models
 SHOW_ALLOCATED = 'ALL'
 SHOW_NOT_ALLOCATED = 'NON_ALL'
 REGISTERED_STUDENT_CHOICES = ((SHOW_ALLOCATED, 'Allocated Projects'),
-                              (SHOW_NOT_ALLOCATED, 'Non-Allocated Projects'))
+                              (SHOW_NOT_ALLOCATED, 'Unallocated Projects'))
 
 
 class ProjectFilter(django_filters.FilterSet):
@@ -158,10 +158,33 @@ def projects(request):
     return models.Project.objects.all().filter(unit=pk_unit)
 
 
+SHOW_STUDENT_ALLOCATED = 'ALL'
+SHOW_STUDENT_NOT_ALLOCATED = 'NON_ALL'
+REGISTERED_STUDENT_CHOICES = ((SHOW_STUDENT_ALLOCATED, 'Allocated Students'),
+                              (SHOW_NOT_ALLOCATED, 'Unallocated Students'))
+
+
 class StudentAllocatedFilter(StudentFilter):
     assigned_project = django_filters.ModelMultipleChoiceFilter(
-        queryset=projects)
-    assigned_preference_rank = django_filters.NumberFilter()
+        queryset=projects, label='Allocated Project')
+    assigned_preference_rank = django_filters.NumberFilter(
+        label='Allocated Preference')
+
+    allocated = django_filters.MultipleChoiceFilter(
+        field_name='assigned_project',
+        label='', method='filter_allocated',
+        choices=REGISTERED_STUDENT_CHOICES,
+        widget=forms.CheckboxSelectMultiple(choices=REGISTERED_STUDENT_CHOICES))
+
+    def filter_allocated(self, queryset, name, value):
+        if len(value) == 2:
+            return queryset
+        elif SHOW_ALLOCATED in value:
+            lookup = '__'.join([name, 'isnull'])
+            return queryset.filter(**{lookup: False})
+        else:
+            lookup = '__'.join([name, 'isnull'])
+            return queryset.filter(**{lookup: True})
 
 
 student_filter_form_layout_main = Fieldset(
@@ -199,7 +222,8 @@ class StudentAllocatedFilterFormHelper(StudentFilterFormHelper):
                 Fieldset(
                     '',
                     'assigned_project',
-                    InlineField('assigned_preference_rank'),
+                    InlineField('assigned_preference_rank', css_class='mb-3'),
+                    InlineRadios('allocated'),
                     css_class='mb-3 d-flex flex-wrap column-gap-4 align-items-center'
                 ),
                 student_filter_form_layout_actions,

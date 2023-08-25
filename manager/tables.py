@@ -50,7 +50,7 @@ class ProjectTable(tables.Table):
                     """)
 
     def render_actions(self, value, record):
-        return format_html(f"""<div class="d-flex flex-wrap gap-2 justify-content-end">
+        return format_html(f"""<div class="d-flex gap-2 justify-content-end">
                                 <a class="btn btn-primary btn-sm" href="{reverse('manager:unit-project-update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
                                 <a class="btn btn-danger btn-sm" href="{reverse('manager:unit-project-remove', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
                             </div>

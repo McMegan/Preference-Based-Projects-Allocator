@@ -1,13 +1,13 @@
 import csv
 from io import StringIO
 import os
-from typing import Any
 
 from django import forms
+from django.db.models import Q, ExpressionWrapper, BooleanField
 
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML
+from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML, Field
 from crispy_bootstrap5.bootstrap5 import FloatingField
 
 from core import models
@@ -175,6 +175,41 @@ class StudentListForm(forms.Form):
         return super().clean()
 
 
+class StudentUpdateForm(forms.ModelForm):
+    """
+        Form for updating a student's allocation in a unit
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.unit = kwargs.pop('unit', None)
+
+        super().__init__(*args, **kwargs)
+
+        self.fields.get('assigned_project').queryset = self.unit.projects
+        self.fields.get('assigned_project').required = False
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            'assigned_project',
+            FormActions(
+                Submit('submit', 'Save Student Allocation',
+                       css_class='btn btn-primary'),
+            )
+        )
+
+    def save(self, commit: bool = ...):
+        if self.instance.assigned_project:
+            assigned_project_pref = self.instance.project_preferences.filter(
+                project_id=self.instance.assigned_project.id)
+            self.instance.assigned_preference_rank = assigned_project_pref.first(
+            ).rank if assigned_project_pref.exists() else None
+        return super().save(commit)
+
+    class Meta:
+        model = models.EnrolledStudent
+        fields = ['assigned_project']
+
+
 class StudentListClearForm(forms.Form):
     """
         Form for clearing the list of students
@@ -244,9 +279,39 @@ class ProjectUpdateForm(ProjectForm):
     """
 
     def __init__(self, *args, **kwargs):
+        self.unit = kwargs.pop('unit', None)
+
         super().__init__(*args, **kwargs)
+
         self.helper.layout = Layout(
             project_form_layout_main,
+            FormActions(
+                Submit('submit', 'Save Project',
+                       css_class='btn btn-primary'),
+            )
+        )
+
+
+class ProjectAllocatedUpdateForm(ProjectUpdateForm):
+    """
+        Form for updating a project in a unit
+    """
+    assigned_students = forms.ModelMultipleChoiceField(
+        queryset=models.EnrolledStudent.objects.all())
+
+    def __init__(self, *args, **kwargs):
+        unit = kwargs.pop('unit')
+
+        super().__init__(*args, **kwargs)
+
+        self.fields.get(
+            'assigned_students').queryset = models.EnrolledStudent.objects.filter(unit_id=unit.id).annotate(is_assigned=ExpressionWrapper(Q(assigned_project_id=self.instance.id), output_field=BooleanField())).order_by('-is_assigned')
+        self.fields.get(
+            'assigned_students').initial = self.instance.assigned_students.all()
+
+        self.helper.layout = Layout(
+            project_form_layout_main,
+            Fieldset('', Field('assigned_students', size=10)),
             FormActions(
                 Submit('submit', 'Save Project',
                        css_class='btn btn-primary'),
@@ -362,25 +427,5 @@ class StartAllocationForm(forms.Form):
             FormActions(
                 Submit('submit', submit_text,
                        css_class=f'btn {submit_btn_colour}'),
-            ),
-        )
-
-
-class ExportAllocationForm(forms.Form):
-    """
-        Form for exporting the allocation results
-    """
-    email_results = forms.BooleanField(
-        label='Send file via email', required=False)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            'email_results',
-            FormActions(
-                Submit('submit', 'Download Allocation Results as CSV',
-                       css_class='btn btn-primary'),
             ),
         )

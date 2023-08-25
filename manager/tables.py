@@ -135,10 +135,20 @@ class StudentAllocatedTable(StudentTable):
                     'assigned_preference_rank')
 
     def render_assigned_project(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.assigned_project.id})}">{record.assigned_project.number}: {record.assigned_project.name}</a>""")
+        if record.assigned_project:
+            return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.assigned_project.id})}">{record.assigned_project.number}: {record.assigned_project.name}</a>""")
+        else:
+            return 'n/a'
 
     def render_assigned_preference_rank(self, value, record):
         return value if value else 'n/a'
+
+    def render_actions(self, value, record):
+        return format_html(f"""<div class="d-flex flex-wrap gap-2 justify-content-end">
+                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit-student-update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit Allocation</a>
+                                <a class="btn btn-danger btn-sm" href="{reverse('manager:unit-student-remove', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
+                            </div>
+                            """)
 
 
 class PreferencesTable(tables.Table):

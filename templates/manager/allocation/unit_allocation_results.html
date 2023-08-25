@@ -46,7 +46,11 @@
     {% if unit.allocation_successful %}
         <div class="my-5">View the allocation by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-students' unit.id %}">students</a> or by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-projects' unit.id %}">projects</a>.</div>
         <form method="post" enctype="multipart/form-data">
-            {% csrf_token %} {% crispy form %}
+            {% csrf_token %}
+            <div class="mb-3">
+                <button type="submit" name="download_results" class="btn btn-primary"><i class="bi bi-download"></i><span class="ms-1">Download Allocation Results as CSV</span></button>
+                <button type="submit" name="email_results" class="btn btn-primary"><i class="bi bi-envelope-at"></i><span class="ms-1">Email Allocation Results as CSV</span></button>
+            </div>
         </form>
     {% endif %}
 {% endblock content %}

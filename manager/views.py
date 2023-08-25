@@ -1,17 +1,16 @@
 import csv
 from io import StringIO
+from typing import Any, Callable, Type
 
-from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
 from django.db.models import Count, Sum, F, Avg, Min, Max
 from django.db.models.functions import Round
-from django.http import HttpResponse
-from django.shortcuts import render, redirect
+from django.forms.models import BaseModelForm
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.edit import FormMixin
-
 
 from django_filters.views import FilterView, FilterMixin
 from django_tables2 import SingleTableMixin, MultiTableMixin
@@ -296,6 +295,25 @@ class UnitStudentDetailView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, 
         return super().get_queryset().filter(student=self.kwargs['pk']).prefetch_related('project')
 
 
+class UnitStudentUpdateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """
+        Update a student allocation in a unit
+    """
+    model = models.EnrolledStudent
+    template_name = 'manager/students/unit_student_update.html'
+
+    form_class = forms.StudentUpdateForm
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
+
+    def get_success_url(self):
+        return reverse('manager:unit-student-detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
+
+    def test_func(self):
+        return super().test_func() and self.get_unit_object().is_allocated()
+
+
 class UnitStudentDeleteView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """
         Remove a single student from a unit
@@ -465,9 +483,14 @@ class UnitProjectUpdateView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, 
     """
         Update a project in a unit
     """
-    form_class = forms.ProjectUpdateForm
     model = models.Project
     template_name = 'manager/projects/unit_project_update.html'
+
+    def get_form_class(self):
+        return forms.ProjectAllocatedUpdateForm if self.get_unit_object().is_allocated else forms.ProjectUpdateForm
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
 
     def get_success_url(self):
         return reverse('manager:unit-project-detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
@@ -601,30 +624,22 @@ class UnitAllocationStartView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin
         return {**context, 'submitted_prefs_count': submitted_prefs_count, 'not_submitted_prefs_count': not_submitted_prefs_count, **project_spaces}
 
 
-class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, TemplateView):
+class UnitAllocationResultsView(UnitMixin, LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """
         View allocation results & stats
     """
     template_name = 'manager/allocation/unit_allocation_results.html'
-    form_class = forms.ExportAllocationForm
 
     def get_success_url(self):
         return self.request.path
 
     def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        if form.is_valid():
-
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
-
-    def form_valid(self, form):
+        email_results = 'email_results' in request.POST
         from . import export
-        if form.cleaned_data.get('email_results'):
+        if email_results:
             export.email_allocation_results_csv(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
-            return super().form_valid(form)
+            return HttpResponseRedirect(self.get_success_url())
         return export.download_allocation_results_csv(unit_id=self.kwargs['pk_unit'])
 
     def get_unit_queryset(self):

@@ -20,8 +20,7 @@ def load_data():
     if LOAD_PROJECTS:
         pass
     if LOAD_PREFS:
-        load_prefs(unit_code='SMALL',
-                   pref_list=preferences_full.pref_list, replace=True)
+        # load_prefs(unit_code='SMALL',pref_list=preferences_full.pref_list, replace=True)
         load_prefs(unit_code='FULL00001',
                    pref_list=preferences_full.pref_list, replace=True)
 

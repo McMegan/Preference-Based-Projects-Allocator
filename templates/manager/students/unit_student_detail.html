@@ -5,7 +5,7 @@
         <tbody>
             <tr><th class="fw-semibold">Student ID</th><td>{{ object.student_id }}</td></tr>
             <tr><th class="fw-semibold">Registered</th><td><span class ="badge rounded-pill text-bg-{% if object.is_registered %}success{% else %}danger{% endif %}"><i class="bi bi-{% if object.is_registered %}check{% else %}x{% endif %}-lg"></i></span></td></tr>
-            <tr><th class="fw-semibold">Submitted Preferences</th><td><span class ="badge rounded-pill text-bg-{% if object.is_registered and object.project_preferences_count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if object.is_registered and object.project_preferences_count %}check{% else %}x{% endif %}-lg"></i></span></td></tr>
+            <tr><th class="fw-semibold">Submitted Preferences</th><td><span class ="badge rounded-pill text-bg-{% if object.project_preferences_count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if object.project_preferences_count %}check{% else %}x{% endif %}-lg"></i></span></td></tr>
             {% if unit.is_allocated %}
                 <tr><th class="fw-semibold">Allocated Project</th><td>{% if object.allocated_project %}<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id object.allocated_project_id %}">{{ object.allocated_project.number }}: {{ object.allocated_project.name }}</a>{% else %}n/a{% endif %}</td></tr>
                 <tr><th class="fw-semibold">Allocated Preference</th><td>{% if object.allocated_preference_rank %}{{ object.allocated_preference_rank }}{% else %}n/a{% endif %}</td></tr>

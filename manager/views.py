@@ -94,7 +94,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
             {'url': 'manager:unit-projects',
                 'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
             {'url': 'manager:unit-preferences', 'label': 'Submitted Preferences',
-                'classes': 'ms-3'},
+                'classes': 'ms-3', 'disabled': not unit.preference_count},
             {'url': 'manager:unit-preferences-distribution',
              'label': 'Preference Distribution', 'classes': 'ms-3', 'disabled': not unit.preference_count},
             {'url': 'manager:unit-allocation-results', 'label': 'Allocation Results',
@@ -687,7 +687,7 @@ class UnitAllocationStartView(UnitMixin, FormMixin, TemplateView):
         form = self.get_form()
         if form.is_valid():
             unit = self.get_unit_object()
-            unit.allocation_status = models.Unit.ALLOCATING
+            unit.is_allocating = True
             unit.save()
 
             tasks.start_allocation.delay(

@@ -16,8 +16,10 @@
     <table class="table table-borderless">
         <tbody>
             <tr><th class="fw-semibold">Total No. Students</th><td>{{ unit.students_count }}</td></tr>
+            {% if unit.is_allocated %}
             <tr><th class="fw-semibold">No. Allocated Students</th><td>{{ allocated_student_count }}</td></tr>
             <tr><th class="fw-semibold">No. Unallocated Students</th><td>{{ unallocated_student_count }}</td></tr>
+            {% endif %}
         </tbody>
     </table>
     <div class="my-3 mx-2 d-flex gap-2 flex-wrap">

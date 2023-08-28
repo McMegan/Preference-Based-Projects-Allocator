@@ -8,7 +8,7 @@ class Allocator:
     def __init__(self, unit: models.Unit):
         previous_allocation_status = unit.allocation_status
 
-        unit.allocation_status = models.Unit.ALLOCATING
+        unit.is_allocating = True
         unit.save()
 
         self.solver = pywraplp.Solver.CreateSolver('SCIP')
@@ -44,6 +44,7 @@ class Allocator:
         if allocation_successful:
             self.save_allocation()
         unit.allocation_status = result if allocation_successful or not previous_allocation_successful else previous_allocation_status
+        unit.is_allocating = False
         unit.save()
 
     def make_vars(self):

@@ -1,24 +1,18 @@
 {% extends 'manager/base.html' %}
 
-{% block page_title %}Preference Distribution{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Total No. Students</div>
-            <div>{{ unit.students_count }}</div>
+    <table class="table table-borderless">
+        <tbody>
+            <tr><th class="fw-semibold">Total No. Students</th><td>{{ unit.students_count }}</td></tr>
+            <tr><th class="fw-semibold">Percentage of Students who have Submitted Preferences</th><td>{{ submitted_prefs_perc }}% ({{ submitted_prefs_count }} Students)</td></tr>
+        </tbody>
+    </table>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="my-3 mx-2 d-flex gap-2 flex-wrap">
+            <button type="submit" name="download_results" class="btn btn-primary"><i class="bi bi-download"></i><span class="ms-1">Download Student Preferences as CSV</span></button>
+            <button type="submit" name="email_results" class="btn btn-primary"><i class="bi bi-envelope-at"></i><span class="ms-1">Email Student Preferences as CSV</span></button>
         </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Total No. Students who Submitted Preferences</div>
-            <div>{{ submitted_prefs_count }}</div>
-        </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Total No. Students who did not Submit Preferences</div>
-            <div>{{ not_submitted_prefs_count }}</div>
-        </div>
-        <div class="d-grid gap-3">
-            <div class="fw-semibold">Project Popularity</div>
-            <div>The popularity of a project is calculated by summing the of number of students who preferred a project multiplied by the rank at which they preferred the project. Projects with a higher popularity index were more popular.</div>
-        </div>
-    </div>
+    </form>
     <hr class="my-4">
 {% endblock %}

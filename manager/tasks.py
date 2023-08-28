@@ -10,7 +10,7 @@ from .export import generate_allocation_results_csv
 @shared_task
 def start_allocation(unit_id, manager_id, results_url):
     unit = models.Unit.objects.filter(pk=unit_id).prefetch_related('projects').prefetch_related(
-        'enrolled_students').prefetch_related('enrolled_students__project_preferences').first()
+        'students').prefetch_related('students__project_preferences').first()
 
     Allocator(unit=unit)
 
@@ -38,7 +38,7 @@ def start_allocation(unit_id, manager_id, results_url):
 @shared_task
 def export_allocation_results(unit_id, manager_id, email_results):
     unit = models.Unit.objects.filter(pk=unit_id).prefetch_related('projects').prefetch_related(
-        'enrolled_students').prefetch_related('enrolled_students__project_preferences').first()
+        'students').prefetch_related('students__project_preferences').first()
     filename = f'{unit.code}-project-allocation.csv'
 
     attachment = generate_allocation_results_csv(unit)

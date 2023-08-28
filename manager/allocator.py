@@ -15,7 +15,7 @@ class Allocator:
 
         self.unit = unit
         self.projects = unit.projects.all()
-        self.students = unit.enrolled_students.all()
+        self.students = unit.students.all()
 
         # Make variables for projects & students
         self.make_vars()
@@ -118,18 +118,12 @@ class Allocator:
                         else:
                             rank = None
 
-                        student.assigned_project_id = project.id
-                        student.assigned_preference_rank = rank
+                        student.allocated_project_id = project.id
+                        student.allocated_preference_rank = rank
                         student_allocated.append(student)
-                if len(project_allocated_ranks) != 0:
-                    project.avg_allocated_pref = sum(
-                        project_allocated_ranks) / len(project_allocated_ranks)
-                    project_updated.append(project)
 
-        models.EnrolledStudent.objects.bulk_update(
-            student_allocated, fields=['assigned_project', 'assigned_preference_rank'])
-        models.Project.objects.bulk_update(
-            project_updated, fields=['avg_allocated_pref'])
+        models.Student.objects.bulk_update(
+            student_allocated, fields=['allocated_project', 'allocated_preference_rank'])
 
     def get_preference_rank(self, student, project):
         """

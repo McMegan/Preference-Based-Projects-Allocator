@@ -52,7 +52,7 @@ class StudentUserRegistrationForm(UserCreationForm):
 
     def clean(self):
         # If an enrollment doesn't exist for this username / student id
-        if self.cleaned_data.get('username') and not models.EnrolledStudent.objects.filter(
+        if self.cleaned_data.get('username') and not models.Student.objects.filter(
                 student_id=self.cleaned_data.get('username')).exists():
             raise forms.ValidationError(
                 {'username': 'Invalid student ID. This student ID has not been registered for any units.'})

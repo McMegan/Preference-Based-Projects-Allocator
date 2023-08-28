@@ -1,0 +1,13 @@
+{% extends 'manager/base.html' %}
+
+{% block extra_header %}
+    <table class="table table-borderless">
+        <tbody>
+            <tr><th class="fw-semibold">Total No. Students</th><td>{{ unit.students_count }}</td></tr>
+            <tr><th class="fw-semibold">Percentage of Students who have Submitted Preferences</th><td>{{ submitted_prefs_perc }}% ({{ submitted_prefs_count }} Students)</td></tr>
+            <tr><th class="fw-semibold" colspan="2">Project Popularity</th></tr>
+            <tr><td colspan="2">The popularity of a project is calculated by summing the of number of students who preferred a project multiplied by the rank at which they preferred the project. Projects with a higher popularity index were more popular.</td></tr>
+        </tbody>
+    </table>
+    <hr class="my-4">
+{% endblock %}

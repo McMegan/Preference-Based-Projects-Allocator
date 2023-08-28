@@ -14,8 +14,7 @@ class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return super().get_queryset().filter(
-            enrolled_students__user__id=self.request.user.id).order_by('-is_active')
+        return super().get_queryset().filter(students__user__id=self.request.user.id).order_by('-is_active')
 
     def test_func(self):
         return self.request.user.is_student

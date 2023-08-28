@@ -1,14 +1,15 @@
 {% extends 'manager/base.html' %}
 
-{% block page_title %}Project List{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">No. Projects</div>
-            <div>{{ unit.projects_count }}</div>
-        </div>
-    </div>
-    <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
+    <table class="table table-borderless">
+        <tbody>
+            <tr><th class="fw-semibold">No. Projects</th><td>{{ unit.projects_count }}</td></tr>
+            {% if unit.is_allocated %}
+                <tr><th class="fw-semibold">Allocated Projects</th><td>{{ allocated_projects_count }}</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+    <div class="my-3 mx-2 d-flex gap-2 flex-wrap">
         <a class="btn btn-primary" href="{% url 'manager:unit-projects-new-list' unit.id %}">Upload Project List</a>
         <a class="btn btn-primary" href="{% url 'manager:unit-projects-new' unit.id %}">Add Project</a>
         <a class="btn btn-danger {% if not table.data %}disabled{% endif %}" href="{% url 'manager:unit-projects-clear' unit.id %}" {% if not table.data %}aria-disabled="true"{% endif %}>Clear Project List</a>

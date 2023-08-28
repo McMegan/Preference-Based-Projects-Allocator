@@ -1,18 +1,7 @@
 {% extends 'manager/base.html' %}
 
-{% load crispy_forms_tags %} 
-
-{% block page_title %}Allocation Results{% endblock %}
-{% block extra_header %}
-    <div class="alert alert-{% if unit.allocation_successful %}success{% else %}danger{% endif %}" role="alert">
-        <div class="fw-bold">Allocation: {{ unit.get_allocation_descriptive }}</div>
-        {% if unit.allocation_successful %}
-            The allocation of students to projects was completed successfully.
-        {% else %}
-            The allocation of students to projects failed.
-        {% endif %}
-    </div>
-    {% if unit.is_allocated and unallocated_student_count %}
+{% block warnings %}
+    {% if unit.completed_allocation and unallocated_student_count %}
         <div class="alert alert-warning">
             <p>There {% if unallocated_student_count > 1%}are{% else %}is{% endif %} {{ unallocated_student_count }} student{% if unallocated_student_count > 1%}s{% endif %} who {% if unallocated_student_count > 1%}are{% else %}is{% endif %} not allocated to a project.</p>
             <p class="mb-0">To fix this:</p>
@@ -22,28 +11,27 @@
             </ul>
         </div>
     {% endif %}
-    {% if unit.allocation_successful %}
+{% endblock %}
+{% block extra_header %}
     <table class="table table-borderless">
         <tbody>
-            <tr><th>Total No. Students</th><td>{{ unit.students_count }}</td></tr>
-            <tr><th>Students Preference Submission Rate</th><td>{{ submitted_prefs_perc }}% ({{ submitted_prefs_count }} Students)</td></tr>
-            <tr><th>Average Allocated Preference</th><td>{{ unit.avg_allocated_pref_rounded }}</td></tr>
-            <tr><th>Best Allocated Preference</th><td>{{ unit.min_allocated_pref }}</td></tr>
-            <tr><th>Worst Allocated Preference</th><td>{{ unit.max_allocated_pref }}</td></tr>
+            <tr><th class="fw-semibold">Total No. Students</th><td>{{ unit.students_count }}</td></tr>            
+            <tr><th class="fw-semibold">Student Preference Submission Rate</th><td>{{ submitted_prefs_perc }}% ({{ submitted_prefs_count }} Student{% if submitted_prefs_count > 1 %}s{% endif %})</td></tr>
+            <tr><th class="fw-semibold">Allocation Status</th><td>{{ unit.get_allocation_descriptive }}</td></tr>
+            <tr><th class="fw-semibold">Average Allocated Preference</th><td>{{ unit.avg_allocated_pref_rounded }}</td></tr>
+            <tr><th class="fw-semibold">Best Allocated Preference</th><td>{{ unit.min_allocated_pref }}</td></tr>
+            <tr><th class="fw-semibold">Worst Allocated Preference</th><td>{{ unit.max_allocated_pref }}</td></tr>
         </tbody>
     </table>
-    {% endif %}
     <hr class="my-4">
 {% endblock %}
 {% block content %}
-    {% if unit.allocation_successful %}
-        <div class="mb-5">View the allocation by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-students' unit.id %}">students</a> or by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-projects' unit.id %}">projects</a>.</div>
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="mb-3 d-flex flex-wrap gap-2">
-                <button type="submit" name="download_results" class="btn btn-primary"><i class="bi bi-download"></i><span class="ms-1">Download Allocation Results as CSV</span></button>
-                <button type="submit" name="email_results" class="btn btn-primary"><i class="bi bi-envelope-at"></i><span class="ms-1">Email Allocation Results as CSV</span></button>
-            </div>
-        </form>
-    {% endif %}
+    <div class="my-4">View the allocation by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-students' unit.id %}">student</a> or by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-projects' unit.id %}">project</a>.</div>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3 d-flex flex-wrap gap-2">
+            <button type="submit" name="download_results" class="btn btn-primary"><i class="bi bi-download"></i><span class="ms-1">Download Allocation Results as CSV</span></button>
+            <button type="submit" name="email_results" class="btn btn-primary"><i class="bi bi-envelope-at"></i><span class="ms-1">Email Allocation Results as CSV</span></button>
+        </div>
+    </form>
 {% endblock content %}

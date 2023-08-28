@@ -1,25 +1,16 @@
 {% extends 'manager/base.html' %}
 
-{% block page_title %}Start Project Allocation{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Total No. Students</div>
-            <div>{{ unit.students_count }}</div>
-        </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Total No. Students who Submitted Preferences</div>
-            <div>{{ submitted_prefs_count }}</div>
-        </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Total No. Students who did not Submit Preferences</div>
-            <div>{{ not_submitted_prefs_count }}</div>
-        </div>
-    </div>
+    <table class="table table-borderless">
+        <tbody>
+            <tr><th class="fw-semibold">Total No. Students</th><td>{{ unit.students_count }}</td></tr>
+            <tr><th class="fw-semibold">Student Preference Submission Rate</th><td>{{ submitted_prefs_perc }}% ({{ submitted_prefs_count }} Student{% if submitted_prefs_count > 1 %}s{% endif %})</td></tr>
+        </tbody>
+    </table>
     <hr class="my-4">
 {% endblock %}
 {% block content %}
-    {% if unit.projects.count and unit.enrolled_students.count %}
+    {% if unit.projects.count and unit.students.count %}
         {% if too_few_students or too_many_students %}
             {% if too_few_students %}
                 <div class="alert alert-danger" role="alert">
@@ -57,9 +48,9 @@
                 </div>
             {% else %}
                 {% if unit.completed_allocation %}
-                <div class="alert alert-{% if unit.allocation_successful %}success{% else %}danger{% endif %}" role="alert">
+                <div class="alert alert-{% if unit.is_allocated %}success{% else %}danger{% endif %}" role="alert">
                     <div class="fw-bold">Allocation: {{ unit.get_allocation_descriptive }}</div>
-                    {% if unit.allocation_successful %}
+                    {% if unit.is_allocated %}
                         The allocation of students to projects was completed successfully.
                     {% else %}
                         The allocation of students to projects failed.

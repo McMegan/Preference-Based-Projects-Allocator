@@ -58,25 +58,25 @@ class ProjectTable(tables.Table):
 
 
 class ProjectAllocatedTable(ProjectTable):
-    num_allocated = tables.Column(
+    allocated_students_count = tables.Column(
         empty_values=(), verbose_name='Allocated Group Size')
     avg_allocated_pref = tables.Column()
-    assigned_students = tables.Column(
+    allocated_students = tables.Column(
         empty_values=(), orderable=False, verbose_name='Allocated Students')
 
     class Meta(ProjectTable.Meta):
         sequence = ('number', 'name', 'min_students', 'max_students',
-                    'num_allocated', 'avg_allocated_pref', 'assigned_students')
+                    'allocated_students_count', 'avg_allocated_pref', 'allocated_students')
 
-    def render_num_allocated(self, value, record):
-        return record.assigned_students.count()
+    def render_avg_allocated_pref(self, value, record):
+        return round(value, 2)
 
     def order_num_allocated(self, queryset, is_descending):
         queryset = queryset.annotate(allocated_student_count=Count(
-            'assigned_students')).order_by(('-' if is_descending else '') + 'allocated_student_count')
+            'allocated_students')).order_by(('-' if is_descending else '') + 'allocated_student_count')
         return (queryset, True)
 
-    def render_assigned_students(self, value, record):
+    def render_allocated_students(self, value, record):
         students = ''
         for student in value.all():
             students = students + \
@@ -97,7 +97,7 @@ class StudentTable(tables.Table):
     class Meta:
         attrs = {'class': 'table table-striped align-middle'}
 
-        model = models.EnrolledStudent
+        model = models.Student
 
         fields = ['student_id']
 
@@ -125,33 +125,49 @@ class StudentTable(tables.Table):
 
 
 class StudentAllocatedTable(StudentTable):
-    assigned_project = tables.Column(
+    allocated_project = tables.Column(
         empty_values=(), verbose_name='Allocated Project')
-    assigned_preference_rank = tables.Column(
+    allocated_preference_rank = tables.Column(
         empty_values=(), verbose_name='Allocated Preference')
 
     class Meta(StudentTable.Meta):
-        sequence = ('student_id', 'registered', 'preferences', 'assigned_project',
-                    'assigned_preference_rank')
+        sequence = ('student_id', 'registered', 'preferences', 'allocated_project',
+                    'allocated_preference_rank')
 
-    def render_assigned_project(self, value, record):
-        if record.assigned_project:
-            return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.assigned_project.id})}">{record.assigned_project.number}: {record.assigned_project.name}</a>""")
+    def render_allocated_project(self, value, record):
+        if record.allocated_project:
+            return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.allocated_project.id})}">{record.allocated_project.number}: {record.allocated_project.name}</a>""")
         else:
             return 'n/a'
 
-    def render_assigned_preference_rank(self, value, record):
+    def render_allocated_preference_rank(self, value, record):
         return value if value else 'n/a'
 
     def render_actions(self, value, record):
         return format_html(f"""<div class="d-flex flex-wrap gap-2 justify-content-end">
-                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit-student-update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit Allocation</a>
                                 <a class="btn btn-danger btn-sm" href="{reverse('manager:unit-student-remove', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
                             </div>
                             """)
 
 
 class PreferencesTable(tables.Table):
+    student__student_id = tables.Column(verbose_name='Student')
+    project__number = tables.Column(verbose_name='Project')
+
+    class Meta:
+        attrs = {'class': 'table table-striped align-middle'}
+
+        model = models.ProjectPreference
+        fields = ['rank']
+
+    def render_project__number(self, value, record):
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.project.unit_id, 'pk': record.project.id})}">{record.project.number}: {record.project.name}</a>""")
+
+    def render_student__student_id(self, value, record):
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-student-detail', kwargs={'pk_unit': record.student.unit_id, 'pk': record.student.id})}">{record.student.student_id}</a>""")
+
+
+class PreferencesDistributionTable(tables.Table):
     number = tables.Column(verbose_name='Project')
     popularity = tables.Column(verbose_name='Project Popularity')
 
@@ -189,14 +205,14 @@ class ProjectPreferencesTable(tables.Table):
 
 class AllocatedStudentsTable(tables.Table):
     student_id = tables.Column(verbose_name='Student')
-    assigned_preference_rank = tables.Column(
+    allocated_preference_rank = tables.Column(
         verbose_name='Allocated Preference')
 
     class Meta:
         attrs = {'class': 'table table-striped align-middle m-0'}
 
-        model = models.EnrolledStudent
-        fields = ['student_id', 'assigned_preference_rank']
+        model = models.Student
+        fields = ['student_id', 'allocated_preference_rank']
 
     def render_student_id(self, value, record):
         return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-student-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.student_id}</a>""")

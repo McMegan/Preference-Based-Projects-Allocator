@@ -104,11 +104,11 @@ class UnitAdmin(admin.ModelAdmin):
         if request.user.is_manager:
             queryset = queryset.filter(manager_id=request.user.id)
         return queryset.annotate(
-            students_count=Count('enrolled_students'), projects_count=Count('projects')
+            students_count=Count('students'), projects_count=Count('projects')
         )
 
 
-@admin.register(models.EnrolledStudent)
+@admin.register(models.Student)
 class EnrolledStudentAdmin(admin.ModelAdmin):
     list_display = ['id', 'student_id', 'user', 'unit']
 

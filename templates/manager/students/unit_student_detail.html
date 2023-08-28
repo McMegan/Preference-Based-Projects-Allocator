@@ -1,48 +1,29 @@
 {% extends 'manager/base.html' %}
 
-{% load render_table from django_tables2 %}
-
-{% block page_title %}Student: {{ student.student_id }}{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-grid gap-5 row-gap-3">
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Student ID</div>
-            <div>{{ student.student_id }}</div>
-        </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Registered</div>
-            <div><span class ="badge rounded-pill text-bg-{% if student.user %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user %}check{% else %}x{% endif %}-lg"></i></span></div>
-        </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Submitted Preferences</div>
-            <div><span class ="badge rounded-pill text-bg-{% if student.user and student.project_preferences.count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if student.user and student.project_preferences.count %}check{% else %}x{% endif %}-lg"></i></span></div>
-        </div>
-        {% if unit.is_allocated %}
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Allocated Project</div>
-            <div>{% if student.assigned_project %}<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id student.assigned_project_id %}">{{ student.assigned_project.number }}: {{ student.assigned_project.name }}</a>{% else %}n/a{% endif %}</div>
-        </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Allocated Preference</div>
-            <div>{% if student.assigned_preference_rank %}{{ student.assigned_preference_rank }}{% else %}n/a{% endif %}</div>
-        </div>
-        {% endif %}
-    </div>
-    <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
-        {% if unit.is_allocated %}
-        <a class="btn btn-primary" href="{% url 'manager:unit-student-update' unit.id student.id %}">Edit Student Allocation</a>
-        {% endif %}
-        <a class="btn btn-danger" href="{% url 'manager:unit-student-remove' unit.id student.id %}">Remove Student From Unit</a>
+    <table class="table table-borderless">
+        <tbody>
+            <tr><th class="fw-semibold">Student ID</th><td>{{ object.student_id }}</td></tr>
+            <tr><th class="fw-semibold">Registered</th><td><span class ="badge rounded-pill text-bg-{% if object.is_registered %}success{% else %}danger{% endif %}"><i class="bi bi-{% if object.is_registered %}check{% else %}x{% endif %}-lg"></i></span></td></tr>
+            <tr><th class="fw-semibold">Submitted Preferences</th><td><span class ="badge rounded-pill text-bg-{% if object.is_registered and object.project_preferences_count %}success{% else %}danger{% endif %}"><i class="bi bi-{% if object.is_registered and object.project_preferences_count %}check{% else %}x{% endif %}-lg"></i></span></td></tr>
+            {% if unit.is_allocated %}
+                <tr><th class="fw-semibold">Allocated Project</th><td>{% if object.allocated_project %}<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-project-detail' unit.id object.allocated_project_id %}">{{ object.allocated_project.number }}: {{ object.allocated_project.name }}</a>{% else %}n/a{% endif %}</td></tr>
+                <tr><th class="fw-semibold">Allocated Preference</th><td>{% if object.allocated_preference_rank %}{{ object.allocated_preference_rank }}{% else %}n/a{% endif %}</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+    <div class="my-3 mx-2 d-flex gap-2 flex-wrap">
+        <a class="btn btn-danger" href="{% url 'manager:unit-student-remove' unit.id object.id %}">Remove Student From Unit</a>
     </div>
     <hr class="my-4">
 {% endblock %}
-{% block content %}
-    {% if table and table.data %}
-        <div class="mb-4 mt-5">
-            <h4>Preferences</h4>
-        </div>
-        {% block table %}
-            {% render_table table %}
-        {% endblock %}
+{% block form %}
+    {% if unit.is_allocated %}
+        <h3 class="mt-5">Change Allocated Project</h3>
+        {{ block.super }}
     {% endif %}
+{% endblock %}
+{% block table %}
+    <h3 class="mt-5">Project Preferences</h3>
+    {{ block.super }}
 {% endblock %}

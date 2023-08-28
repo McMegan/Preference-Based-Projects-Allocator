@@ -1,8 +1,29 @@
-{% load crispy_forms_tags %} 
+{% load render_table from django_tables2 %}
+{% load crispy_forms_tags %}
+
 <div class="row g-3">
     <div class="col-sm-12 col-md-12 col-lg-6">
         <div class="container-fluid p-0 pt-3">
-            <h3 class="mb-3">Projects</h3>
+            <h3 class="mb-4">Projects</h3>
+
+            <div class="my-3">
+                <h4 class="fs-5">Search</h4>
+                <div class="d-flex gap-2 flex-wrap">
+                    <div class="form-floating overflow-hidden">
+                        <input class="form-control project-search" data-field="number" id="project-number-search" type="text" placeholder="Project Number" size="5">
+                        <label for="project-number-search">No.</label>
+                    </div>
+                    <div class="form-floating flex-grow-1">
+                        <input class="form-control project-search" data-field="name" id="project-name-search" type="text" placeholder="Project Name">
+                        <label for="project-name-search">Project Name</label>
+                    </div>
+                    <div class="form-floating">
+                        <input class="form-control project-search" data-field="capacity" id="project-capacity-search" type="text" placeholder="Project Group Size" size="12">
+                        <label for="project-capacity-search">Group Size</label>
+                    </div>
+                </div>
+            </div>
+            
             {% if object_list %}
             <table id="project_table" class="table table-striped align-middle">
                 <thead>
@@ -24,6 +45,7 @@
     <div class="col">
         <div class="container-fluid pt-3 sticky-top preferences_sticky">
             <div>
+
                 <h3 class="mb-3">Preferences</h3>
                 <p id="form_minimum" class="m-3">You must submit at least {{ unit.minimum_preference_limit }} project preferences.</p>
                 {% if form.non_form_errors %}
@@ -40,14 +62,14 @@
                                 <th scope="col"></th>
                                 <th scope="col">Rank</th>
                                 <th scope="col">Project</th>
-                                <th scope="col">Group Size</th>
+                                {% comment %} <th scope="col">Group Size</th> {% endcomment %}
                                 <th scope="col"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% if preferences %}
                                 {% for preference in preferences %}
-                                    {% include 'student/project_row.html' with is_preferred=True project=preference.project rank=preference.rank %}
+                                    {% include 'student/project_row.html' with in_preference_table=True project=preference.project rank=preference.rank %}
                                 {% endfor %}
                             {% endif %}
                         </tbody>

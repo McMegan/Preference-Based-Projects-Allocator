@@ -78,6 +78,8 @@ const add_project_to_prefs = (project_id) => {
 	project_row.addClass('preference_row');
 	project_row.attr('data-rank', rank);
 
+	project_row.find('td.project_capacity').remove();
+
 	// Add preference stuff
 	//     <button type="button" class="project_drag_preference border-0 btn btn-sm p-0"><i class="bi bi-grip-vertical"></i></button>
 	project_row.prepend(`
@@ -137,6 +139,12 @@ const remove_project_from_prefs = (project_id) => {
 	// Grab preference count & rank
 	let preference_count = +$('#id_form-TOTAL_FORMS').val();
 	let current_rank = +preference_row.attr('data-rank');
+
+	// Fix project info
+	let preference_project_info = $(`#preference_table .project_info_container[data-project-id="${project_id}"]`);
+	preference_project_info.remove();
+	let project_info = $(`#project_table .project_info_container[data-project-id="${project_id}"]`);
+	project_info.removeClass('d-none');
 
 	// Remove from forms
 	let form_row = $(`#id_form-${current_rank - 1}-rank`).parent();
@@ -217,4 +225,17 @@ const move_preference = (project_id, move_up = true) => {
 window.onload = () => {
 	fix_up_down_arrows();
 	fix_striped_tables();
+
+	$('input.project-search').each((index, elem) => {
+		let field = $(elem).data()['field'];
+		$(elem).on('keyup', (event) => {
+			var search = $(elem).val().toLowerCase();
+			$(`#project_table > tbody > tr .project_${field}`).filter((index, elem) => {
+				$(elem)
+					.closest('tr')
+					.toggle($(elem).text().toLowerCase().indexOf(search) > -1);
+			});
+			fix_striped_tables();
+		});
+	});
 };

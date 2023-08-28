@@ -1,8 +1,7 @@
 {% extends 'manager/base.html' %}
 
-{% block page_title %}Student List{% endblock %}
-{% block extra_header %}
-    {% if unit.is_allocated and unallocated_student_count %}
+{% block warnings %}
+    {% if unit.completed_allocation and unallocated_student_count %}
         <div class="alert alert-warning">
             <p>There {% if unallocated_student_count > 1%}are{% else %}is{% endif %} {{ unallocated_student_count }} student{% if unallocated_student_count > 1%}s{% endif %} who {% if unallocated_student_count > 1%}are{% else %}is{% endif %} not allocated to a project.</p>
             <p class="mb-0">To fix this:</p>
@@ -12,23 +11,16 @@
             </ul>
         </div>
     {% endif %}
-    <div class="my-3 mx-3 d-flex gap-5 row-gap-3 flex-wrap">
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">No. Students</div>
-            <div>{{ unit.students_count }}</div>
-        </div>
-        {% if unit.is_allocated %}
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">No. Allocated Students</div>
-            <div>{{ allocated_student_count }}</div>
-        </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">No. Unallocated Students</div>
-            <div>{{ unallocated_student_count }}</div>
-        </div>
-        {% endif %}
-    </div>
-    <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
+{% endblock %}
+{% block extra_header %}
+    <table class="table table-borderless">
+        <tbody>
+            <tr><th class="fw-semibold">Total No. Students</th><td>{{ unit.students_count }}</td></tr>
+            <tr><th class="fw-semibold">No. Allocated Students</th><td>{{ allocated_student_count }}</td></tr>
+            <tr><th class="fw-semibold">No. Unallocated Students</th><td>{{ unallocated_student_count }}</td></tr>
+        </tbody>
+    </table>
+    <div class="my-3 mx-2 d-flex gap-2 flex-wrap">
         <a class="btn btn-primary" href="{% url 'manager:unit-students-new-list' unit.id %}">Upload Student List</a>
         <a class="btn btn-primary" href="{% url 'manager:unit-students-new' unit.id %}">Add Student</a>
         <a class="btn btn-danger {% if not table.data %}disabled{% endif %}" href="{% url 'manager:unit-students-clear' unit.id %}" {% if not table.data %}aria-disabled="true"{% endif %}>Clear Student List</a>

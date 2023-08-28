@@ -1,8 +1,5 @@
 {% extends 'core/base.html' %}
 
-{% load render_table from django_tables2 %}
-{% load crispy_forms_tags %}
-
 {% block main %}
 <div class="row g-5">
     <div class="col-sm-12 col-md-4 col-lg-3" id="sidebar_container">
@@ -21,38 +18,39 @@
     </div>
     <div class="col">
         <div class="container-fluid px-0 py-3">
-            <div>
-                {% if not unit.is_active %}
-                    <div class="alert alert-warning text-center text-uppercase" role="alert" style="font-size: 0.75rem;">This unit is inactive.</div>
-                {% endif %}
-                <h1>{% block page_title %}{% endblock %}</h1>
-                <hr class="my-4">
-                {% block extra_header %}{% endblock %}
-            </div>
-            <div>
-                {% block content %}
-                    {% if form %}
-                        <div>
-                            {% block form %}
-                                {% load crispy_forms_tags %} 
-                                <form method="post" enctype="multipart/form-data">
-                                    {% csrf_token %} {% crispy form %}
-                                </form>
-                            {% endblock %}
+            {% if not unit.is_active %}
+                <div class="alert alert-warning text-center text-uppercase" role="alert" style="font-size: 0.75rem;">This unit is inactive.</div>
+            {% endif %}
+            <h1>{% block page_title %}{% if page_title %}{{ page_title }}{% endif %}{% endblock %}</h1>
+            <hr class="my-4">
+            {% block warnings %}{% endblock %}
+            {% block extra_header %}{% endblock %}
+            {% block content %}
+                {% if form %}
+                    {% block form %}
+                        <div class="my-4">
+                            {% load crispy_forms_tags %} 
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %} {% crispy form %}
+                            </form>
                         </div>
-                    {% endif %}
-                    {% if table and table.data %}
-                        {% block table %}
-                            {% if filter %}
-                                <div class="my-2">
-                                    {% crispy filter.form filter.form.helper %}
-                                </div>
-                            {% endif %}
+                    {% endblock %}
+                {% endif %}
+                {% if table and table.data %}
+                    {% block table %}
+                        {% if filter %}
+                            {% load crispy_forms_tags %} 
+                            <div class="my-4">
+                                {% crispy filter.form filter.form.helper %}
+                            </div>
+                        {% endif %}
+                        {% load render_table from django_tables2 %}
+                        <div class="my-4">
                             {% render_table table %}
-                        {% endblock %}
-                    {% endif %}
-                {% endblock %}
-            </div>
+                        </div>
+                    {% endblock %}
+                {% endif %}
+            {% endblock %}
         </div>
     </div>
 </div>

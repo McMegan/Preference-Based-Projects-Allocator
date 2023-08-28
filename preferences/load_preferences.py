@@ -49,7 +49,7 @@ def load_big_unit():
 
 def load_students(unit_code, n_students, replace=False):
     unit = models.Unit.objects.get(code=unit_code)
-    students = unit.enrolled_students.all()
+    students = unit.students.all()
     student_count = students.count()
     if replace:
         students.delete()
@@ -57,9 +57,9 @@ def load_students(unit_code, n_students, replace=False):
 
     new_students = []
     for student_num in range(student_count + 1, n_students + 1):
-        new_students.append(models.EnrolledStudent(
+        new_students.append(models.Student(
             student_id=f'stu{student_num}', unit=unit))
-    models.EnrolledStudent.objects.bulk_create(new_students)
+    models.Student.objects.bulk_create(new_students)
 
 
 def load_projects(unit_code, n_projects, replace=False):
@@ -81,7 +81,7 @@ def load_prefs(unit_code, pref_list, replace=False, csv_prefs=True):
     result = f'\n ##### {unit_code}: '
 
     unit = models.Unit.objects.get(code=unit_code)
-    students = unit.enrolled_students.all()
+    students = unit.students.all()
     student_count = students.count()
 
     projects = unit.projects.all()

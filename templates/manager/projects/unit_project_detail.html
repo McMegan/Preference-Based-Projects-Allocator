@@ -1,30 +1,22 @@
 {% extends 'manager/base.html' %}
 
-{% load render_table from django_tables2 %}
-
-{% block page_title %}{{ project.number }}: {{ project.name }}{% endblock %}
 {% block extra_header %}
-    <div class="my-3 mx-3 d-flex gap-3 flex-column">
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Project Number</div>
-            <div>{{ project.number }}</div>
-        </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Project Name</div>
-            <div>{{ project.name }}</div>
-        </div>
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Group Size</div>
-            <div>{{ project.min_students }} - {{ project.max_students }}</div>
-        </div>
-        {% if project.description %}
-        <div class="d-flex gap-3">
-            <div class="fw-semibold">Description</div>
-            <div>{{ project.description }}</div>
-        </div>
-        {% endif %}
-    </div>
-    <div class="my-3 mx-3 d-flex gap-2 flex-wrap">
+    <table class="table table-borderless">
+        <tbody>
+            <tr><th class="fw-semibold">Project Number</th><td>{{ project.number }}</td></tr>
+            <tr><th class="fw-semibold">Project Name</th><td>{{ project.name }}</td></tr>
+            <tr><th class="fw-semibold">Group Size</th><td>{{ project.min_students }} - {{ project.max_students }}</td></tr>
+            {% if project.description %}
+            <tr><th class="fw-semibold" colspan="2">Description</th></tr>
+            <tr><td colspan="2">{{ project.description }}</td></tr>
+            {% endif %}
+            {% if unit.is_allocated %}
+                <tr><th class="fw-semibold">Allocated Group Size</th><td>{{project.allocated_students.count}}</td></tr>
+                <tr><th class="fw-semibold">Average Allocated Preference</th><td>{{project.avg_allocated_pref}}</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+    <div class="my-3 mx-2 d-flex gap-2 flex-wrap">
         <a class="btn btn-primary" href="{% url 'manager:unit-project-update' unit.id project.id %}">Edit</a>
         <a class="btn btn-danger" href="{% url 'manager:unit-project-remove' unit.id project.id %}">Remove</a>
     </div>
@@ -32,6 +24,7 @@
 {% endblock %}
 {% block content %}
     {% if tables %}
+    {% load render_table from django_tables2 %}
     <ul class="nav nav-tabs border-0" id="tab" role="tablist">
         {% for table in tables %}
         {% if table and table.data %}

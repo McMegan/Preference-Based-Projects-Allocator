@@ -1,7 +1,0 @@
-{% extends 'manager/base.html' %}
-{% block page_title %}Remove {{ object }} from unit?{% endblock %}
-{% block form %}
-    <form method="post">{% csrf_token %}
-        <input class="btn btn-danger" type="submit" value="Confirm">
-    </form>
-{% endblock %}

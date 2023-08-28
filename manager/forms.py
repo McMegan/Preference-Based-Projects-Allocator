@@ -5,7 +5,7 @@ import os
 from django import forms
 from django.db.models import Q, ExpressionWrapper, BooleanField
 
-from crispy_forms.bootstrap import FormActions
+from crispy_forms.bootstrap import FormActions, InlineField
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML, Field
 from crispy_bootstrap5.bootstrap5 import FloatingField
@@ -82,12 +82,14 @@ class CreateUnitForm(forms.ModelForm):
     class Meta:
         model = models.Unit
         fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',
-                  'preference_submission_end', 'minimum_preference_limit', 'is_active']
+                  'preference_submission_end', 'minimum_preference_limit', 'is_active', 'limit_by_major']
 
 
-class UpdateUnitForm(CreateUnitForm):
+class UnitUpdateForm(CreateUnitForm):
     is_active = forms.BooleanField(
         label='Unit is current/active', required=False)
+    limit_by_major = forms.BooleanField(
+        label='Limit project preference selection by major', required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -96,6 +98,7 @@ class UpdateUnitForm(CreateUnitForm):
             unit_form_layout_main,
             unit_form_layout_allocator,
             'is_active',
+            'limit_by_major',
             FormActions(
                 Submit('submit', 'Save Unit', css_class='btn btn-primary'),
                 HTML(
@@ -129,13 +132,13 @@ class StudentForm(forms.ModelForm):
 
     def clean(self):
         student_id = self.cleaned_data.get('student_id')
-        if models.EnrolledStudent.objects.filter(student_id=student_id, unit_id=self.pk_unit).exists():
+        if models.Student.objects.filter(student_id=student_id, unit_id=self.pk_unit).exists():
             raise forms.ValidationError(
                 {'student_id': 'A student with that ID is already enrolled in this unit.'})
         return super().clean()
 
     class Meta:
-        model = models.EnrolledStudent
+        model = models.Student
         fields = ['student_id']
 
 
@@ -175,6 +178,11 @@ class StudentListForm(forms.Form):
         return super().clean()
 
 
+class AllocatedProjectChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return f'{str(obj)}    (Current Group Size = {obj.allocated_students.count()})'
+
+
 class StudentUpdateForm(forms.ModelForm):
     """
         Form for updating a student's allocation in a unit
@@ -185,29 +193,49 @@ class StudentUpdateForm(forms.ModelForm):
 
         super().__init__(*args, **kwargs)
 
-        self.fields.get('assigned_project').queryset = self.unit.projects
-        self.fields.get('assigned_project').required = False
+        self.fields['allocated_project'] = AllocatedProjectChoiceField(
+            queryset=self.unit.projects.prefetch_related('allocated_students'), required=False, label='Allocated Project')
 
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            'assigned_project',
+            FloatingField('allocated_project',
+                          css_class='my-3'),
             FormActions(
                 Submit('submit', 'Save Student Allocation',
-                       css_class='btn btn-primary'),
+                       css_class='btn btn-primary')
             )
         )
 
     def save(self, commit: bool = ...):
-        if self.instance.assigned_project:
-            assigned_project_pref = self.instance.project_preferences.filter(
-                project_id=self.instance.assigned_project.id)
-            self.instance.assigned_preference_rank = assigned_project_pref.first(
-            ).rank if assigned_project_pref.exists() else None
+        # Update allocated preference
+        if self.instance.allocated_project:
+            allocated_project_pref = self.instance.project_preferences.filter(
+                project_id=self.instance.allocated_project.id)
+            self.instance.allocated_preference_rank = allocated_project_pref.first(
+            ).rank if allocated_project_pref.exists() else None
         return super().save(commit)
 
     class Meta:
-        model = models.EnrolledStudent
-        fields = ['assigned_project']
+        model = models.Student
+        fields = ['allocated_project']
+
+
+class StudentDeleteForm(forms.Form):
+    """
+        Form for deleting a single student
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            HTML('<p>Are you sure you want to remove this student?</p>'),
+            FormActions(
+                Submit('submit', 'Yes, Remove Student from Unit',
+                       css_class='btn btn-danger'),
+            )
+        )
 
 
 class StudentListClearForm(forms.Form):
@@ -222,7 +250,7 @@ class StudentListClearForm(forms.Form):
         self.helper.layout = Layout(
             HTML('<p>Are you sure you want to remove all students from this unit?</p>'),
             FormActions(
-                Submit('submit', 'Remove All Students from Unit',
+                Submit('submit', 'Yes, Remove All Students from Unit',
                        css_class='btn btn-danger'),
             )
         )
@@ -296,27 +324,46 @@ class ProjectAllocatedUpdateForm(ProjectUpdateForm):
     """
         Form for updating a project in a unit
     """
-    assigned_students = forms.ModelMultipleChoiceField(
-        queryset=models.EnrolledStudent.objects.all())
 
     def __init__(self, *args, **kwargs):
         unit = kwargs.pop('unit')
 
         super().__init__(*args, **kwargs)
 
-        self.fields.get(
-            'assigned_students').queryset = models.EnrolledStudent.objects.filter(unit_id=unit.id).annotate(is_assigned=ExpressionWrapper(Q(assigned_project_id=self.instance.id), output_field=BooleanField())).order_by('-is_assigned')
-        self.fields.get(
-            'assigned_students').initial = self.instance.assigned_students.all()
+        self.fields['allocated_students'] = forms.ModelMultipleChoiceField(
+            queryset=models.Student.objects.filter(unit_id=unit.id).annotate(is_assigned=ExpressionWrapper(Q(allocated_project_id=self.instance.id), output_field=BooleanField())).order_by('-is_assigned'), initial=self.instance.allocated_students.all(), required=False)
 
         self.helper.layout = Layout(
             project_form_layout_main,
-            Fieldset('', Field('assigned_students', size=10)),
+            Fieldset('', Field('allocated_students', size=10)),
             FormActions(
                 Submit('submit', 'Save Project',
                        css_class='btn btn-primary'),
             )
         )
+
+    def save(self, commit: bool = ...):
+        current_students = self.instance.allocated_students
+        new_students = self.cleaned_data.get('allocated_students')
+        if current_students and new_students:
+            for student in current_students.all():
+                if student not in new_students:
+                    student.allocated_project = None
+                    student.allocated_preference_rank = None
+                    student.save()
+        if new_students:
+            for student in new_students.all():
+                student.allocated_project = self.instance
+                allocated_project_pref = student.project_preferences.filter(
+                    project_id=self.instance.id)
+                student.allocated_preference_rank = allocated_project_pref.first(
+                ).rank if allocated_project_pref.exists() else None
+                student.save()
+        return super().save(commit)
+
+    class Meta(ProjectForm.Meta):
+        fields = ['number', 'name', 'description',
+                  'min_students', 'max_students']
 
 
 class ProjectListForm(forms.Form):
@@ -395,6 +442,43 @@ class ProjectListForm(forms.Form):
                 models.Project, project)
 
         return super().clean()
+
+
+class ProjectDeleteForm(forms.Form):
+    """
+        Form for deleting a single project
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            HTML('<p>Are you sure you want to remove this project?</p>'),
+            FormActions(
+                Submit('submit', 'Yes, Remove Project from Unit',
+                       css_class='btn btn-danger'),
+            )
+        )
+
+
+class ProjectListClearForm(forms.Form):
+    """
+        Form for clearing the list of projects
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            HTML('<p>Are you sure you want to remove all projects from this unit?</p>'),
+            FormActions(
+                Submit('submit', 'Yes, Remove All Projects from Unit',
+                       css_class='btn btn-danger'),
+            )
+        )
+
 
 # Allocation forms
 

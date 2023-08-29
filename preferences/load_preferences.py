@@ -5,6 +5,7 @@ from django.db.models import Count
 from core import models
 from . import preferences_full
 from . import preferences_big
+from . import preferences_uneven
 
 LOAD_PREFS = False
 LOAD_STUDENTS = False
@@ -21,8 +22,9 @@ def load_data():
         pass
     if LOAD_PREFS:
         # load_prefs(unit_code='SMALL',pref_list=preferences_full.pref_list, replace=True)
-        load_prefs(unit_code='FULL00001',
-                   pref_list=preferences_full.pref_list, replace=True)
+        # load_prefs(unit_code='FULL00001',pref_list=preferences_full.pref_list, replace=True)
+        load_prefs(unit_code='UNEVEN',
+                   pref_list=preferences_uneven.pref_list, replace=True)
 
 
 def load_big_unit():

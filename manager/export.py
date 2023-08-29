@@ -20,12 +20,13 @@ def generate_allocation_results_csv(unit):
     writer = csv.writer(file_output, delimiter=',', quoting=csv.QUOTE_ALL)
 
     # Add headers to file
-    writer.writerow(['student_id', 'project_number', 'project_name'])
+    writer.writerow(['student_id', 'project_number',
+                    'project_name', 'allocated_preference_rank'])
     # Write students to file
     for student in unit.students.all():
         if student.allocated_project:
             writer.writerow(
-                [student.student_id, student.allocated_project.number, student.allocated_project.name])
+                [student.student_id, student.allocated_project.number, student.allocated_project.name, student.allocated_preference_rank])
         else:
             writer.writerow(
                 [student.student_id, '', ''])

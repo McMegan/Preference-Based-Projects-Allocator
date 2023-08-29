@@ -9,7 +9,7 @@
                 <div id="sidebar">
                     <div class="card bg-body-tertiary border-0 border-top rounded-0 rounded-bottom">
                         <div class="card-body">
-                            {% include 'manager/sidebar_nav.html' %}
+                            {% include 'manager/base_sidebar.html' %}
                         </div>
                     </div>
                 </div>
@@ -21,35 +21,84 @@
             {% if not unit.is_active %}
                 <div class="alert alert-warning text-center text-uppercase" role="alert" style="font-size: 0.75rem;">This unit is inactive.</div>
             {% endif %}
-            <h1>{% block page_title %}{% if page_title %}{{ page_title }}{% endif %}{% endblock %}</h1>
-            <hr class="my-4">
-            {% block warnings %}{% endblock %}
-            {% block extra_header %}{% endblock %}
-            {% block content %}
-                {% if form %}
-                    {% block form %}
-                        <div class="my-4">
-                            {% load crispy_forms_tags %} 
-                            <form method="post" enctype="multipart/form-data">
-                                {% csrf_token %} {% crispy form %}
-                            </form>
-                        </div>
-                    {% endblock %}
+            <div class="d-flex gap-5">
+                {% if page_title_url %}
+                    <a class="text-body text-decoration-none" href="{{ page_title_url }}"><h1>{% if page_title %}{{ page_title }}{% endif %}</h1></a>
+                {% else %}
+                    <h1>{% if page_title %}{{ page_title }}{% endif %}</h1>
                 {% endif %}
-                {% if table and table.data %}
-                    {% block table %}
-                        {% if filter %}
-                            {% load crispy_forms_tags %} 
-                            <div class="my-4">
-                                {% crispy filter.form filter.form.helper %}
-                            </div>
+                
+                {% if page_title_actions %}{% block page_title_actions %}
+                    <div class="ms-auto d-flex gap-2 align-items-center">
+                    {% for page_action in page_title_actions %}
+                        {% if page_action.url %}
+                            {% if object %}
+                                {% url page_action.url unit.id object.id as url %}
+                            {% else %}
+                                {% url page_action.url unit.id as url %}
+                            {% endif %}
+                            <a class="btn btn-primary  {{ page_action.classes }} {% if request.path ==  url %}disabled{% endif %}" {% if request.path ==  url %}aria-disabled="true"{% endif %} href="{{ url }}" {% if request.path == url %}aria-current="page"{% endif %}>{{ page_action.label }}</a>
                         {% endif %}
-                        {% load render_table from django_tables2 %}
-                        <div class="my-4">
-                            {% render_table table %}
-                        </div>
-                    {% endblock %}
-                {% endif %}
+                    {% endfor %}
+                    </div>
+                {% endblock %}{% endif %}
+            </div>
+            <hr class="my-4">
+            {% if page_warnings %}{% block page_warnings %}
+                {% for warning in page_warnings %}
+                    <div class="alert alert-{{ warning.type }}">{{ warning.content }}</div>
+                {% endfor %}
+            {% endblock %}{% endif %}
+            {% if page_info %}{% block page_info %}
+                <table class="table table-borderless">
+                    <tbody>
+                        {% for info in page_info %}
+                            {% if info.wide %}
+                            <tr><th class="fw-semibold" colspan="2">{{ info.label }}</th></tr>
+                            <tr><td colspan="2">{{ info.content }}</td></tr>
+                            {% else %}
+                            <tr><th class="fw-semibold">{{ info.label }}</th><td>{{ info.content }}</td></tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endblock %}{% endif %}
+            {% if page_actions %}{% block page_actions %}
+                <div class="my-3 mx-2 d-flex gap-2 flex-wrap">
+                {% for page_action in page_actions %}
+                    {% if page_action.url %}
+                        {% if object %}
+                            {% url page_action.url unit.id object.id as url %}
+                        {% else %}
+                            {% url page_action.url unit.id as url %}
+                        {% endif %}
+                        <a class="btn btn-primary  {{ page_action.classes }} {% if page_action.disabled %}disabled{% endif %}" {% if page_action.disabled %}aria-disabled="true"{% endif %} href="{{ url }}">{{ page_action.label }}</a>
+                    {% endif %}
+                {% endfor %}
+                </div>
+            {% endblock %}{% endif %}
+            {% block extra_header %}{% endblock %}
+            {% if page_info or page_warnings or page_actions %}
+                <hr class="my-4">
+            {% endif %}
+
+            {% if form %}
+                {% block form %}
+                    {% include 'manager/base_form.html' %}
+                {% endblock %}
+            {% endif %}
+            {% if table %}
+                {% block table %}
+                    {% include 'manager/base_table.html' %}
+                {% endblock %}
+            {% endif %}
+            {% if tables %}
+                {% block tables %}
+                    {% include 'manager/base_tables.html' %}
+                {% endblock %}
+            {% endif %}
+
+            {% block content %}
             {% endblock %}
         </div>
     </div>

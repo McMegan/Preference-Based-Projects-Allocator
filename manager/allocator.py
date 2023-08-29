@@ -71,7 +71,7 @@ class Allocator:
             # Each student must be assigned to a project
             self.solver.Add(self.solver.Sum(allocation) == 1)
             # Student must have selected the project
-            self.solver.Add(self.solver.Sum(allocation_preference) >= 1)
+            # self.solver.Add(self.solver.Sum(allocation_preference) >= 1)
 
     def make_project_constraints(self):
         for project in self.projects:

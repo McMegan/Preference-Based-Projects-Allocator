@@ -96,6 +96,15 @@ class Unit(models.Model):
     def get_allocation_descriptive(self):
         return self.ALLOCATION_STATUS[self.allocation_status]
 
+    def get_allocated_student_count(self):
+        if not hasattr(self, 'allocated_student_count'):
+            self.allocated_student_count = self.students.filter(
+                allocated_project__isnull=False).count()
+        return self.allocated_student_count
+
+    def get_unallocated_student_count(self):
+        return self.students.count() - self.get_allocated_student_count()
+
     class Meta:
         ordering = ['code', 'name']
         constraints = [
@@ -108,9 +117,18 @@ class Unit(models.Model):
 
 class Area(models.Model):
     name = models.CharField(max_length=150)
+    unit = models.ForeignKey(
+        Unit, on_delete=models.CASCADE, related_name='areas')
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['unit', 'name'], name='%(app_label)s_%(class)s_rank_unique', violation_error_message='Each area in a unit must be unique. An area with that name is already included in this unit.'),
+        ]
 
 
 project_min_lte_max_constraint = models.CheckConstraint(check=Q(min_students__isnull=True) | Q(max_students__isnull=True) | Q(
@@ -167,6 +185,11 @@ class Student(models.Model):
 
     def __str__(self):
         return self.student_id
+
+    def get_is_registered(self):
+        if not hasattr(self, 'is_registered'):
+            self.is_registered = self.user != None
+        return self.is_registered
 
     class Meta:
         ordering = ['student_id']

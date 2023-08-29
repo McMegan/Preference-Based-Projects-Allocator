@@ -1,6 +1,7 @@
 import csv
 from io import StringIO
 import os
+from typing import Any, Mapping, Optional, Sequence, Type, Union
 
 from django import forms
 from django.db.models import Q, ExpressionWrapper, BooleanField
@@ -9,6 +10,9 @@ from crispy_forms.bootstrap import FormActions, InlineField
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML, Field
 from crispy_bootstrap5.bootstrap5 import FloatingField
+from django.forms.fields import Field
+from django.forms.utils import ErrorList
+from django.forms.widgets import Widget
 
 from core import models
 
@@ -42,6 +46,12 @@ class SplitDateTimeWidget(forms.SplitDateTimeWidget):
 class SplitDateTimeField(forms.SplitDateTimeField):
     widget = SplitDateTimeWidget
 
+
+"""
+
+General unit forms
+
+"""
 
 unit_form_layout_main = Layout(
     FloatingField('code'),
@@ -87,9 +97,9 @@ class CreateUnitForm(forms.ModelForm):
 
 class UnitUpdateForm(CreateUnitForm):
     is_active = forms.BooleanField(
-        label='Unit is current/active', required=False)
+        label='Unit is current/active', required=False, help_text='If this is un-checked students will be unabled to access the unit.')
     limit_by_major = forms.BooleanField(
-        label='Limit project preference selection by major', required=False)
+        label='Limit project preference selection by major/area', required=False, help_text='This will limit each students project preference options to those which match the students area. If a student has no area, all projects will be displayed. If a project has no area, it will be displayed to all students.')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -107,23 +117,30 @@ class UnitUpdateForm(CreateUnitForm):
         )
 
 
-# Students
+"""
+
+Student forms 
+
+"""
+
+
 class StudentForm(forms.ModelForm):
     """
         Form for adding a single student to a unit
     """
 
     def __init__(self, *args, **kwargs):
-        self.pk_unit = kwargs.pop('pk_unit', None)
+        self.unit = kwargs.pop('unit', None)
 
         super().__init__(*args, **kwargs)
 
+        self.fields['area'] = forms.ModelMultipleChoiceField(
+            queryset=self.unit.areas, required=False)
+
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            Fieldset(
-                '',
-                FloatingField('student_id'),
-            ),
+            FloatingField('student_id'),
+            'area',
             FormActions(
                 Submit('submit', 'Add Student to Unit',
                        css_class='btn btn-primary'),
@@ -132,7 +149,7 @@ class StudentForm(forms.ModelForm):
 
     def clean(self):
         student_id = self.cleaned_data.get('student_id')
-        if models.Student.objects.filter(student_id=student_id, unit_id=self.pk_unit).exists():
+        if self.unit.students.filter(student_id=student_id).exists():
             raise forms.ValidationError(
                 {'student_id': 'A student with that ID is already enrolled in this unit.'})
         return super().clean()
@@ -152,6 +169,9 @@ class StudentListForm(forms.Form):
     student_id_column = forms.CharField(
         label='Name of the column for the Student ID in the uploaded file.')
 
+    area_column = forms.CharField(
+        label='Name of the column for the Project Area in the uploaded file. Leave blank if none.', help_text='Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -163,7 +183,8 @@ class StudentListForm(forms.Form):
                 '',
                 'file',
                 'list_override',
-                FloatingField('student_id_column')
+                FloatingField('student_id_column'),
+                'area_column'
             ),
             FormActions(
                 Submit('submit', 'Upload List of Students to Unit',
@@ -175,6 +196,11 @@ class StudentListForm(forms.Form):
         valid_csv_file(self.cleaned_data.get('file'))
         column_exists_in_csv(self.cleaned_data.get('file'), 'student_id_column',
                              self.cleaned_data.get('student_id_column'))
+
+        if self.cleaned_data.get('area_column') != '':
+            column_exists_in_csv(self.cleaned_data.get('file'), 'area_column',
+                                 self.cleaned_data.get('area_column'))
+
         return super().clean()
 
 
@@ -185,7 +211,7 @@ class AllocatedProjectChoiceField(forms.ModelChoiceField):
 
 class StudentUpdateForm(forms.ModelForm):
     """
-        Form for updating a student's allocation in a unit
+        Form for updating a student in a unit
     """
 
     def __init__(self, *args, **kwargs):
@@ -193,18 +219,30 @@ class StudentUpdateForm(forms.ModelForm):
 
         super().__init__(*args, **kwargs)
 
-        self.fields['allocated_project'] = AllocatedProjectChoiceField(
-            queryset=self.unit.projects.prefetch_related('allocated_students'), required=False, label='Allocated Project')
+        if self.unit.is_allocated():
+            self.fields['allocated_project'] = AllocatedProjectChoiceField(
+                queryset=self.unit.projects.prefetch_related('allocated_students'), required=False, label='Allocated Project')
+
+        self.fields['area'] = forms.ModelMultipleChoiceField(
+            queryset=self.unit.areas, required=False)
 
         self.helper = FormHelper()
-        self.helper.layout = Layout(
-            FloatingField('allocated_project',
-                          css_class='my-3'),
-            FormActions(
-                Submit('submit', 'Save Student Allocation',
-                       css_class='btn btn-primary')
-            )
+        layout_actions = FormActions(
+            Submit('submit', 'Save Student',
+                   css_class='btn btn-primary')
         )
+        if self.unit.is_allocated():
+            self.helper.layout = Layout(
+                FloatingField('allocated_project',
+                              css_class='my-3'),
+                'area',
+                layout_actions
+            )
+        else:
+            self.helper.layout = Layout(
+                'area',
+                layout_actions
+            )
 
     def save(self, commit: bool = ...):
         # Update allocated preference
@@ -217,7 +255,7 @@ class StudentUpdateForm(forms.ModelForm):
 
     class Meta:
         model = models.Student
-        fields = ['allocated_project']
+        fields = ['area']
 
 
 class StudentDeleteForm(forms.Form):
@@ -256,7 +294,11 @@ class StudentListClearForm(forms.Form):
         )
 
 
-# Projects
+"""
+
+Project forms
+
+"""
 project_form_layout_main = Layout(
     Fieldset(
         '',
@@ -264,7 +306,8 @@ project_form_layout_main = Layout(
         FloatingField('name'),
         FloatingField('min_students'),
         FloatingField('max_students'),
-        'description'
+        'description',
+        'area'
     ),
 )
 
@@ -275,9 +318,12 @@ class ProjectForm(forms.ModelForm):
     """
 
     def __init__(self, *args, **kwargs):
-        self.pk_unit = kwargs.pop('pk_unit', None)
+        self.unit = kwargs.pop('unit')
 
         super().__init__(*args, **kwargs)
+
+        self.fields['area'] = forms.ModelMultipleChoiceField(
+            queryset=self.unit.areas, required=False)
 
         self.helper = FormHelper()
         self.helper.layout = Layout(
@@ -290,7 +336,7 @@ class ProjectForm(forms.ModelForm):
 
     def clean(self):
         number = self.cleaned_data.get('number')
-        if models.Project.objects.filter(number=number, unit_id=self.pk_unit).exists():
+        if self.unit.projects.filter(number=number).exists():
             raise forms.ValidationError(
                 {'number': 'A project with that number is already included in this unit.'})
         return super().clean()
@@ -298,7 +344,7 @@ class ProjectForm(forms.ModelForm):
     class Meta:
         model = models.Project
         fields = ['number', 'name', 'description',
-                  'min_students', 'max_students']
+                  'min_students', 'max_students', 'area']
 
 
 class ProjectUpdateForm(ProjectForm):
@@ -307,10 +353,12 @@ class ProjectUpdateForm(ProjectForm):
     """
 
     def __init__(self, *args, **kwargs):
-        self.unit = kwargs.pop('unit', None)
+        super(forms.ModelForm, self).__init__(*args, **kwargs)
 
-        super().__init__(*args, **kwargs)
+        self.fields['area'] = forms.ModelMultipleChoiceField(
+            queryset=self.instance.unit.areas, required=False)
 
+        self.helper = FormHelper()
         self.helper.layout = Layout(
             project_form_layout_main,
             FormActions(
@@ -319,6 +367,9 @@ class ProjectUpdateForm(ProjectForm):
             )
         )
 
+    def clean(self):
+        return super(forms.ModelForm, self).clean()
+
 
 class ProjectAllocatedUpdateForm(ProjectUpdateForm):
     """
@@ -326,16 +377,17 @@ class ProjectAllocatedUpdateForm(ProjectUpdateForm):
     """
 
     def __init__(self, *args, **kwargs):
-        unit = kwargs.pop('unit')
-
         super().__init__(*args, **kwargs)
 
+        print(self.instance.unit)
+
         self.fields['allocated_students'] = forms.ModelMultipleChoiceField(
-            queryset=models.Student.objects.filter(unit_id=unit.id).annotate(is_assigned=ExpressionWrapper(Q(allocated_project_id=self.instance.id), output_field=BooleanField())).order_by('-is_assigned'), initial=self.instance.allocated_students.all(), required=False)
+            queryset=models.Student.objects.filter(unit_id=self.instance.unit_id).annotate(is_assigned=ExpressionWrapper(Q(allocated_project_id=self.instance.id), output_field=BooleanField())).order_by('-is_assigned'), initial=self.instance.allocated_students.all(), required=False)
+        self.fields['allocated_students'].widget.attrs['size'] = '10'
 
         self.helper.layout = Layout(
             project_form_layout_main,
-            Fieldset('', Field('allocated_students', size=10)),
+            Fieldset('', 'allocated_students'),
             FormActions(
                 Submit('submit', 'Save Project',
                        css_class='btn btn-primary'),
@@ -361,10 +413,6 @@ class ProjectAllocatedUpdateForm(ProjectUpdateForm):
                 student.save()
         return super().save(commit)
 
-    class Meta(ProjectForm.Meta):
-        fields = ['number', 'name', 'description',
-                  'min_students', 'max_students']
-
 
 class ProjectListForm(forms.Form):
     """
@@ -385,6 +433,9 @@ class ProjectListForm(forms.Form):
     description_column = forms.CharField(
         label='Name of the column for the Project Description in the uploaded file. Leave blank if none.', required=False)
 
+    area_column = forms.CharField(
+        label='Name of the column for the Project Area in the uploaded file. Leave blank if none.', help_text='Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -403,7 +454,8 @@ class ProjectListForm(forms.Form):
                 FloatingField('name_column'),
                 FloatingField('min_students_column'),
                 FloatingField('max_students_column'),
-                FloatingField('description_column')
+                'description_column',
+                'area_column'
             ),
             FormActions(
                 Submit('submit', 'Upload List of Projects to Unit',
@@ -425,6 +477,10 @@ class ProjectListForm(forms.Form):
         if self.cleaned_data.get('description_column') != '':
             column_exists_in_csv(self.cleaned_data.get('file'), 'description_column',
                                  self.cleaned_data.get('description_column'))
+
+        if self.cleaned_data.get('area_column') != '':
+            column_exists_in_csv(self.cleaned_data.get('file'), 'area_column',
+                                 self.cleaned_data.get('area_column'))
 
         file = self.cleaned_data.get(
             'file')
@@ -480,12 +536,16 @@ class ProjectListClearForm(forms.Form):
         )
 
 
-# Allocation forms
+"""
+
+Area forms
+
+"""
 
 
-class StartAllocationForm(forms.Form):
+class AreaForm(forms.ModelForm):
     """
-        Form for starting the allocation process
+        Form for adding a single area to a unit
     """
 
     def __init__(self, *args, **kwargs):
@@ -493,23 +553,83 @@ class StartAllocationForm(forms.Form):
 
         super().__init__(*args, **kwargs)
 
-        submit_text = 'Start Allocation'
-        submit_btn_colour = 'btn-primary'
-        warning = ''
-        if self.unit.is_allocated():
-            submit_text = 'Override Allocation'
-            submit_btn_colour = 'btn-danger'
-            warning = """
-                <div class="alert alert-danger" role="alert">
-                    This unit has already been allocated, allocating again will override the current allocation.<br>If this allocation fails, the previous successful allocation will be retained.
-                </div>
-            """
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            FloatingField('name'),
+            FormActions(
+                Submit('submit', 'Add Area to Unit',
+                       css_class='btn btn-primary'),
+            )
+        )
+
+    def clean(self):
+        name = self.cleaned_data.get('name')
+        if self.unit.areas.filter(name=name).exists():
+            raise forms.ValidationError(
+                {'name': 'An area with that name is already included in this unit.'})
+        return super().clean()
+
+    class Meta:
+        model = models.Area
+        fields = ['name']
+
+
+class AreaUpdateForm(AreaForm):
+    """
+        Form for updating a single area to a unit
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['projects'] = forms.ModelMultipleChoiceField(
+            queryset=self.unit.projects.all(), initial=self.instance.projects.all(), required=False)
 
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            HTML(warning),
+            FloatingField('name'),
+            'projects',
             FormActions(
-                Submit('submit', submit_text,
-                       css_class=f'btn {submit_btn_colour}'),
-            ),
+                Submit('submit', 'Save Area',
+                       css_class='btn btn-primary'),
+            )
+        )
+
+    def clean(self):
+        return super(forms.ModelForm, self).clean()
+
+
+class AreaDeleteForm(forms.Form):
+    """
+        Form for deleting a single area
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            HTML('<p>Are you sure you want to remove this project?</p><p>Any projects and students with this area will be retained.</p>'),
+            FormActions(
+                Submit('submit', 'Yes, Remove Area from Unit',
+                       css_class='btn btn-danger'),
+            )
+        )
+
+
+class AreaListClearForm(forms.Form):
+    """
+        Form for clearing all areas
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            HTML('<p>Are you sure you want to remove all areas from this unit?</p><p>Any projects and students with an area will be retained.</p>'),
+            FormActions(
+                Submit('submit', 'Yes, Remove All Areas from Unit',
+                       css_class='btn btn-danger'),
+            )
         )

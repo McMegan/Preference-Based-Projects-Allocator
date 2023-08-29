@@ -17,7 +17,7 @@ def unit_projects(request):
     pk_unit = request.resolver_match.kwargs.get('pk_unit')
     if not pk_unit:
         return models.Projects.objects.none()
-    return models.Project.objects.all().filter(unit=pk_unit)
+    return models.Project.objects.filter(unit=pk_unit)
 
 
 def unit_students(request):
@@ -26,7 +26,16 @@ def unit_students(request):
     pk_unit = request.resolver_match.kwargs.get('pk_unit')
     if not pk_unit:
         return models.Student.objects.none()
-    return models.Student.objects.all().filter(unit=pk_unit)
+    return models.Student.objects.filter(unit=pk_unit)
+
+
+def unit_areas(request):
+    if request is None:
+        return models.Area.objects.none()
+    pk_unit = request.resolver_match.kwargs.get('pk_unit')
+    if not pk_unit:
+        return models.Area.objects.none()
+    return models.Area.objects.filter(unit=pk_unit)
 
 
 """
@@ -59,6 +68,9 @@ class StudentFilter(django_filters.FilterSet):
         choices=PREFS_STUDENT_CHOICES,
         widget=forms.CheckboxSelectMultiple(choices=PREFS_STUDENT_CHOICES))
 
+    area = django_filters.ModelMultipleChoiceFilter(
+        queryset=unit_areas, label='Area')
+
     def filter_registered(self, queryset, name, value):
         if len(value) == 2:
             return queryset
@@ -81,7 +93,7 @@ class StudentFilter(django_filters.FilterSet):
 
     class Meta:
         model = models.Student
-        fields = ['student_id']
+        fields = ['student_id', 'area']
 
 
 class StudentAllocatedFilter(StudentFilter):
@@ -120,6 +132,7 @@ student_filter_form_layout_main = Fieldset(
         InlineRadios('preferences'),
         css_class='mb-3 d-flex flex-wrap column-gap-3 align-items-center'
     ),
+    Div('area', css_class='w-100'),
     css_class='mb-3 d-grid gap-1 align-items-center'
 )
 
@@ -174,15 +187,17 @@ Project Filters
 
 
 class ProjectFilter(django_filters.FilterSet):
-
     number = django_filters.CharFilter(lookup_expr='contains', label='Number')
     name = django_filters.CharFilter(lookup_expr='contains', label='Name')
     min_students = django_filters.NumberFilter(label='Min. Group Size')
     max_students = django_filters.NumberFilter(label='Max. Group Size')
 
+    area = django_filters.ModelMultipleChoiceFilter(
+        queryset=unit_areas, label='Area')
+
     class Meta:
         model = models.Project
-        fields = ['number', 'name', 'min_students', 'max_students']
+        fields = ['number', 'name', 'min_students', 'max_students', 'area']
 
 
 class ProjectAllocatedFilter(ProjectFilter):
@@ -220,6 +235,7 @@ project_filter_form_layout_main = Fieldset(
     FloatingField('name'),
     FloatingField('min_students'),
     FloatingField('max_students'),
+    Div('area', css_class='w-100'),
     css_class='d-flex flex-wrap column-gap-3 align-items-center'
 )
 
@@ -360,6 +376,39 @@ class PreferenceDistributionFilterFormHelper(FormHelper):
                     HTML(
                         """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit-preferences-distribution' unit.id %}">Clear Filters</a>{% endif %}""")
                 )
+            ),
+        ),
+    )
+
+
+"""
+
+Area filters
+
+"""
+
+
+class AreaFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(
+        lookup_expr='contains', label='Name')
+
+    class Meta:
+        model = models.Area
+        fields = ['name']
+
+
+class AreaFilterFormHelper(FormHelper):
+    form_method = 'GET'
+    layout = Layout(
+        Accordion(
+            AccordionGroup(
+                'Filters',
+                FloatingField('name'),
+                FormActions(
+                    Submit('submit', 'Filter'),
+                    HTML(
+                        """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit-areas' unit.id %}">Clear Filters</a>{% endif %}""")
+                ),
             ),
         ),
     )

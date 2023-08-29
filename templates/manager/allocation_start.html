@@ -1,14 +1,5 @@
 {% extends 'manager/base.html' %}
 
-{% block extra_header %}
-    <table class="table table-borderless">
-        <tbody>
-            <tr><th class="fw-semibold">Total No. Students</th><td>{{ unit.students_count }}</td></tr>
-            <tr><th class="fw-semibold">Student Preference Submission Rate</th><td>{{ submitted_prefs_perc }}% ({{ submitted_prefs_count }} Student{% if submitted_prefs_count > 1 %}s{% endif %})</td></tr>
-        </tbody>
-    </table>
-    <hr class="my-4">
-{% endblock %}
 {% block content %}
     {% if unit.projects.count and unit.students.count %}
         {% if too_few_students or too_many_students %}
@@ -43,8 +34,9 @@
             {% endif %}
         {% else %}
             {% if unit.is_allocating %}
-                <div class="alert alert-secondary" role="alert">
-                    This unit is currently allocating students to projects.
+                <div class="alert alert-secondary d-grid gap-3" role="alert">
+                   <div>This unit is currently allocating students to projects. Feel free to refresh or leave the page.</div>
+                   <div>You should recieve an email once the allocation is completed.</div>
                 </div>
             {% else %}
                 {% if unit.completed_allocation %}
@@ -59,9 +51,13 @@
                 {% endif %}
                 {% if unit.preference_submission_set and unit.preference_submission_ended %}
                     <div>
-                        {% load crispy_forms_tags %} 
-                        <form method="post" enctype="multipart/form-data">
-                            {% csrf_token %} {% crispy form %}
+                        <form method="post" enctype="multipart/form-data">{% csrf_token %}
+                            {% if unit.is_allocated %}
+                                <div class="alert alert-danger">This unit has already been allocated, allocating again will override the current allocation.<br>If this allocation fails, the previous successful allocation will be retained.</div>
+                                <input type="submit" name="submit" value="Override Allocation" class="btn btn-danger">
+                            {% else %}
+                                <input type="submit" name="submit" value="Start Allocation" class="btn btn-primary">
+                            {% endif %}
                         </form>
                     </div>
                 {% else %}

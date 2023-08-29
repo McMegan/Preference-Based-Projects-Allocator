@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.forms import formset_factory
+from django.db.models import Q, Count
 from django.views.generic import ListView
 from django.views.generic.edit import FormMixin
 
@@ -14,7 +15,7 @@ class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return super().get_queryset().filter(students__user__id=self.request.user.id).order_by('-is_active')
+        return super().get_queryset().filter(students__user__id=self.request.user.id).filter(is_active=True)
 
     def test_func(self):
         return self.request.user.is_student
@@ -24,30 +25,26 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
     model = models.Project
     template_name = "student/unit_detail.html"
 
-    def get_unit(self):
+    def get_unit_object(self):
         if not hasattr(self, 'unit'):
             self.unit = models.Unit.objects.filter(
                 pk=self.kwargs['pk']).first()
         return self.unit
 
-    def get_student_enrollment(self):
-        if not hasattr(self, 'enrollment'):
-            enrollment = self.request.user.enrollments.filter(
+    def get_student_object(self):
+        if not hasattr(self, 'student_object'):
+            self.student_object = self.request.user.enrollments.get(
                 unit_id=self.kwargs['pk'])
-            if enrollment.exists():
-                self.enrollment = enrollment.first()
-            else:
-                return False
-        return self.enrollment
+        return self.student_object
 
     def get_students_preferences(self):
         if not hasattr(self, 'preferences'):
-            self.preferences = self.get_student_enrollment(
+            self.preferences = self.get_student_object(
             ).project_preferences.all().select_related('project')
         return self.preferences
 
     def get_form_class(self):
-        min_preference_limit = self.get_unit().minimum_preference_limit
+        min_preference_limit = self.get_unit_object().minimum_preference_limit
         return formset_factory(formset=forms.PreferenceFormSet, form=forms.PreferenceForm, extra=0, min_num=min_preference_limit if min_preference_limit else 0, validate_min=True if min_preference_limit else False)
 
     def get_initial(self):
@@ -107,7 +104,7 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
                         preference_at_current_rank.save()
                     else:
                         # Create new record
-                        form.instance.student = self.get_student_enrollment()
+                        form.instance.student = self.get_student_object()
                         form.instance.save()
 
             return self.form_valid(formset)
@@ -115,7 +112,7 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
             return self.form_invalid(formset)
 
     def get_context_data(self, **kwargs):
-        unit = self.get_unit()
+        unit = self.get_unit_object()
         preference_querset = self.get_students_preferences()
         helper = forms.PreferenceFormSetHelper()
 
@@ -126,7 +123,7 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
             for form in formset:
                 form.instance.project = models.Project.objects.get(
                     id=form.cleaned_data.get('project_id'))
-                form.instance.student = self.get_student_enrollment()
+                form.instance.student = self.get_student_object()
                 preference_from_form.append(form.instance)
 
         preferences = preference_from_form if len(
@@ -137,7 +134,11 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
         return {**super().get_context_data(**kwargs), 'unit': unit, 'preferences': preferences, 'preferred_projects': preferred_projects, 'helper': helper}
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit_id=self.kwargs['pk'])
+        qs = super().get_queryset().filter(unit_id=self.kwargs['pk'])
+        if self.get_unit_object().limit_by_major:
+            qs = qs.annotate(area_count=Count('area')).filter(Q(area__in=self.get_student_object(
+            ).area.all()) | Q(area_count=0)).distinct()
+        return qs
 
     def test_func(self):
-        return self.request.user.is_student and self.get_student_enrollment()
+        return self.request.user.is_student and self.get_student_object()

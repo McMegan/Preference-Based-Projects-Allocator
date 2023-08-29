@@ -1,0 +1,19 @@
+{% load render_table from django_tables2 %}
+<ul class="nav nav-tabs border-0" id="tab" role="tablist">
+    {% for table in tables %}
+    {% if table %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if forloop.first %}active{% endif %} fs-6" id="{{ table.id }}-tab" data-bs-toggle="tab" data-bs-target="#{{ table.id }}-tab-pane" type="button" role="tab" aria-controls="{{ table.id }}-tab-pane" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{ table.name }}</button>
+        </li>
+    {% endif %}
+    {% endfor %}
+</ul>
+<div class="tab-content border rounded-bottom overflow-hidden" id="tabContent">
+    {% for table in tables %}
+    {% if table %}
+        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="{{ table.id }}-tab-pane" role="tabpanel" aria-labelledby="{{ table.id }}-tab" tabindex="0">
+            {% render_table table %}
+        </div>
+    {% endif %}
+    {% endfor %}
+</div>

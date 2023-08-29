@@ -297,7 +297,7 @@ class StudentsListView(UnitMixin, FilteredTableView):
         return tables.StudentsAllocatedTable if self.get_unit_object().successfully_allocated() else tables.StudentsTable
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('allocated_project')
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('allocated_project').prefetch_related('area')
 
     def get_context_data(self, **kwargs):
         allocated_student_count = self.get_unit_object().students.filter(
@@ -561,7 +561,7 @@ class ProjectsListView(UnitMixin, FilteredTableView):
         return tables.ProjectsAllocatedTable if self.get_unit_object().successfully_allocated() else tables.ProjectsTable
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('unit').filter(unit=self.kwargs['pk_unit']).prefetch_related('allocated_students').annotate(allocated_students_count=Count('allocated_students', distinct=True)).annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank'))
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('unit').prefetch_related('area').prefetch_related('allocated_students').annotate(allocated_students_count=Count('allocated_students', distinct=True)).annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank'))
 
 
 class ProjectCreateView(UnitMixin, FormMixin, TemplateView):
@@ -874,18 +874,13 @@ class PreferencesDistributionView(UnitMixin, FilteredTableView):
         ]
 
     def get_queryset(self):
-        if not hasattr(self, 'queryset'):
+        if not hasattr(self, 'queryset') or self.queryset == None:
             project_queryset = super().get_queryset().filter(
                 unit_id=self.kwargs['pk_unit']).prefetch_related(
                 'student_preferences')
             total_projects = project_queryset.count()
-
-            project_queryset = project_queryset.annotate(popularity=Sum(
+            self.queryset = project_queryset.annotate(popularity=Sum(
                 total_projects - F('student_preferences__rank'))).order_by('number', 'name')
-            for project in project_queryset:
-                project.popularity = project.popularity if project.popularity else 0
-
-            self.queryset = project_queryset
         return self.queryset
 
 

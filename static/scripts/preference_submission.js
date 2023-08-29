@@ -81,7 +81,6 @@ const add_project_to_prefs = (project_id) => {
 	project_row.find('td.project_capacity').remove();
 
 	// Add preference stuff
-	//     <button type="button" class="project_drag_preference border-0 btn btn-sm p-0"><i class="bi bi-grip-vertical"></i></button>
 	project_row.prepend(`
         <td scope="row">
             <div class="d-flex gap-1">

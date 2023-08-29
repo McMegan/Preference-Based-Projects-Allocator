@@ -2,7 +2,6 @@
     {% if in_preference_table %}
         <td scope="row">
             <div class="d-flex gap-1">
-                {% comment %} <button type="button" class="project_drag_preference border-0 btn btn-sm p-0"><i class="bi bi-grip-vertical"></i></button> {% endcomment %}
                 <button type="button"onclick="move_preference({{ project.id }})" class="project_move_up_preference border-0 btn btn-sm p-0"><i class="bi bi-arrow-up"></i></button>
                 <button type="button" onclick="move_preference({{ project.id }}, false)" class="project_move_down_preference border-0 btn btn-sm p-0"><i class="bi bi-arrow-down"></i></button>
             </div>
@@ -20,8 +19,10 @@
     {% endif %}
 
     <td>
-        <button type="button" onclick="remove_project_from_prefs({{ project.id }})" class="remove_project_from_prefs btn btn-sm {% if not project in preferred_projects %}disabled d-none{% endif %}" {% if not project in preferred_projects %}aria-disabled="true"{% endif %}><i class="bi bi-x-lg"></i></button>
-        <button type="button" class="add_project_to_prefs border-0 btn btn-sm {% if project in preferred_projects %}disabled d-none{% endif %}"{% if project in preferred_projects %}aria-disabled="true"{% endif %} title="Add to Preferences" onclick="add_project_to_prefs({{ project.id }})"><i class="bi bi-plus-lg"></i></button>
+        <div class="d-flex gap-1">
+            <button type="button" onclick="remove_project_from_prefs({{ project.id }})" class="remove_project_from_prefs btn btn-sm p-1 {% if not project in preferred_projects %}disabled d-none{% endif %}" {% if not project in preferred_projects %}aria-disabled="true"{% endif %}><i class="bi bi-x-lg"></i></button>
+            <button type="button" class="add_project_to_prefs border-0 btn btn-sm p-1 {% if project in preferred_projects %}disabled d-none{% endif %}"{% if project in preferred_projects %}aria-disabled="true"{% endif %} title="Add to Preferences" onclick="add_project_to_prefs({{ project.id }})"><i class="bi bi-plus-lg"></i></button>
+        </div>
     </td>
 </tr>
 {% if project.description %}

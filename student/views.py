@@ -28,19 +28,19 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
     def get_unit_object(self):
         if not hasattr(self, 'unit'):
             self.unit = models.Unit.objects.filter(
-                pk=self.kwargs['pk']).first()
+                pk=self.kwargs['pk']).prefetch_related('areas').first()
         return self.unit
 
     def get_student_object(self):
         if not hasattr(self, 'student_object'):
-            self.student_object = self.request.user.enrollments.get(
-                unit_id=self.kwargs['pk'])
+            self.student_object = self.request.user.enrollments.filter(
+                unit_id=self.kwargs['pk']).prefetch_related('area').first()
         return self.student_object
 
     def get_students_preferences(self):
         if not hasattr(self, 'preferences'):
             self.preferences = self.get_student_object(
-            ).project_preferences.all().select_related('project')
+            ).project_preferences.all().select_related('project').prefetch_related('project__area')
         return self.preferences
 
     def get_form_class(self):
@@ -134,7 +134,8 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
         return {**super().get_context_data(**kwargs), 'unit': unit, 'preferences': preferences, 'preferred_projects': preferred_projects, 'helper': helper}
 
     def get_queryset(self):
-        qs = super().get_queryset().filter(unit_id=self.kwargs['pk'])
+        qs = super().get_queryset().filter(
+            unit_id=self.kwargs['pk']).prefetch_related('area')
         if self.get_unit_object().limit_by_major:
             qs = qs.annotate(area_count=Count('area')).filter(Q(area__in=self.get_student_object(
             ).area.all()) | Q(area_count=0)).distinct()

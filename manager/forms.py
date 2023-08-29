@@ -167,10 +167,10 @@ class StudentListForm(forms.Form):
     list_override = forms.BooleanField(
         label='Replace current students', required=False)
     student_id_column = forms.CharField(
-        label='Name of the column for the Student ID in the uploaded file.')
+        label='Student ID Column Name')
 
     area_column = forms.CharField(
-        label='Name of the column for the Project Area in the uploaded file. Leave blank if none.', help_text='Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
+        label='Project Area Column Name', help_text='Leave blank if none. Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -184,7 +184,7 @@ class StudentListForm(forms.Form):
                 'file',
                 'list_override',
                 FloatingField('student_id_column'),
-                'area_column'
+                FloatingField('area_column'),
             ),
             FormActions(
                 Submit('submit', 'Upload List of Students to Unit',
@@ -422,19 +422,19 @@ class ProjectListForm(forms.Form):
     list_override = forms.BooleanField(
         label='Replace current projects', required=False)
     number_column = forms.CharField(
-        label='Name of the column for the Project Number in the uploaded file.')
+        label='Project Number Column Name')
     name_column = forms.CharField(
-        label='Name of the column for the Project Name in the uploaded file.')
+        label='Project Name Column Name')
     min_students_column = forms.CharField(
-        label='Name of the column for the Minimum Students in the uploaded file.')
+        label='Minimum Students Column Name')
     max_students_column = forms.CharField(
-        label='Name of the column for the Maximum Students in the uploaded file.')
+        label='Maximum Students Column Name')
 
     description_column = forms.CharField(
-        label='Name of the column for the Project Description in the uploaded file. Leave blank if none.', required=False)
+        label='Project Description Column Name', required=False, help_text='Leave blank if none.')
 
     area_column = forms.CharField(
-        label='Name of the column for the Project Area in the uploaded file. Leave blank if none.', help_text='Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
+        label='Project Area Column Name', help_text='Leave blank if none. Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -454,8 +454,8 @@ class ProjectListForm(forms.Form):
                 FloatingField('name_column'),
                 FloatingField('min_students_column'),
                 FloatingField('max_students_column'),
-                'description_column',
-                'area_column'
+                FloatingField('description_column'),
+                FloatingField('area_column'),
             ),
             FormActions(
                 Submit('submit', 'Upload List of Projects to Unit',

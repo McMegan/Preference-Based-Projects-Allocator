@@ -318,13 +318,13 @@ class PreferenceFilterFormHelper(FormHelper):
                             css_class='w-100'),
                         Div(InlineField('student'),
                             css_class='w-100'),
-
                         css_class='d-grid column-gap-3 flex-grow-1'
                     ),
                     Fieldset(
                         'Projects',
                         Div(
-                            FloatingField('project__number'),
+                            Div(FloatingField('project__number'),
+                                css_class='flex-grow-1'),
                             Div(FloatingField('project__name'),
                                 css_class='flex-grow-1'),
                             css_class='d-flex flex-wrap column-gap-3'
@@ -333,7 +333,7 @@ class PreferenceFilterFormHelper(FormHelper):
                             css_class='w-100'),
                         css_class='d-grid flex-grow-1'
                     ),
-                    css_class='mb-3 d-flex flex-md-nowrap flex-sm-wrap gap-3 align-items-start'
+                    css_class='mb-3 d-flex flex-wrap flex-lg-nowrap gap-3 align-items-start'
                 ),
                 FormActions(
                     Submit('submit', 'Filter'),

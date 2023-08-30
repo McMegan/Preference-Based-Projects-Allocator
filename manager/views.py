@@ -1033,8 +1033,8 @@ class AreasListView(UnitMixin, FilteredTableView):
     model = models.Area
     page_title = 'Area List'
 
-    table_class = tables.AreaTable
-    filter_class = filters.AreaFilter
+    table_class = tables.AreasTable
+    filterset_class = filters.AreaFilter
     filter_formhelper_class = filters.AreaFilterFormHelper
 
     def get_page_actions(self):
@@ -1124,6 +1124,13 @@ class AreaPageMixin(UnitMixin):
         {'url': 'manager:unit-area-remove',
             'label': 'Remove', 'classes': 'btn-danger'},
     ]
+
+    def get_page_info(self):
+        area = self.get_object()
+        return [
+            {'label': 'No. Projects', 'content': area.projects.count()},
+            {'label': 'No. Students', 'content': area.students.count()},
+        ]
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('projects').prefetch_related('students')

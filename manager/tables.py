@@ -1,4 +1,4 @@
-from django.db.models import Count, Sum, F, Avg, Min, Max
+from django.db.models import Count
 from django.utils.html import format_html
 from django.urls import reverse
 
@@ -258,14 +258,14 @@ Area table
 """
 
 
-class AreaTable(Table):
-    students = tables.Column(verbose_name='Has Students')
+class AreasTable(Table):
     projects = tables.Column(verbose_name='Has Projects')
+    students = tables.Column(verbose_name='Has Students')
     actions = tables.Column(empty_values=(), orderable=False, verbose_name='')
 
     class Meta(Table.Meta):
         model = models.Area
-        fields = ['name', 'students', 'projects']
+        fields = ['name', 'projects', 'students']
 
     def render_name(self, value, record):
         return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-area-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.name}</a>""")
@@ -277,14 +277,14 @@ class AreaTable(Table):
                             </div>
                             """)
 
-    def render_students(self, value, record):
-        bg_colour = 'success' if record.students.exists() else 'danger'
-        icon_name = 'check' if record.students.exists() else 'x'
-        return format_html(f"""<span class ="badge rounded-pill text-bg-{bg_colour}"><i class="bi bi-{icon_name}-lg"></i></span>""")
-
     def render_projects(self, value, record):
         bg_colour = 'success' if record.projects.exists() else 'danger'
         icon_name = 'check' if record.projects.exists() else 'x'
+        return format_html(f"""<span class ="badge rounded-pill text-bg-{bg_colour}"><i class="bi bi-{icon_name}-lg"></i></span>""")
+
+    def render_students(self, value, record):
+        bg_colour = 'success' if record.students.exists() else 'danger'
+        icon_name = 'check' if record.students.exists() else 'x'
         return format_html(f"""<span class ="badge rounded-pill text-bg-{bg_colour}"><i class="bi bi-{icon_name}-lg"></i></span>""")
 
 

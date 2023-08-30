@@ -38,6 +38,36 @@ def unit_areas(request):
     return models.Area.objects.filter(unit=pk_unit)
 
 
+class ExistsMultipleChoiceMixin:
+    SHOW_EXISTS = 'EXISTS'
+    SHOW_NOT_EXISTS = 'N_EXISTS'
+
+
+class ExistsMultipleChoiceFilter(ExistsMultipleChoiceMixin, django_filters.MultipleChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        self.exists_label = kwargs.pop('exists_label', None)
+        self.not_exists_label = kwargs.pop('not_exists_label', None)
+
+        super().__init__(*args, **kwargs)
+
+        self.extra['choices'] = (
+            (self.SHOW_EXISTS, self.exists_label), (self.SHOW_NOT_EXISTS, self.not_exists_label))
+        self.extra['widget'] = forms.CheckboxSelectMultiple(
+            choices=self.extra['choices'])
+
+        self._label = ''
+
+        self.method = 'filter_exists'
+
+
+class ExistsMultipleChoiceFilterSet(ExistsMultipleChoiceMixin, django_filters.FilterSet):
+    def filter_exists(self, queryset, name, value):
+        if len(value) == 2:
+            return queryset
+        lookup = '__'.join([name, 'isnull'])
+        return queryset.filter(**{lookup: False if self.SHOW_EXISTS in value else True}).distinct()
+
+
 """
 
 Student Filters
@@ -45,51 +75,15 @@ Student Filters
 """
 
 
-class StudentFilter(django_filters.FilterSet):
-    SHOW_REGISTERED = 'REG'
-    SHOW_NON_REGISTERED = 'NO_REG'
-    REGISTERED_STUDENT_CHOICES = ((SHOW_REGISTERED, 'Registered Students'),
-                                  (SHOW_NON_REGISTERED, 'Un-Registered Students'))
-    SHOW_PREFS = 'PREFS'
-    SHOW_NO_PREFS = 'NO_PREFS'
-    PREFS_STUDENT_CHOICES = ((SHOW_PREFS, 'Submitted Preferences'),
-                             (SHOW_NO_PREFS, 'Didn\'t Submit Preferences'))
-
+class StudentFilter(ExistsMultipleChoiceFilterSet):
     student_id = django_filters.CharFilter(
         lookup_expr='contains', label='Student ID')
-    registered = django_filters.MultipleChoiceFilter(
-        field_name='user',
-        label='', method='filter_registered',
-        choices=REGISTERED_STUDENT_CHOICES,
-        widget=forms.CheckboxSelectMultiple(choices=REGISTERED_STUDENT_CHOICES))
-    preferences = django_filters.MultipleChoiceFilter(
-        field_name='project_preferences',
-        label='', method='filter_preferences',
-        choices=PREFS_STUDENT_CHOICES,
-        widget=forms.CheckboxSelectMultiple(choices=PREFS_STUDENT_CHOICES))
-
+    registered = ExistsMultipleChoiceFilter(
+        field_name='user', exists_label='Registered Students', not_exists_label='Un-Registered Students')
+    preferences = ExistsMultipleChoiceFilter(
+        field_name='project_preferences', exists_label='Submitted Preferences', not_exists_label='Didn\'t Submit Preferences')
     area = django_filters.ModelMultipleChoiceFilter(
         queryset=unit_areas, label='Area')
-
-    def filter_registered(self, queryset, name, value):
-        if len(value) == 2:
-            return queryset
-        elif self.SHOW_REGISTERED in value:
-            lookup = '__'.join([name, 'isnull'])
-            return queryset.filter(**{lookup: False})
-        else:
-            lookup = '__'.join([name, 'isnull'])
-            return queryset.filter(**{lookup: True})
-
-    def filter_preferences(self, queryset, name, value):
-        if len(value) == 2:
-            return queryset
-        elif self.SHOW_PREFS in value:
-            lookup = '__'.join([name, 'isnull'])
-            return queryset.filter(**{lookup: False})
-        else:
-            lookup = '__'.join([name, 'isnull'])
-            return queryset.filter(**{lookup: True})
 
     class Meta:
         model = models.Student
@@ -97,31 +91,12 @@ class StudentFilter(django_filters.FilterSet):
 
 
 class StudentAllocatedFilter(StudentFilter):
-    SHOW_STUDENT_ALLOCATED = 'ALL'
-    SHOW_STUDENT_NOT_ALLOCATED = 'NON_ALL'
-    REGISTERED_STUDENT_CHOICES = ((SHOW_STUDENT_ALLOCATED, 'Allocated Students'),
-                                  (SHOW_STUDENT_NOT_ALLOCATED, 'Unallocated Students'))
-
     allocated_project = django_filters.ModelMultipleChoiceFilter(
         queryset=unit_projects, label='Allocated Project')
     allocated_preference_rank = django_filters.NumberFilter(
         label='Allocated Preference')
-
-    allocated = django_filters.MultipleChoiceFilter(
-        field_name='allocated_project',
-        label='', method='filter_allocated',
-        choices=REGISTERED_STUDENT_CHOICES,
-        widget=forms.CheckboxSelectMultiple(choices=REGISTERED_STUDENT_CHOICES))
-
-    def filter_allocated(self, queryset, name, value):
-        if len(value) == 2:
-            return queryset
-        elif self.SHOW_STUDENT_ALLOCATED in value:
-            lookup = '__'.join([name, 'isnull'])
-            return queryset.filter(**{lookup: False})
-        else:
-            lookup = '__'.join([name, 'isnull'])
-            return queryset.filter(**{lookup: True})
+    allocated = ExistsMultipleChoiceFilter(
+        field_name='allocated_project', exists_label='Allocated Students', not_exists_label='Unallocated Students')
 
 
 student_filter_form_layout_main = Fieldset(
@@ -187,7 +162,8 @@ Project Filters
 
 
 class ProjectFilter(django_filters.FilterSet):
-    number = django_filters.CharFilter(lookup_expr='contains', label='Number')
+    number = django_filters.NumberFilter(
+        lookup_expr='contains', label='Number')
     name = django_filters.CharFilter(lookup_expr='contains', label='Name')
     min_students = django_filters.NumberFilter(label='Min. Group Size')
     max_students = django_filters.NumberFilter(label='Max. Group Size')
@@ -200,29 +176,11 @@ class ProjectFilter(django_filters.FilterSet):
         fields = ['number', 'name', 'min_students', 'max_students', 'area']
 
 
-class ProjectAllocatedFilter(ProjectFilter):
-    SHOW_ALLOCATED = 'ALL'
-    SHOW_NOT_ALLOCATED = 'NON_ALL'
-    REGISTERED_STUDENT_CHOICES = ((SHOW_ALLOCATED, 'Allocated Projects'),
-                                  (SHOW_NOT_ALLOCATED, 'Unallocated Projects'))
-
+class ProjectAllocatedFilter(ExistsMultipleChoiceFilterSet, ProjectFilter):
     num_allocated = django_filters.NumberFilter(
         field_name='allocated_students', label='Allocated Group Size', method='filter_num_allocated',)
-    allocated = django_filters.MultipleChoiceFilter(
-        field_name='allocated_students',
-        label='', method='filter_allocated',
-        choices=REGISTERED_STUDENT_CHOICES,
-        widget=forms.CheckboxSelectMultiple(choices=REGISTERED_STUDENT_CHOICES))
-
-    def filter_allocated(self, queryset, name, value):
-        if len(value) == 2:
-            return queryset
-        elif self.SHOW_ALLOCATED in value:
-            lookup = '__'.join([name, 'isnull'])
-            return queryset.filter(**{lookup: False})
-        else:
-            lookup = '__'.join([name, 'isnull'])
-            return queryset.filter(**{lookup: True})
+    allocated = ExistsMultipleChoiceFilter(
+        field_name='allocated_students', exists_label='Allocated Projects', not_exists_label='Unallocated Projects')
 
     def filter_num_allocated(self, queryset, name, value):
         return queryset.annotate(allocated_student_count=Count(
@@ -388,9 +346,13 @@ Area filters
 """
 
 
-class AreaFilter(django_filters.FilterSet):
+class AreaFilter(ExistsMultipleChoiceFilterSet):
     name = django_filters.CharFilter(
         lookup_expr='contains', label='Name')
+    has_projects = ExistsMultipleChoiceFilter(
+        field_name='projects', exists_label='Has Projects', not_exists_label='Doesn\'t Have Projects')
+    has_students = ExistsMultipleChoiceFilter(
+        field_name='students', exists_label='Has Students', not_exists_label='Doesn\'t Have Students')
 
     class Meta:
         model = models.Area
@@ -403,7 +365,12 @@ class AreaFilterFormHelper(FormHelper):
         Accordion(
             AccordionGroup(
                 'Filters',
-                FloatingField('name'),
+                Div(FloatingField('name'), css_class='w-100'),
+                Div(
+                    InlineRadios('has_projects'),
+                    InlineRadios('has_students'),
+                    css_class='mb-3 d-flex flex-wrap column-gap-3 align-items-center'
+                ),
                 FormActions(
                     Submit('submit', 'Filter'),
                     HTML(

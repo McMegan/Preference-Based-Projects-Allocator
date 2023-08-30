@@ -50,18 +50,15 @@
                 {% endfor %}
             {% endblock %}{% endif %}
             {% if page_info %}{% block page_info %}
-                <table class="table table-borderless">
-                    <tbody>
-                        {% for info in page_info %}
-                            {% if info.wide %}
-                            <tr><th class="fw-semibold" colspan="2">{{ info.label }}</th></tr>
-                            <tr><td colspan="2">{{ info.content }}</td></tr>
-                            {% else %}
-                            <tr><th class="fw-semibold">{{ info.label }}</th><td>{{ info.content }}</td></tr>
-                            {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="px-2 d-flex gap-3 column-gap-5 flex-wrap">
+                    {% for info in page_info %}
+                        {% if info.wide %}
+                            <div class="d-flex gap-3 flex-column"><div class="fw-semibold">{{ info.label }}</div><div>{{ info.content }}</div></div>
+                        {% else %}
+                            <div class="d-flex gap-3 flex-wrap"><div class="fw-semibold">{{ info.label }}</div><div>{{ info.content }}</div></div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             {% endblock %}{% endif %}
             {% if page_actions %}{% block page_actions %}
                 <div class="my-3 mx-2 d-flex gap-2 flex-wrap">

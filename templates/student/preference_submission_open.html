@@ -7,13 +7,6 @@
             <div>
                 <h3 class="mb-3">Preferences</h3>
                 <p id="form_minimum" class="my-3">You must submit at least {{ unit.minimum_preference_limit }} project preferences.</p>
-                {% if form.non_form_errors %}
-                    <div class="alert alert-block alert-danger">
-                        <ul class="m-0">
-                            {{ form.non_form_errors|unordered_list }}
-                        </ul>
-                    </div>
-                {% endif %}
                 <div class="border rounded overflow-hidden" style="min-height: 200px;">
                     <table id="preference_table" class="table table align-middle m-0">
                         <thead class="table-light">
@@ -33,7 +26,14 @@
                         </tbody>
                     </table>
                 </div>
-                <form class="preference-submission-form my-3" method="post">
+                {% if form.non_form_errors %}
+                    <div class="alert alert-block alert-danger my-3">
+                        <ul class="m-0">
+                            {{ form.non_form_errors|unordered_list }}
+                        </ul>
+                    </div>
+                {% endif %}
+                <form class="preference-submission-form" method="post">
                     {% crispy form helper %}
                 </form>
             </div>

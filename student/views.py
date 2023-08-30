@@ -139,7 +139,7 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
         if self.get_unit_object().limit_by_major:
             qs = qs.annotate(area_count=Count('area')).filter(Q(area__in=self.get_student_object(
             ).area.all()) | Q(area_count=0)).distinct()
-        return qs
+        return qs.order_by('number')
 
     def test_func(self):
         return self.request.user.is_student and self.get_student_object()

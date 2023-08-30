@@ -34,6 +34,14 @@ class PreferenceForm(forms.ModelForm):
 
 
 class PreferenceFormSet(BaseFormSet):
+    def full_clean(self):
+        super().full_clean()
+        for error in self._non_form_errors.as_data():
+            if error.code == 'too_many_forms':
+                error.message = f'Please nominate at most {self.max_num} preferences.'
+            if error.code == 'too_few_forms':
+                error.message = f'Please nominate at least {self.min_num} preferences.'
+
     def clean(self):
         """ Checks that all projects are listed only once & that submitted ranks are valid. """
         if any(self.errors):

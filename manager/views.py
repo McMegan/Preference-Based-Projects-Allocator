@@ -1,6 +1,5 @@
 import csv
 from io import StringIO
-from typing import Any, Dict, Optional, Type
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
@@ -9,6 +8,7 @@ from django.db.models.functions import Round
 from django.forms.models import BaseModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
+from django.utils import formats
 from django.utils.html import format_html
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.edit import FormMixin
@@ -96,31 +96,27 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
             # Allocator Settings / Setup
             {'label': 'Unit Actions', 'classes': 'fw-semibold'},
             {'url': 'manager:unit-students-new-list',
-                'label': 'Upload Student List', 'classes': 'ms-3'},
-            {'url': 'manager:unit-students-new',
-                'label': 'Add Student', 'classes': 'ms-3'},
+                'label': 'Upload Student List'},
+            {'url': 'manager:unit-students-new', 'label': 'Add Student'},
             {'url': 'manager:unit-projects-new-list',
-                'label': 'Upload Project List', 'classes': 'ms-3'},
-            {'url': 'manager:unit-projects-new',
-                'label': 'Add Project', 'classes': 'ms-3'},
-            {'url': 'manager:unit-area-new',
-                'label': 'Add Area', 'classes': 'ms-3'},
-            {'url': 'manager:unit-allocation-start',
-                'label': 'Start Allocation', 'classes': 'ms-3'},
+                'label': 'Upload Project List'},
+            {'url': 'manager:unit-projects-new', 'label': 'Add Project'},
+            {'url': 'manager:unit-area-new', 'label': 'Add Area'},
+            {'url': 'manager:unit-allocation-start', 'label': 'Start Allocation'},
             # Unit Information
             {'label': 'Unit Information', 'classes': 'fw-semibold'},
             {'url': 'manager:unit-students',
-                'label': f'Student List ({unit.students_count})', 'classes': 'ms-3'},
+                'label': f'Student List ({unit.students_count})'},
             {'url': 'manager:unit-projects',
-                'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
+                'label': f'Project List ({unit.projects_count})'},
             {'url': 'manager:unit-areas',
-                'label': f'Area List ({unit.areas_count})', 'classes': 'ms-3'},
+                'label': f'Area List ({unit.areas_count})'},
             {'url': 'manager:unit-preferences', 'label': 'Submitted Preferences',
-                'classes': 'ms-3', 'disabled': not unit.preference_count},
+                'disabled': not unit.preference_count},
             {'url': 'manager:unit-preferences-distribution',
-             'label': 'Preference Distribution', 'classes': 'ms-3', 'disabled': not unit.preference_count},
+                'label': 'Preference Distribution', 'disabled': not unit.preference_count},
             {'url': 'manager:unit-allocation-results', 'label': 'Allocation Results',
-                'classes': 'ms-3', 'disabled': not unit.successfully_allocated()},
+                'disabled': not unit.successfully_allocated()},
         ]
         return {'nav_items': nav_items}
 
@@ -154,7 +150,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **
-                self.get_context_for_sidebar(), 'unit': self.get_unit_object(), 'page_title': self.get_page_title(), 'page_title_url': self.get_page_title_url(), 'page_title_actions': self.get_page_title_actions(), 'page_info': self.get_page_info(), 'page_warnings': self.get_page_warnings(), 'page_actions': self.get_page_actions()}
+                self.get_context_for_sidebar(), 'unit': self.get_unit_object(), 'page_title': self.get_page_title(), 'page_title_url': self.get_page_title_url(), 'page_title_actions': self.get_page_title_actions(), 'page_info': self.get_page_info(), 'page_info_column': self.page_info_column if hasattr(self, 'page_info_column') else False, 'page_warnings': self.get_page_warnings(), 'page_actions': self.get_page_actions()}
 
     def unit_managed_by_user(self):
         unit = self.get_unit_object()
@@ -167,6 +163,17 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
         if not hasattr(self, 'object'):
             self.object = super().get_object(queryset)
         return self.object
+
+
+class RestrictWhileAllocatingMixin:
+
+    def get_page_warnings(self):
+        unit = self.get_unit_object()
+        warnings = []
+        if unit.is_allocating():
+            warnings.append(
+                {'type': 'danger', 'content': 'You can not make changes to the unit while it is allocating.'})
+        return warnings if warnings != [] else None
 
 
 """
@@ -196,7 +203,7 @@ Unit views
 
 
 class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
-    form_class = forms.CreateUnitForm
+    form_class = forms.UnitCreateForm
     template_name = 'manager/unit_new.html'
     success_url = reverse_lazy('manager:index')
 
@@ -216,27 +223,59 @@ class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return user_is_manager(self.request.user)
 
 
-class UnitDeleteView(UnitMixin, DeleteView):
+class UnitPageMixin(UnitMixin):
     model = models.Unit
-    success_url = reverse_lazy('index')
-    template_name = 'manager/unit_confirm_delete.html'
 
     unit_id_arg = 'pk'
 
-    def get_page_title(self):
-        if not hasattr(self, 'page_title'):
-            self.page_title = f'Delete {self.get_unit_object()}?'
-        return self.page_title
+    page_title_actions = [
+        {'url': 'manager:unit-update', 'label': 'Edit'},
+        {'url': 'manager:unit-delete',
+            'label': 'Delete', 'classes': 'btn-danger'},
+    ]
+
+    def get_page_title_url(self):
+        return reverse('manager:unit', kwargs={'pk': self.kwargs['pk']})
+
+    page_info_column = True
+
+    def get_page_info(self):
+        unit = self.get_object()
+        allocated_info = []
+        if unit.is_allocated():
+            allocated_info = [
+
+            ]
+        return [
+            {'label': 'Code', 'content': unit.code},
+            {'label': 'Name', 'content': unit.name},
+            {'label': 'Year', 'content': unit.year},
+            {'label': 'Semester', 'content': unit.semester},
+            {'label': 'Preference Submission Timeframe',
+                'content': f'{ formats.date_format(unit.preference_submission_start, "DATETIME_FORMAT") } - { formats.date_format(unit.preference_submission_end, "DATETIME_FORMAT") }'},
+            {'label': 'Limiting Preference Selection by Area', 'content': render_exists_badge(
+                unit.limit_by_major)},
+
+        ] + allocated_info
 
 
-class UnitView(UnitMixin, UpdateView):
-    model = models.Unit
+class UnitDetailView(UnitPageMixin, DetailView):
+    pass
+
+
+class UnitUpdateView(UnitPageMixin, RestrictWhileAllocatingMixin, UpdateView):
     form_class = forms.UnitUpdateForm
 
-    unit_id_arg = 'pk'
+    def get_page_info(self):
+        return None
 
     def get_success_url(self):
-        return self.request.path
+        return reverse('manager:unit', kwargs={'pk': self.kwargs['pk']})
+
+
+class UnitDeleteView(UnitPageMixin, RestrictWhileAllocatingMixin, DeleteView):
+    success_url = reverse_lazy('index')
+    form_class = forms.UnitDeleteForm
 
 
 """
@@ -793,7 +832,7 @@ class ProjectDeleteView(ProjectPageMixin, DeleteView):
     """
         Remove a single project from a unit
     """
-    form_class = forms.ProjectDeleteForm
+    form_class = forms.UnitDeleteForm
 
     def get_success_url(self):
         return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})

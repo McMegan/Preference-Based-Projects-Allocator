@@ -1,6 +1,6 @@
 {% extends 'manager/base.html' %}
 
-{% block content %}
+{% block after_content %}
     {% if unit.projects.count and unit.students.count %}
         {% if too_few_students or too_many_students %}
             {% if too_few_students %}

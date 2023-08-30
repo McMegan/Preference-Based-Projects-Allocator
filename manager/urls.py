@@ -9,7 +9,9 @@ urlpatterns = [
     # Unit views
     path('units/new/', views.UnitCreateView.as_view(), name='unit-new'),
     path('units/<pk>/',
-         views.UnitView.as_view(), name='unit'),
+         views.UnitDetailView.as_view(), name='unit'),
+    path('units/<pk>/update',
+         views.UnitUpdateView.as_view(), name='unit-update'),
     path('units/<pk>/delete',
          views.UnitDeleteView.as_view(), name='unit-delete'),
     # Student views

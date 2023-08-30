@@ -33,7 +33,11 @@
                     {% for page_action in page_title_actions %}
                         {% if page_action.url %}
                             {% if object %}
-                                {% url page_action.url unit.id object.id as url %}
+                                {% if unit and object == unit %}
+                                    {% url page_action.url object.id as url %}
+                                {% else %}
+                                    {% url page_action.url unit.id as url %}
+                                {% endif %}
                             {% else %}
                                 {% url page_action.url unit.id as url %}
                             {% endif %}
@@ -50,7 +54,7 @@
                 {% endfor %}
             {% endblock %}{% endif %}
             {% if page_info %}{% block page_info %}
-                <div class="px-2 d-flex gap-3 column-gap-5 flex-wrap">
+                <div class="px-2 d-flex gap-3 column-gap-5 flex-wrap {% if page_info_column %}flex-column{% endif %}">
                     {% for info in page_info %}
                         {% if info.wide %}
                             <div class="d-flex gap-3 flex-column"><div class="fw-semibold">{{ info.label }}</div><div>{{ info.content }}</div></div>
@@ -79,6 +83,7 @@
                 <hr class="my-4">
             {% endif %}
 
+            {% block before_content %}{% endblock %}
             {% if form %}
                 {% block form %}
                     {% include 'manager/base_form.html' %}
@@ -94,9 +99,7 @@
                     {% include 'manager/base_tables.html' %}
                 {% endblock %}
             {% endif %}
-
-            {% block content %}
-            {% endblock %}
+            {% block after_content %}{% endblock %}
         </div>
     </div>
 </div>

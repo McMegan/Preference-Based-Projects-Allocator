@@ -74,7 +74,7 @@ unit_form_layout_allocator = Layout(
 )
 
 
-class CreateUnitForm(forms.ModelForm):
+class UnitCreateForm(forms.ModelForm):
     preference_submission_start = SplitDateTimeField(required=False)
     preference_submission_end = SplitDateTimeField(required=False)
 
@@ -95,7 +95,7 @@ class CreateUnitForm(forms.ModelForm):
                   'preference_submission_end', 'minimum_preference_limit', 'is_active', 'limit_by_major']
 
 
-class UnitUpdateForm(CreateUnitForm):
+class UnitUpdateForm(UnitCreateForm):
     is_active = forms.BooleanField(
         label='Unit is current/active', required=False, help_text='If this is un-checked students will be unabled to access the unit.')
     limit_by_major = forms.BooleanField(
@@ -113,6 +113,24 @@ class UnitUpdateForm(CreateUnitForm):
                 Submit('submit', 'Save Unit', css_class='btn btn-primary'),
                 HTML(
                     """<a href="{% url 'manager:unit-delete' unit.id %}" class="btn btn-danger">Delete Unit</a>""")
+            )
+        )
+
+
+class UnitDeleteForm(forms.Form):
+    """
+        Form for deleting a unit
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            HTML('<p>Are you sure you want to delete this unit?</p>'),
+            FormActions(
+                Submit('submit', 'Yes, Remove Delete Unit',
+                       css_class='btn btn-danger'),
             )
         )
 
@@ -512,7 +530,7 @@ class ProjectListForm(forms.Form):
         return super().clean()
 
 
-class ProjectDeleteForm(forms.Form):
+class UnitDeleteForm(forms.Form):
     """
         Form for deleting a single project
     """

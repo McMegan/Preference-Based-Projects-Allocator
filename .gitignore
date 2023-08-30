@@ -1,2 +1,6 @@
-.vscode/settings.json
 *.pyc
+__pycache__
+db.sqlite3
+/env
+*.env
+.vscode

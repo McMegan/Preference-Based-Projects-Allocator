@@ -17,6 +17,9 @@ celery = "*"
 django-tables2 = "*"
 django-filter = "*"
 django-bootstrap5 = "*"
+django-environ = "*"
+psycopg2 = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 

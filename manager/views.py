@@ -1,11 +1,12 @@
 import csv
 from io import StringIO
-from typing import Any
+from typing import Any, Dict, Optional, Type
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
 from django.db.models import Count, Sum, F, Avg, Min, Max
 from django.db.models.functions import Round
+from django.forms.models import BaseModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
@@ -328,6 +329,7 @@ class StudentCreateView(UnitMixin, FormMixin, TemplateView):
             if user.exists():
                 form.instance.user_id = user.first().id
             form.instance.save()
+            form.instance.area.set(form.cleaned_data.get('area'))
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -384,8 +386,9 @@ class StudentsUploadListView(UnitMixin, FormMixin, TemplateView):
 
             models.Student.objects.bulk_create(
                 student_create_list,
+                unique_fields=['student_id', 'unit_id'],
                 update_conflicts=True,
-                update_fields=['student_id', 'unit_id'],
+                update_fields=['user']
             )
             models.Area.objects.bulk_create(
                 area_create_list, ignore_conflicts=True)
@@ -498,7 +501,9 @@ class StudentUpdateView(StudentPageMixin, UpdateView):
     """
         Update a single student in a unit
     """
-    form_class = forms.StudentUpdateForm
+
+    def get_form_class(self):
+        return forms.StudentAllocatedUpdateForm if self.get_unit_object().successfully_allocated() else forms.StudentUpdateForm
 
     def get_form_kwargs(self):
         return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
@@ -579,6 +584,7 @@ class ProjectCreateView(UnitMixin, FormMixin, TemplateView):
         if form.is_valid():
             form.instance.unit_id = self.kwargs['pk_unit']
             form.instance.save()
+            form.instance.area.set(form.cleaned_data.get('area'))
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -638,8 +644,9 @@ class ProjectsUploadListView(UnitMixin, FormMixin, TemplateView):
 
             models.Project.objects.bulk_create(
                 project_create_list,
+                unique_fields=['number', 'unit_id'],
                 update_conflicts=True,
-                update_fields=['number', 'name', 'description',
+                update_fields=['name', 'description',
                                'min_students', 'max_students'],
             )
             models.Area.objects.bulk_create(
@@ -658,7 +665,7 @@ class ProjectsUploadListView(UnitMixin, FormMixin, TemplateView):
                         project_id=project.id, area_id=area.id))
 
             project_areas_model.objects.bulk_create(
-                project_areas_create, ignore_conflicts=True,)
+                project_areas_create, ignore_conflicts=True)
 
             return self.form_valid(form)
         else:
@@ -1166,7 +1173,7 @@ class AreaUpdateView(AreaPageMixin, UpdateView):
         return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
 
     def get_success_url(self):
-        return reverse('manager:unit-project-detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit-area-detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
 
 
 class AreaDeleteView(AreaPageMixin, DeleteView):

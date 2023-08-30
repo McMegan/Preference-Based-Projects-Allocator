@@ -162,7 +162,7 @@ class Project(models.Model):
         return self.allocated
 
     class Meta:
-        ordering = ['number', 'name']
+        ordering = ['number']
         constraints = [
             models.UniqueConstraint(
                 fields=['unit', 'number'], name='%(app_label)s_%(class)s_rank_unique', violation_error_message='Each project in a unit must have a unique number. A project with that number is already included in this unit.'),

@@ -219,30 +219,45 @@ class StudentUpdateForm(forms.ModelForm):
 
         super().__init__(*args, **kwargs)
 
-        if self.unit.is_allocated():
-            self.fields['allocated_project'] = AllocatedProjectChoiceField(
-                queryset=self.unit.projects.prefetch_related('allocated_students'), required=False, label='Allocated Project')
-
         self.fields['area'] = forms.ModelMultipleChoiceField(
             queryset=self.unit.areas, required=False)
 
         self.helper = FormHelper()
-        layout_actions = FormActions(
-            Submit('submit', 'Save Student',
-                   css_class='btn btn-primary')
+        self.helper.layout = Layout(
+            'area',
+            FormActions(
+                Submit('submit', 'Save Student',
+                       css_class='btn btn-primary')
+            )
         )
+
+    class Meta:
+        model = models.Student
+        fields = ['area']
+
+
+class StudentAllocatedUpdateForm(StudentUpdateForm):
+    """
+        Form for updating a student in a unit that has been allocated
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
         if self.unit.is_allocated():
-            self.helper.layout = Layout(
-                FloatingField('allocated_project',
-                              css_class='my-3'),
-                'area',
-                layout_actions
+            self.fields['allocated_project'] = AllocatedProjectChoiceField(
+                queryset=self.unit.projects.prefetch_related('allocated_students'), required=False, label='Allocated Project')
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            FloatingField('allocated_project',
+                          css_class='my-3'),
+            'area',
+            FormActions(
+                Submit('submit', 'Save Student',
+                       css_class='btn btn-primary')
             )
-        else:
-            self.helper.layout = Layout(
-                'area',
-                layout_actions
-            )
+        )
 
     def save(self, commit: bool = ...):
         # Update allocated preference
@@ -253,9 +268,8 @@ class StudentUpdateForm(forms.ModelForm):
             ).rank if allocated_project_pref.exists() else None
         return super().save(commit)
 
-    class Meta:
-        model = models.Student
-        fields = ['area']
+    class Meta(StudentUpdateForm.Meta):
+        fields = ['allocated_project', 'area']
 
 
 class StudentDeleteForm(forms.Form):
@@ -378,8 +392,6 @@ class ProjectAllocatedUpdateForm(ProjectUpdateForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        print(self.instance.unit)
 
         self.fields['allocated_students'] = forms.ModelMultipleChoiceField(
             queryset=models.Student.objects.filter(unit_id=self.instance.unit_id).annotate(is_assigned=ExpressionWrapper(Q(allocated_project_id=self.instance.id), output_field=BooleanField())).order_by('-is_assigned'), initial=self.instance.allocated_students.all(), required=False)
@@ -585,10 +597,14 @@ class AreaUpdateForm(AreaForm):
         self.fields['projects'] = forms.ModelMultipleChoiceField(
             queryset=self.unit.projects.all(), initial=self.instance.projects.all(), required=False)
 
+        self.fields['students'] = forms.ModelMultipleChoiceField(
+            queryset=self.unit.students.all(), initial=self.instance.students.all(), required=False)
+
         self.helper = FormHelper()
         self.helper.layout = Layout(
             FloatingField('name'),
             'projects',
+            'students',
             FormActions(
                 Submit('submit', 'Save Area',
                        css_class='btn btn-primary'),
@@ -596,7 +612,12 @@ class AreaUpdateForm(AreaForm):
         )
 
     def clean(self):
+        self.instance.projects.set(self.cleaned_data.get('projects'))
+        self.instance.students.set(self.cleaned_data.get('students'))
         return super(forms.ModelForm, self).clean()
+
+    class Meta(AreaForm.Meta):
+        fields = ['name']
 
 
 class AreaDeleteForm(forms.Form):

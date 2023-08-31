@@ -5,6 +5,10 @@ import os
 env = environ.Env()
 environ.Env.read_env()
 
+print('PRODUCTION' if 'WEBSITE_HOSTNAME' in os.environ else 'TESTING')
+print(os.getenv('DJANGO_SETTINGS_MODULE')
+      if 'DJANGO_SETTINGS_MODULE' in os.environ else 'NO SETTINGS SET')
+
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = True

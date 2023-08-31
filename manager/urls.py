@@ -50,7 +50,7 @@ urlpatterns = [
     re_path(r'^units/(?P<pk_unit>[0-9]+)/areas/clear$',
             views.AreasClearView.as_view(), name='unit-areas-clear'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/areas/new$',
-            views.AreaCreateView.as_view(), name='unit-area-new'),
+            views.AreaCreateView.as_view(), name='unit-areas-new'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/areas/(?P<pk>[0-9]+)$',
             views.AreaDetailView.as_view(), name='unit-area-detail'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/areas/(?P<pk>[0-9]+)/update$',
@@ -64,7 +64,5 @@ urlpatterns = [
             views.PreferencesDistributionView.as_view(), name='unit-preferences-distribution'),
     # Allocation Views
     re_path(r'^units/(?P<pk_unit>[0-9]+)/allocation$',
-            views.AllocationStartView.as_view(), name='unit-allocation-start'),
-    re_path(r'^units/(?P<pk_unit>[0-9]+)/allocation/results$',
-            views.AllocationResultsView.as_view(), name='unit-allocation-results'),
+            views.AllocationView.as_view(), name='unit-allocation')
 ]

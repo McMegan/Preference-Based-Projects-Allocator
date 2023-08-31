@@ -46,8 +46,10 @@ class SplitDateTimeField(forms.SplitDateTimeField):
 class UnitKwargMixin:
     def __init__(self, *args, **kwargs):
         self.unit = kwargs.pop('unit', None)
-        if self.unit:
-            self.disabled = self.unit.is_allocating
+        self.disabled = kwargs.pop('disabled', None)
+
+        if not self.disabled:
+            self.disabled = self.unit.is_allocating if self.unit else self.disabled
 
         super().__init__(*args, **kwargs)
 
@@ -98,6 +100,7 @@ unit_form_layout_main = Layout(
     FloatingField('name'),
     FloatingField('year'),
     FloatingField('semester'),
+    'is_active',
 )
 unit_form_layout_allocator = Layout(
     Fieldset(
@@ -109,14 +112,20 @@ unit_form_layout_allocator = Layout(
                 css_class='col preference_submission_timeframe'),
             css_class='row'
         ),
-        'minimum_preference_limit',
+        Div(
+            Div('minimum_preference_limit',
+                css_class='col'),
+            Div('maximum_preference_limit',
+                css_class='col'),
+            css_class='row'
+        ),
     ),
 )
 
 
 class UnitCreateForm(forms.ModelForm):
-    preference_submission_start = SplitDateTimeField(required=False)
-    preference_submission_end = SplitDateTimeField(required=False)
+    is_active = forms.BooleanField(
+        label='Unit is current/active', required=False, help_text='If this is un-checked students will be unabled to access the unit.')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -131,8 +140,7 @@ class UnitCreateForm(forms.ModelForm):
 
     class Meta:
         model = models.Unit
-        fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',
-                  'preference_submission_end', 'minimum_preference_limit', 'is_active', 'limit_by_major']
+        fields = ['code', 'name', 'year', 'semester', 'is_active']
 
 
 class UnitUpdateForm(UnitKwargMixin, UnitCreateForm):
@@ -143,14 +151,18 @@ class UnitUpdateForm(UnitKwargMixin, UnitCreateForm):
     form_layout = Layout(
         unit_form_layout_main,
         unit_form_layout_allocator,
-        'is_active',
-        'limit_by_major'
+        'limit_by_major',
     )
 
-    is_active = forms.BooleanField(
-        label='Unit is current/active', required=False, help_text='If this is un-checked students will be unabled to access the unit.')
+    preference_submission_start = SplitDateTimeField(required=False)
+    preference_submission_end = SplitDateTimeField(required=False)
+
     limit_by_major = forms.BooleanField(
         label='Limit project preference selection by major/area', required=False, help_text='This will limit each students project preference options to those which match the students area. If a student has no area, all projects will be displayed. If a project has no area, it will be displayed to all students.')
+
+    class Meta(UnitCreateForm.Meta):
+        fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',
+                  'preference_submission_end', 'minimum_preference_limit', 'maximum_preference_limit', 'is_active', 'limit_by_major']
 
 
 """
@@ -231,7 +243,7 @@ class StudentUpdateForm(UnitKwargMixin, forms.ModelForm):
     """
         Form for updating a student in a unit
     """
-    submit_label = 'Update Student'
+    submit_label = 'Save Student'
     form_layout = Layout('area')
 
     def init_fields(self):
@@ -254,11 +266,11 @@ class StudentAllocatedUpdateForm(StudentUpdateForm):
     )
 
     def init_fields(self):
+        super().init_fields()
         self.fields['allocated_project'] = AllocatedProjectChoiceField(
             queryset=self.unit.projects.prefetch_related('allocated_students'), required=False, label='Allocated Project')
 
     def save(self, commit: bool = ...):
-        # Update allocated preference
         if self.instance.allocated_project:
             allocated_project_pref = self.instance.project_preferences.filter(
                 project_id=self.instance.allocated_project.id)
@@ -316,10 +328,11 @@ class ProjectUpdateForm(ProjectForm):
     """
         Form for updating a project in a unit
     """
-    submit_label = 'Update Unit'
+    submit_label = 'Save Unit'
     form_layout = Layout(project_form_layout_main)
 
     def init_fields(self):
+        super().init_fields()
         self.fields['area'] = forms.ModelMultipleChoiceField(
             queryset=self.instance.unit.areas, required=False)
 
@@ -329,13 +342,14 @@ class ProjectUpdateForm(ProjectForm):
 
 class ProjectAllocatedUpdateForm(ProjectUpdateForm):
     """
-        Form for updating a project in a unit
+        Form for updating a project in a unit that has been allocated
     """
-    submit_label = 'Update Unit'
+    submit_label = 'Save Project'
     form_layout = Layout(project_form_layout_main,
                          Fieldset('', 'allocated_students'))
 
     def init_fields(self):
+        super().init_fields()
         self.fields['allocated_students'] = forms.ModelMultipleChoiceField(
             queryset=models.Student.objects.filter(unit_id=self.instance.unit_id).annotate(is_assigned=ExpressionWrapper(Q(allocated_project_id=self.instance.id), output_field=BooleanField())).order_by('-is_assigned'), initial=self.instance.allocated_students.all(), required=False)
         self.fields['allocated_students'].widget.attrs['size'] = '10'
@@ -467,7 +481,7 @@ class AreaUpdateForm(AreaForm):
     """
         Form for updating a single area to a unit
     """
-    submit_label = 'Update Area'
+    submit_label = 'Save Area'
     form_layout = Layout(
         FloatingField('name'),
         'projects',
@@ -475,6 +489,7 @@ class AreaUpdateForm(AreaForm):
     )
 
     def init_fields(self):
+        super().init_fields()
         self.fields['projects'] = forms.ModelMultipleChoiceField(
             queryset=self.unit.projects.all(), initial=self.instance.projects.all(), required=False)
         self.fields['students'] = forms.ModelMultipleChoiceField(
@@ -487,3 +502,19 @@ class AreaUpdateForm(AreaForm):
 
     class Meta(AreaForm.Meta):
         fields = ['name']
+
+
+"""
+
+Allocation Forms
+
+"""
+
+
+class StartAllocationForm(UnitKwargMixin, forms.Form):
+    """
+
+    Start allocation form
+
+    """
+    submit_label = 'Start Allocation'

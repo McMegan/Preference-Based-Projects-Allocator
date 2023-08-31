@@ -1,82 +1,27 @@
 {% extends 'manager/base.html' %}
 
 {% block after_content %}
-    {% if unit.projects.count and unit.students.count %}
-        {% if too_few_students or too_many_students %}
-            {% if too_few_students %}
-                <div class="alert alert-danger" role="alert">
-                    <p>There are too few students enrolled in the unit compared to the minimum project spaces.</p>
-                    <p>
-                        <div><span class="fw-semibold">Students:</span> {{ unit.students_count }}</div>
-                        <div><span class="fw-semibold">Minimum Spaces:</span> {{ min_project_space }}</div>
-                    </p>
-                    <p class="mb-0">To fix this:</p>
-                    <ul class="my-0">
-                        <li>change the minimum group size for a project, or</li>
-                        <li>add students to the student list.</li>
-                    </ul>
-                </div>
-            {% endif %}
-            {% if too_many_students %}
-                <div class="alert alert-danger" role="alert">
-                    <p>There are too many students enrolled in the unit compared to the maximum project spaces.</p>
-                    <p>
-                        <div><span class="fw-semibold">Students:</span> {{ unit.students_count }}</div>
-                        <div><span class="fw-semibold">Maximum Spaces:</span> {{ max_project_spaces }}</div>
-                    </p>
-                    <p class="mb-0">To fix this:</p>
-                    <ul class="my-0">
-                        <li>change the maximum group size for a project, or</li>
-                        <li>add projects to the project list, or</li>
-                        <li>remove students from the student list.</li>
-                    </ul>
-                </div>
-            {% endif %}
-        {% else %}
-            {% if unit.is_allocating %}
-                <div class="alert alert-secondary d-grid gap-3" role="alert">
-                   <div>This unit is currently allocating students to projects. Feel free to refresh or leave the page.</div>
-                   <div>You should recieve an email once the allocation is completed.</div>
-                </div>
-            {% else %}
-                {% if unit.completed_allocation %}
-                <div class="alert alert-{% if unit.is_allocated %}success{% else %}danger{% endif %}" role="alert">
-                    <div class="fw-bold">Allocation: {{ unit.get_allocation_descriptive }}</div>
-                    {% if unit.is_allocated %}
-                        The allocation of students to projects was completed successfully.
-                    {% else %}
-                        The allocation of students to projects failed.
-                    {% endif %}
-                </div>
-                {% endif %}
-                {% if unit.preference_submission_set and unit.preference_submission_ended %}
-                    <div>
-                        <form method="post" enctype="multipart/form-data">{% csrf_token %}
-                            {% if unit.is_allocated %}
-                                <div class="alert alert-danger">This unit has already been allocated, allocating again will override the current allocation.<br>If this allocation fails, the previous successful allocation will be retained.</div>
-                                <input type="submit" name="submit" value="Override Allocation" class="btn btn-danger">
-                            {% else %}
-                                <input type="submit" name="submit" value="Start Allocation" class="btn btn-primary">
-                            {% endif %}
-                        </form>
-                    </div>
-                {% else %}
-                    {% if not unit.preference_submission_set %}
-                        <div class="alert alert-danger" role="alert">
-                            A preference submission timeframe for this unit has not been set.
-                        </div>
-                    {% endif %}
-                    {% if not unit.preference_submission_ended %}
-                        <div class="alert alert-danger" role="alert">
-                            Allocation can only start once the preference submission timeframe for this unit has ended.
-                        </div>
-                    {% endif %}
-                {% endif %}
-            {% endif %}
-        {% endif %}
-    {% else %}
-        <div class="alert alert-danger" role="alert">
-            You must add students and projects to the unit before allocating.
-        </div>
+    {% if allocation_warnings %}
+        {% for warning in allocation_warnings %}
+            <div class="alert alert-{{ warning.type }} {{ warning.classes }}" role="alert">{{ warning.content }}</div>
+        {% endfor %}
     {% endif %}
+    {% if unit.completed_allocation %}
+    <div class="alert alert-{% if unit.is_allocated %}success{% else %}danger{% endif %}" role="alert">
+        <div class="fw-bold">Allocation: {{ unit.get_allocation_descriptive }}</div>
+        {% if unit.is_allocated %}
+            The allocation of students to projects was completed successfully.
+        {% else %}
+            The allocation of students to projects failed.
+        {% endif %}
+    </div>
+    {% endif %}
+    {% if unit.is_allocated %}
+    <div class="alert alert-danger">This unit has already been allocated, allocating again will override the current allocation.<br>If this allocation fails, the previous successful allocation will be retained.</div>
+    {% endif %}
+    <div>
+        <form method="post" enctype="multipart/form-data">{% csrf_token %}
+            <input type="submit" name="start_allocation" value="{% if unit.is_allocated %}Override Allocation{% else %}Start Allocation{% endif %}" class="btn btn-{% if unit.is_allocated %}danger{% else %}primary{% endif %}" {% if not can_start_allocation %}disabled{% endif %}>
+        </form>
+    </div>
 {% endblock %}

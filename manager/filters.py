@@ -325,10 +325,9 @@ class PreferenceDistributionFilterFormHelper(FormHelper):
                     FloatingField('number'),
                     Div(FloatingField('name'),
                         css_class='flex-grow-1'),
-                    Div(InlineField('project'),
-                        css_class='flex-grow-1'),
-                    css_class='mb-3 d-flex flex-wrap column-gap-3 align-items-center'
+                    css_class='d-flex flex-wrap column-gap-3 align-items-center'
                 ),
+                Div(InlineField('project'), css_class='mb-3'),
                 FormActions(
                     Submit('submit', 'Filter'),
                     HTML(

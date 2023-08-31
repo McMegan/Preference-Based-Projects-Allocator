@@ -6,7 +6,16 @@
         <div class="container-fluid p-0 pt-3 preferences_sticky">
             <div>
                 <h3 class="mb-3">Preferences</h3>
-                <p id="form_minimum" class="my-3">You must submit at least {{ unit.minimum_preference_limit }} project preferences.</p>
+                {% if unit.minimum_preference_limit and unit.maximum_preference_limit %}
+                    <p class="my-3">You must submit at least {{ unit.minimum_preference_limit }} and at most {{ unit.maximum_preference_limit }} project preferences.</p>
+                {% else %}
+                    {% if unit.minimum_preference_limit %}
+                        <p class="my-3">You must submit at least {{ unit.minimum_preference_limit }} project preferences.</p>
+                    {% endif %}
+                    {% if unit.maximum_preference_limit %}
+                        <p class="my-3">You must submit at most {{ unit.maximum_preference_limit }} project preferences.</p>
+                    {% endif %}
+                {% endif %}
                 <div class="border rounded overflow-hidden" style="min-height: 200px;">
                     <table id="preference_table" class="table table align-middle m-0">
                         <thead class="table-light">
@@ -43,8 +52,8 @@
         <div class="container-fluid p-0 pt-3">
             <h3 class="mb-4">Projects</h3>
             {% if unit.limit_by_major %}
-                <p>Your project selection has been limited by the project area.</p>
-                <p>If you cannot see the relavent projects, please contact your supervisor.</p>
+                <p>Your project selection has been limited by project area.</p>
+                <p>If you cannot see the projects you expected to see, please contact your supervisor.</p>
             {% endif %}
             <div class="my-3">
                 <h4 class="fs-5">Search</h4>

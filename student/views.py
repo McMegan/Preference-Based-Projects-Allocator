@@ -45,7 +45,8 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
 
     def get_form_class(self):
         min_preference_limit = self.get_unit_object().minimum_preference_limit
-        return formset_factory(formset=forms.PreferenceFormSet, form=forms.PreferenceForm, extra=0, min_num=min_preference_limit if min_preference_limit else 0, validate_min=True if min_preference_limit else False)
+        max_preference_limit = self.get_unit_object().maximum_preference_limit
+        return formset_factory(formset=forms.PreferenceFormSet, form=forms.PreferenceForm, extra=0, min_num=min_preference_limit if min_preference_limit else 0, validate_min=True if min_preference_limit else False, max_num=max_preference_limit if max_preference_limit else 0, validate_max=True if max_preference_limit else False)
 
     def get_initial(self):
         return [{'rank': preference.rank, 'project': preference.project, 'project_id': preference.project.id}

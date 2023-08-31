@@ -38,6 +38,10 @@ def render_area_list(areas):
     return format_html(f"""{areas_html}""")
 
 
+def user_is_manager(user):
+    return user.is_manager
+
+
 class FilteredTableBase(SingleTableMixin):
     filter_formhelper_class = None
 
@@ -66,10 +70,6 @@ class FilteredTableView(FilteredTableBase, FilterView):
     pass
 
 
-def user_is_manager(user):
-    return user.is_manager
-
-
 class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
     unit_id_arg = 'pk_unit'
     template_name = 'manager/base.html'
@@ -90,33 +90,72 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def get_context_for_sidebar(self):
         unit = self.get_unit_object()
+        """
         nav_items = [
-            {'url': 'manager:unit', 'label': unit,
+            {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
                 'classes': f'fs-6'},
             # Allocator Settings / Setup
             {'label': 'Unit Actions', 'classes': 'fw-semibold'},
-            {'url': 'manager:unit-students-new-list',
-                'label': 'Upload Student List'},
-            {'url': 'manager:unit-students-new', 'label': 'Add Student'},
-            {'url': 'manager:unit-projects-new-list',
-                'label': 'Upload Project List'},
-            {'url': 'manager:unit-projects-new', 'label': 'Add Project'},
-            {'url': 'manager:unit-area-new', 'label': 'Add Area'},
-            {'url': 'manager:unit-allocation-start', 'label': 'Start Allocation'},
+            {'url': reverse('manager:unit-students-new-list', kwargs={'pk_unit': unit.pk}),
+             'label': 'Upload Student List', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-students-new', kwargs={'pk_unit': unit.pk}),
+             'label': 'Add Student', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-projects-new-list', kwargs={'pk_unit': unit.pk}),
+             'label': 'Upload Project List', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-projects-new', kwargs={'pk_unit': unit.pk}),
+             'label': 'Add Project', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-areas-new', kwargs={'pk_unit': unit.pk}),
+             'label': 'Add Area', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-allocation-start', kwargs={'pk_unit': unit.pk}),
+             'label': 'Start Allocation', 'classes': 'ms-3'},
             # Unit Information
             {'label': 'Unit Information', 'classes': 'fw-semibold'},
-            {'url': 'manager:unit-students',
-                'label': f'Student List ({unit.students_count})'},
-            {'url': 'manager:unit-projects',
-                'label': f'Project List ({unit.projects_count})'},
-            {'url': 'manager:unit-areas',
-                'label': f'Area List ({unit.areas_count})'},
-            {'url': 'manager:unit-preferences', 'label': 'Submitted Preferences',
-                'disabled': not unit.preference_count},
-            {'url': 'manager:unit-preferences-distribution',
-                'label': 'Preference Distribution', 'disabled': not unit.preference_count},
-            {'url': 'manager:unit-allocation-results', 'label': 'Allocation Results',
-                'disabled': not unit.successfully_allocated()},
+            {'url': reverse('manager:unit-students', kwargs={'pk_unit': unit.pk}),
+             'label': f'Student List ({unit.students_count})', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-projects', kwargs={'pk_unit': unit.pk}),
+             'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-areas', kwargs={'pk_unit': unit.pk}),
+             'label': f'Area List ({unit.areas_count})', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-preferences', kwargs={'pk_unit': unit.pk}),
+             'label': 'Preferences', 'classes': 'ms-3', 'disabled': not unit.preference_count},
+            {'url': reverse('manager:unit-preferences-distribution', kwargs={'pk_unit': unit.pk}),
+             'label': 'Project Popularity', 'classes': 'ms-3', 'disabled': not unit.preference_count},
+            {'url': reverse('manager:unit-allocation-results', kwargs={'pk_unit': unit.pk}),
+             'label': 'Allocation Results', 'classes': 'ms-3', 'disabled': not unit.successfully_allocated()},
+        ]
+
+        
+        """
+        nav_items = [
+            {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
+                'classes': f'fs-6'},
+
+            {'url': reverse('manager:unit-projects', kwargs={'pk_unit': unit.pk}),
+             'label': f'Projects ({unit.projects_count})'},
+            {'url': reverse('manager:unit-projects-new-list', kwargs={'pk_unit': unit.pk}),
+             'label': 'Upload Project List', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-projects-new', kwargs={'pk_unit': unit.pk}),
+             'label': 'Add Project', 'classes': 'ms-3'},
+
+            {'url': reverse('manager:unit-students', kwargs={'pk_unit': unit.pk}),
+             'label': f'Students ({unit.students_count})'},
+            {'url': reverse('manager:unit-students-new-list', kwargs={'pk_unit': unit.pk}),
+             'label': 'Upload Student List', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-students-new', kwargs={'pk_unit': unit.pk}),
+             'label': 'Add Student', 'classes': 'ms-3'},
+
+            {'url': reverse('manager:unit-areas', kwargs={'pk_unit': unit.pk}),
+             'label': f'Areas ({unit.areas_count})'},
+            {'url': reverse('manager:unit-areas-new', kwargs={'pk_unit': unit.pk}),
+             'label': 'Add Area', 'classes': 'ms-3'},
+
+            {'url': reverse('manager:unit-preferences', kwargs={'pk_unit': unit.pk}),
+             'label': 'Preferences'},
+            {'url': reverse('manager:unit-preferences-distribution', kwargs={'pk_unit': unit.pk}),
+             'label': 'Project Popularity', 'classes': 'ms-3'},
+
+            {'url': reverse('manager:unit-allocation', kwargs={'pk_unit': unit.pk}),
+             'label': 'Allocation'}
         ]
         return {'nav_items': nav_items}
 
@@ -125,13 +164,13 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
             self.page_title = self.get_unit_object()
         return self.page_title
 
+    def get_page_subtitle(self):
+        if not hasattr(self, 'page_subtitle'):
+            return None
+        return self.page_subtitle
+
     def get_page_title_url(self):
         return self.request.path
-
-    def get_page_title_actions(self):
-        if not hasattr(self, 'page_title_actions'):
-            return None
-        return self.page_title_actions
 
     def get_page_info(self):
         if not hasattr(self, 'page_info'):
@@ -139,9 +178,32 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
         return self.page_info
 
     def get_page_warnings(self):
-        if not hasattr(self, 'page_warnings'):
-            return None
-        return self.page_warnings
+        unit = self.get_unit_object()
+        if not hasattr(self, 'warnings'):
+            self.warnings = []
+
+        if not unit.is_active:
+            self.warnings.append(
+                {'type': 'secondary', 'content': 'This unit is inactive.', 'classes': 'text-center'})
+        if unit.is_allocating:
+            self.warnings.append(
+                {'type': 'danger', 'content': 'This unit is currently being allocated. You can not make changes to the unit while it is allocating.'})
+        if unit.completed_allocation() and unit.get_unallocated_student_count() > 0:
+            self.warnings.append({'type': 'warning', 'content': format_html(f"""
+            <p>There {'are' if unit.get_unallocated_student_count() > 1 else 'is'} {unit.get_unallocated_student_count()} student{'s' if unit.get_unallocated_student_count() > 1 else ''} who {'are' if unit.get_unallocated_student_count() > 1 else 'is'} not allocated to a project.</p>
+            <p class="mb-0">To fix this:</p>
+            <ul class="my-0">
+                <li>run the allocator again (this may change the project allocation if existing students), or</li>
+                <li>manually add the unallocated student{'s' if unit.get_unallocated_student_count() > 1 else ''} to a project.</li>
+            </ul>
+        """)})
+        if unit.projects_count == 0 and unit.preference_submission_started():
+            self.warnings.append(
+                {'type': 'danger', 'content': 'The preference submission timeframe has started but there are currently no projects in the unit.'})
+        if unit.students_count == 0 and unit.preference_submission_started():
+            self.warnings.append(
+                {'type': 'danger', 'content': 'The preference submission timeframe has started but there are currently no students in the unit.'})
+        return self.warnings if self.warnings != [] else None
 
     def get_page_actions(self):
         if not hasattr(self, 'page_actions'):
@@ -150,7 +212,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **
-                self.get_context_for_sidebar(), 'unit': self.get_unit_object(), 'page_title': self.get_page_title(), 'page_title_url': self.get_page_title_url(), 'page_title_actions': self.get_page_title_actions(), 'page_info': self.get_page_info(), 'page_info_column': self.page_info_column if hasattr(self, 'page_info_column') else False, 'page_warnings': self.get_page_warnings(), 'page_actions': self.get_page_actions()}
+                self.get_context_for_sidebar(), 'unit': self.get_unit_object(), 'page_title': self.get_page_title(), 'page_subtitle': self.get_page_subtitle(), 'page_title_url': self.get_page_title_url(), 'page_info': self.get_page_info(), 'page_info_column': self.page_info_column if hasattr(self, 'page_info_column') else False, 'page_warnings': self.get_page_warnings(), 'page_actions': self.get_page_actions()}
 
     def unit_managed_by_user(self):
         unit = self.get_unit_object()
@@ -181,7 +243,7 @@ class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return self.request.user.managed_units.all().order_by('-is_active')
+        return self.request.user.managed_units.all().order_by('-is_active', 'year', 'code', 'name')
 
     def test_func(self):
         return user_is_manager(self.request.user)
@@ -219,7 +281,7 @@ class UnitPageMixin(UnitMixin):
     model = models.Unit
     unit_id_arg = 'pk'
 
-    def get_page_title_actions(self):
+    def get_page_actions(self):
         return [
             {'url': reverse('manager:unit-update',
                             kwargs={'pk': self.kwargs['pk']}), 'label': 'Edit'},
@@ -245,9 +307,9 @@ class UnitPageMixin(UnitMixin):
             {'label': 'Year', 'content': unit.year},
             {'label': 'Semester', 'content': unit.semester},
             {'label': 'Preference Submission Timeframe',
-                'content': f'{ formats.date_format(unit.preference_submission_start, "DATETIME_FORMAT") } - { formats.date_format(unit.preference_submission_end, "DATETIME_FORMAT") }'},
+                'content': f'{ formats.date_format(unit.preference_submission_start, "DATETIME_FORMAT") if unit.preference_submission_start else "Not Set" } - { formats.date_format(unit.preference_submission_end, "DATETIME_FORMAT") if unit.preference_submission_end else "Not Set" }'},
             {'label': 'Minimum Preference Limit',
-                'content': unit.minimum_preference_limit},
+                'content': unit.minimum_preference_limit if unit.minimum_preference_limit else "Not Set"},
             {'label': 'Is Active/Current?', 'content': render_exists_badge(
                 unit.is_active)},
             {'label': 'Limiting Preference Selection by Area', 'content': render_exists_badge(
@@ -287,12 +349,15 @@ class StudentsListMixin(UnitMixin):
     model = models.Student
     page_title = 'Student List'
 
-    page_actions = [
-        {'url': 'manager:unit-students-new-list', 'label': 'Upload Student List'},
-        {'url': 'manager:unit-students-new', 'label': 'Add Student'},
-        {'url': 'manager:unit-students-clear',
-            'label': 'Remove All Students', 'classes': 'btn-danger'},
-    ]
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit-students-new-list',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Student List'},
+            {'url': reverse('manager:unit-students-new',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Student'},
+            {'url': reverse('manager:unit-students-clear',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Students', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().students.exists()},
+        ]
 
     def get_page_info(self):
         unit = self.get_unit_object()
@@ -308,62 +373,30 @@ class StudentsListMixin(UnitMixin):
             {'label': 'Total No. Students', 'content': unit.students_count},
         ] + allocated_info
 
-    def get_page_warnings(self):
-        unit = self.get_unit_object()
-        warnings = []
-        if unit.completed_allocation() and unit.get_unallocated_student_count() > 0:
-            warnings.append({'type': 'warning', 'content': format_html(f"""
-            <p>There {'are' if unit.get_unallocated_student_count() > 1 else 'is'} {unit.get_unallocated_student_count()} student{'s' if unit.get_unallocated_student_count() > 1 else ''} who {'are' if unit.get_unallocated_student_count() > 1 else 'is'} not allocated to a project.</p>
-            <p class="mb-0">To fix this:</p>
-            <ul class="my-0">
-                <li>run the allocator again (this may change the project allocation if existing students), or</li>
-                <li>manually add the unallocated student{'s' if unit.get_unallocated_student_count() > 1 else ''} to a project.</li>
-            </ul>
-        """)})
-        return warnings if warnings != [] else None
+    def get_queryset(self):
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('allocated_project').prefetch_related('area').order_by('student_id')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.get_unit_object().is_allocated():
+            allocated_student_count = self.get_unit_object().students.filter(
+                allocated_project__isnull=False).count()
+            context['allocated_student_count'] = allocated_student_count
+            context['unallocated_student_count'] = self.get_unit_object(
+            ).students.count()-allocated_student_count
+        return context
+
+    def get_page_title_url(self):
+        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
+
+    def get_success_url(self):
+        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
 
-class StudentsListView(UnitMixin, FilteredTableView):
+class StudentsListView(StudentsListMixin, FilteredTableView):
     """
         List of students in unit
     """
-    model = models.Student
-    page_title = 'Student List'
-
-    page_actions = [
-        {'url': 'manager:unit-students-new-list', 'label': 'Upload Student List'},
-        {'url': 'manager:unit-students-new', 'label': 'Add Student'},
-        {'url': 'manager:unit-students-clear',
-            'label': 'Remove All Students', 'classes': 'btn-danger'},
-    ]
-
-    def get_page_info(self):
-        unit = self.get_unit_object()
-        allocated_info = []
-        if unit.is_allocated():
-            allocated_info = [
-                {'label': 'No. Allocated Students',
-                    'content': unit.get_allocated_student_count()},
-                {'label': 'No. Unallocated Students',
-                    'content': unit.students.count() - unit.get_allocated_student_count()},
-            ]
-        return [
-            {'label': 'Total No. Students', 'content': unit.students_count},
-        ] + allocated_info
-
-    def get_page_warnings(self):
-        unit = self.get_unit_object()
-        warnings = []
-        if unit.completed_allocation() and unit.get_unallocated_student_count() > 0:
-            warnings.append({'type': 'warning', 'content': format_html(f"""
-            <p>There {'are' if unit.get_unallocated_student_count() > 1 else 'is'} {unit.get_unallocated_student_count()} student{'s' if unit.get_unallocated_student_count() > 1 else ''} who {'are' if unit.get_unallocated_student_count() > 1 else 'is'} not allocated to a project.</p>
-            <p class="mb-0">To fix this:</p>
-            <ul class="my-0">
-                <li>run the allocator again (this may change the project allocation if existing students), or</li>
-                <li>manually add the unallocated student{'s' if unit.get_unallocated_student_count() > 1 else ''} to a project.</li>
-            </ul>
-        """)})
-        return warnings if warnings != [] else None
 
     def get_filter_formhelper_class(self):
         return filters.StudentAllocatedFilterFormHelper if self.get_unit_object().successfully_allocated() else filters.StudentFilterFormHelper
@@ -374,27 +407,13 @@ class StudentsListView(UnitMixin, FilteredTableView):
     def get_table_class(self):
         return tables.StudentsAllocatedTable if self.get_unit_object().successfully_allocated() else tables.StudentsTable
 
-    def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('allocated_project').prefetch_related('area')
 
-    def get_context_data(self, **kwargs):
-        allocated_student_count = self.get_unit_object().students.filter(
-            allocated_project__isnull=False).count()
-        return {**super().get_context_data(**kwargs), 'allocated_student_count': allocated_student_count, 'unallocated_student_count': self.get_unit_object().students.count()-allocated_student_count}
-
-
-class StudentCreateView(UnitMixin, FormMixin, TemplateView):
+class StudentCreateView(StudentsListMixin, FormMixin, TemplateView):
     """
         Add a single student to the unit's student list
     """
     form_class = forms.StudentForm
-    page_title = 'Add Student'
-
-    def get_success_url(self):
-        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
-
-    def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
+    page_subtitle = 'Add Student'
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
@@ -412,15 +431,12 @@ class StudentCreateView(UnitMixin, FormMixin, TemplateView):
             return self.form_invalid(form)
 
 
-class StudentsUploadListView(UnitMixin, FormMixin, TemplateView):
+class StudentsUploadListView(StudentsListMixin, FormMixin, TemplateView):
     """
         Upload list of students to a unit
     """
     form_class = forms.StudentListForm
-    page_title = 'Upload Student List'
-
-    def get_success_url(self):
-        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
+    page_subtitle = 'Upload Student List'
 
     def post(self, request, *args, **kwargs):
         # form = self.get_form()
@@ -495,7 +511,7 @@ class StudentsClearView(StudentsListMixin, FormMixin, TemplateView):
         Clear the student list of a unit
     """
     model = models.Student
-    page_title = 'Remove all Students from this Unit?'
+    page_subtitle = 'Remove all Students'
 
     def get_form(self):
         return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove All Students from Unit', form_message='<p>Are you sure you want to remove all students from this unit?</p>')
@@ -503,15 +519,14 @@ class StudentsClearView(StudentsListMixin, FormMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
-            models.Student.objects.filter(
-                unit_id=self.kwargs['pk_unit']).delete()
-
+            unit = self.get_unit_object()
+            unit.students.all().delete()
+            unit.is_allocated = False
+            unit.allocation_status = None
+            unit.save()
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
-
-    def get_success_url(self):
-        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
 
 class StudentPageMixin(UnitMixin):
@@ -520,7 +535,7 @@ class StudentPageMixin(UnitMixin):
     """
     model = models.Student
 
-    def get_page_title_actions(self):
+    def get_page_actions(self):
         return [
             {'url': reverse('manager:unit-student-update', kwargs={'pk': self.kwargs.get(
                 'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
@@ -581,12 +596,10 @@ class StudentUpdateView(StudentPageMixin, UpdateView):
     """
         Update a single student in a unit
     """
+    page_subtitle = 'Update Student'
 
     def get_form_class(self):
         return forms.StudentAllocatedUpdateForm if self.get_unit_object().successfully_allocated() else forms.StudentUpdateForm
-
-    def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
 
     def get_success_url(self):
         return reverse('manager:unit-student-detail', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')})
@@ -596,6 +609,7 @@ class StudentDeleteView(StudentPageMixin, DeleteView):
     """
         Remove a single student from a unit
     """
+    page_subtitle = 'Remove Student'
 
     def get_form(self):
         return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Student from Unit', form_message='<p>Are you sure you want to remove this student?</p>')
@@ -611,20 +625,19 @@ Project views
 """
 
 
-class ProjectsListView(UnitMixin, FilteredTableView):
-    """
-        List of projects in unit
-    """
+class ProjectsListMixin(UnitMixin):
     model = models.Project
-
     page_title = 'Project List'
 
-    page_actions = [
-        {'url': 'manager:unit-projects-new-list', 'label': 'Upload Project List'},
-        {'url': 'manager:unit-projects-new', 'label': 'Add Project'},
-        {'url': 'manager:unit-projects-clear',
-            'label': 'Remove All Projects', 'classes': 'btn-danger'},
-    ]
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit-projects-new-list',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Project List'},
+            {'url': reverse('manager:unit-projects-new',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Project'},
+            {'url': reverse('manager:unit-projects-clear',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Projects', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().projects.exists()},
+        ]
 
     def get_page_info(self):
         unit = self.get_unit_object()
@@ -638,6 +651,31 @@ class ProjectsListView(UnitMixin, FilteredTableView):
             {'label': 'No. Projects', 'content': unit.projects_count},
         ] + allocated_info
 
+    def get_queryset(self):
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('unit').prefetch_related('area').prefetch_related('allocated_students').annotate(allocated_students_count=Count('allocated_students', distinct=True)).annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank')).order_by('number')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.get_unit_object().is_allocated():
+            allocated_student_count = self.get_unit_object().students.filter(
+                allocated_project__isnull=False).count()
+            context['allocated_student_count'] = allocated_student_count
+            context['unallocated_student_count'] = self.get_unit_object(
+            ).students.count()-allocated_student_count
+        return context
+
+    def get_page_title_url(self):
+        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
+
+    def get_success_url(self):
+        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+
+
+class ProjectsListView(ProjectsListMixin, FilteredTableView):
+    """
+        List of projects in unit
+    """
+
     def get_filter_formhelper_class(self):
         return filters.ProjectAllocatedFilterFormHelper if self.get_unit_object().successfully_allocated() else filters.ProjectFilterFormHelper
 
@@ -647,19 +685,10 @@ class ProjectsListView(UnitMixin, FilteredTableView):
     def get_table_class(self):
         return tables.ProjectsAllocatedTable if self.get_unit_object().successfully_allocated() else tables.ProjectsTable
 
-    def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('unit').prefetch_related('area').prefetch_related('allocated_students').annotate(allocated_students_count=Count('allocated_students', distinct=True)).annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank'))
 
-
-class ProjectCreateView(UnitMixin, FormMixin, TemplateView):
+class ProjectCreateView(ProjectsListMixin, FormMixin, TemplateView):
     form_class = forms.ProjectForm
-    page_title = 'Add Project'
-
-    def get_success_url(self):
-        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
-
-    def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
+    page_subtitle = 'Add Project'
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
@@ -672,15 +701,12 @@ class ProjectCreateView(UnitMixin, FormMixin, TemplateView):
             return self.form_invalid(form)
 
 
-class ProjectsUploadListView(UnitMixin, FormMixin, TemplateView):
+class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
     """
         Upload list of projects
     """
     form_class = forms.ProjectListForm
-    page_title = 'Upload Project List'
-
-    def get_success_url(self):
-        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+    page_subtitle = 'Upload Project List'
 
     def post(self, request, *args, **kwargs):
         form = forms.ProjectListForm(request.POST, request.FILES)
@@ -754,26 +780,26 @@ class ProjectsUploadListView(UnitMixin, FormMixin, TemplateView):
             return self.form_invalid(form)
 
 
-class ProjectsClearView(UnitMixin, FormMixin, TemplateView):
+class ProjectsClearView(ProjectsListMixin, FormMixin, TemplateView):
     """
         Clear the project list of a unit
     """
-    page_title = 'Delete all Projects for this Unit?'
+    page_subtitle = 'Delete all Projects for this Unit?'
 
     def get_form(self):
-        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove All Projects from Unit', form_message='<p>Are you sure you want to remove all projects from this unit?</p>')
+        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove All Projects from Unit', form_message=f'<p>Are you sure you want to remove all projects from this unit?</p>' + ('<div class="alert alert-danger">The preference submission timeframe is open, removing all projects now will remove all submitted preferences as well.</div>' if self.get_unit_object().preference_submission_open() else ''))
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
-            models.Project.objects.filter(
-                unit_id=self.kwargs['pk_unit']).delete()
+            unit = self.get_unit_object()
+            unit.projects.all().delete()
+            unit.is_allocated = False
+            unit.allocation_status = None
+            unit.save()
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
-
-    def get_success_url(self):
-        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
 
 class ProjectPageMixin(UnitMixin):
@@ -782,7 +808,7 @@ class ProjectPageMixin(UnitMixin):
     """
     model = models.Project
 
-    def get_page_title_actions(self):
+    def get_page_actions(self):
         return [
             {'url': reverse('manager:unit-project-update', kwargs={'pk': self.kwargs.get(
                 'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
@@ -866,6 +892,7 @@ class ProjectUpdateView(ProjectPageMixin, UpdateView):
     """
         Update a project in a unit
     """
+    page_subtitle = 'Update Project'
 
     def get_form_class(self):
         return forms.ProjectAllocatedUpdateForm if self.get_unit_object().successfully_allocated() else forms.ProjectUpdateForm
@@ -878,234 +905,27 @@ class ProjectDeleteView(ProjectPageMixin, DeleteView):
     """
         Remove a single project from a unit
     """
+    page_subtitle = 'Remove Project'
 
     def get_form(self):
-        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Project from Unit', form_message='<p>Are you sure you want to remove this project?</p>')
+        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Project from Unit', form_message='<p>Are you sure you want to remove this project?</p>' + ('<div class="alert alert-danger">The preference submission timeframe is open, removing a project now will remove the project from the preferences of students who preferred this project. This may result in students having fewer preferences than the minimum preference limit, if it was set.</div>' if self.get_unit_object().preference_submission_open() else ''))
 
     def get_success_url(self):
         return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
-
-"""
-
-Preference Views
-
-"""
-
-
-class PreferencesView(UnitMixin, FilteredTableView):
-    """
-        Show a list of all submitted preferences by students for projects in a unit
-    """
-    model = models.ProjectPreference
-    template_name = 'manager/preferences.html'
-    page_title = 'Submitted Preferences'
-
-    table_class = tables.PreferencesTable
-    filterset_class = filters.PreferenceFilter
-    filter_formhelper_class = filters.PreferenceFilterFormHelper
-
-    def get_page_info(self):
-        unit = self.get_unit_object()
-
-        students_list = models.Student.objects.filter(
-            unit=self.kwargs['pk_unit'])
-        students_count = students_list.count()
-        submitted_prefs_count = students_list.annotate(project_preference_count=Count(
-            'project_preferences')).filter(project_preference_count__gt=0).count()
-        submitted_prefs_perc = round(
-            (submitted_prefs_count/students_count)*100, 1)
-
-        return [
-            {'label': 'Total No. Students', 'content': unit.students_count},
-            {'label': 'Percentage of Students who have Submitted Preferences',
-                'content': f'{ submitted_prefs_perc }% ({ submitted_prefs_count } Students)'},
-        ]
-
-    def get_queryset(self):
-        return super().get_queryset().filter(project__unit_id=self.kwargs['pk_unit']).prefetch_related('project').prefetch_related('student')
-
-    def post(self, request, *args, **kwargs):
-        email_results = 'email_results' in request.POST
-        from . import export
-        if email_results:
-            export.email_preferences_csv(
-                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
-            return HttpResponseRedirect(self.request.path)
-        return export.download_preferences_csv(unit_id=self.kwargs['pk_unit'])
-
-
-class PreferencesDistributionView(UnitMixin, FilteredTableView):
-    """
-        Show the distribution of preferences for projects in unit
-    """
-    model = models.Project
-    page_title = 'Preference Distribution'
-
-    table_class = tables.PreferencesDistributionTable
-    filterset_class = filters.PreferenceDistributionFilter
-    filter_formhelper_class = filters.PreferenceDistributionFilterFormHelper
-
-    def get_page_info(self):
-        unit = self.get_unit_object()
-
-        students_list = models.Student.objects.filter(
-            unit=self.kwargs['pk_unit'])
-        students_count = students_list.count()
-        submitted_prefs_count = students_list.annotate(project_preference_count=Count(
-            'project_preferences')).filter(project_preference_count__gt=0).count()
-        submitted_prefs_perc = round(
-            (submitted_prefs_count/students_count)*100, 1)
-
-        submitted_prefs_count = submitted_prefs_count
-        submitted_prefs_perc = submitted_prefs_perc
-
-        return [
-            {'label': 'Total No. Students', 'content': unit.students_count},
-            {'label': 'Percentage of Students who have Submitted Preferences',
-                'content': f'{ submitted_prefs_perc }% ({ submitted_prefs_count } Students)'},
-            {'label': 'Project Popularity', 'content': 'The popularity of a project is calculated by summing the of number of students who preferred a project multiplied by the rank at which they preferred the project. Projects with a higher popularity index were more popular.', 'wide': True},
-        ]
-
-    def get_queryset(self):
-        if not hasattr(self, 'queryset') or self.queryset == None:
-            project_queryset = super().get_queryset().filter(
-                unit_id=self.kwargs['pk_unit']).prefetch_related(
-                'student_preferences')
-            total_projects = project_queryset.count()
-            self.queryset = project_queryset.annotate(popularity=Sum(
-                total_projects - F('student_preferences__rank'))).order_by('number', 'name')
-        return self.queryset
-
-
-"""
-
-Allocation Views
-
-"""
-
-
-class AllocationStartView(UnitMixin, TemplateView):
-    """
-        View for starting/viewing allocation
-    """
-    template_name = 'manager/allocation_start.html'
-    page_title = 'Start Allocation'
-
-    def get_page_info(self):
-        unit = self.get_unit_object()
-
-        students_list = models.Student.objects.filter(
-            unit=self.kwargs['pk_unit'])
-        students_count = students_list.count()
-        submitted_prefs_count = students_list.annotate(project_preference_count=Count(
-            'project_preferences')).filter(project_preference_count__gt=0).count()
-        submitted_prefs_perc = round(
-            (submitted_prefs_count/students_count)*100, 1)
-
-        return [
-            {'label': 'Total No. Students', 'content': unit.students_count},
-            {'label': 'Percentage of Students who have Submitted Preferences',
-                'content': f'{ submitted_prefs_perc }% ({ submitted_prefs_count } Students)'},
-        ]
-
-    def post(self, request, *args, **kwargs):
-        unit = self.get_unit_object()
-        unit.is_allocating = True
-        unit.save()
-
-        tasks.start_allocation.delay(
-            unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit-allocation-results', kwargs={'pk_unit': self.kwargs['pk_unit']})))
-        return HttpResponseRedirect(self.request.path)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        unit = context.get('unit')
-
-        # Calculate min & max number of project spaces
-        project_spaces = {}
-        projects_list = models.Project.objects.filter(
-            unit=self.kwargs['pk_unit'])
-        if projects_list.exists():
-            min_spaces = []
-            max_spaces = []
-            for project in projects_list.all():
-                min_spaces.append(project.min_students)
-                max_spaces.append(project.max_students)
-            project_spaces = {'too_few_students': min(min_spaces) > unit.students_count, 'min_project_space': min(min_spaces),
-                              'too_many_students': sum(max_spaces) < unit.students_count, 'max_project_spaces': sum(max_spaces)}
-
-        return {**context, **project_spaces}
-
-
-class AllocationResultsView(UnitMixin, TemplateView):
-    """
-        View allocation results & stats
-    """
-    template_name = 'manager/allocation_results.html'
-
-    page_title = 'Allocation Results'
-
-    def get_page_warnings(self):
-        unit = self.get_unit_object()
-        warnings = []
-        if unit.completed_allocation() and unit.get_unallocated_student_count() > 0:
-            warnings.append({'type': 'warning', 'content': format_html(f"""
-            <p>There {'are' if unit.get_unallocated_student_count() > 1 else 'is'} {unit.get_unallocated_student_count()} student{'s' if unit.get_unallocated_student_count() > 1 else ''} who {'are' if unit.get_unallocated_student_count() > 1 else 'is'} not allocated to a project.</p>
-            <p class="mb-0">To fix this:</p>
-            <ul class="my-0">
-                <li>run the allocator again (this may change the project allocation if existing students), or</li>
-                <li>manually add the unallocated student{'s' if unit.get_unallocated_student_count() > 1 else ''} to a project.</li>
-            </ul>
-        """)})
-        return warnings if warnings != [] else None
-
-    page_info_column = True
-
-    def get_page_info(self):
-        unit = self.get_unit_object()
-
-        students_list = models.Student.objects.filter(
-            unit=self.kwargs['pk_unit'])
-        students_count = students_list.count()
-        submitted_prefs_count = students_list.annotate(project_preference_count=Count(
-            'project_preferences')).filter(project_preference_count__gt=0).count()
-        submitted_prefs_perc = round(
-            (submitted_prefs_count/students_count)*100, 1)
-
-        return [
-            {'label': 'Total No. Students', 'content': unit.students_count},
-            {'label': 'Percentage of Students who have Submitted Preferences',
-                'content': f'{ submitted_prefs_perc }% ({ submitted_prefs_count } Students)'},
-            {'label': 'Allocation Status',
-                'content': unit.get_allocation_descriptive()},
-            {'label': 'Average Allocated Preference',
-                'content': unit.avg_allocated_pref_rounded},
-            {'label': 'Best Allocated Preference',
-                'content': unit.min_allocated_pref},
-            {'label': 'Worst Allocated Preference',
-                'content': unit.max_allocated_pref},
-        ]
-
-    def post(self, request, *args, **kwargs):
-        email_results = 'email_results' in request.POST
-        from . import export
-        if email_results:
-            export.email_allocation_results_csv(
-                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
-            return HttpResponseRedirect(self.request.path)
-        return export.download_allocation_results_csv(unit_id=self.kwargs['pk_unit'])
-
-    def get_unit_queryset(self):
-        if not hasattr(self, 'unit_queryset'):
-            self.unit_queryset = super().get_unit_queryset().prefetch_related('projects').prefetch_related('students').annotate(
-                avg_allocated_pref_rounded=Round(Avg('students__allocated_preference_rank'), 2)).annotate(
-                max_allocated_pref=Max('students__allocated_preference_rank')).annotate(
-                min_allocated_pref=Min('students__allocated_preference_rank'))
-        return self.unit_queryset
-
-    def test_func(self):
-        return super().test_func() and self.get_unit_object().successfully_allocated()
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        # Adjust student preferences
+        update_prefs = []
+        for preference in self.object.student_preferences.all():
+            for preference in preference.student.project_preferences.all()[
+                    preference.rank - 1:]:
+                preference.rank = preference.rank - 1
+                update_prefs.append(preference)
+        self.object.delete()
+        models.ProjectPreference.objects.bulk_update(
+            update_prefs, fields=['rank'])
+        return HttpResponseRedirect(success_url)
 
 
 """
@@ -1115,22 +935,16 @@ Area views
 """
 
 
-class AreasListView(UnitMixin, FilteredTableView):
-    """
-        List of areas in unit
-    """
+class AreasListMixin(UnitMixin):
     model = models.Area
     page_title = 'Area List'
 
-    table_class = tables.AreasTable
-    filterset_class = filters.AreaFilter
-    filter_formhelper_class = filters.AreaFilterFormHelper
-
     def get_page_actions(self):
         return [
-            {'url': 'manager:unit-area-new', 'label': 'Add Area'},
-            {'url': 'manager:unit-areas-clear',
-             'label': 'Remove All Areas', 'classes': 'btn-danger', 'disabled': not self.get_queryset().exists()},
+            {'url': reverse('manager:unit-areas-new',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Area'},
+            {'url': reverse('manager:unit-areas-clear', kwargs={'pk_unit': self.kwargs['pk_unit']}),
+             'label': 'Remove All Areas', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().areas.exists()},
         ]
 
     def get_page_info(self):
@@ -1140,36 +954,33 @@ class AreasListView(UnitMixin, FilteredTableView):
                 'content': render_exists_badge(unit.limit_by_major)},
         ]
 
-    def get_page_warnings(self):
-        unit = self.get_unit_object()
-        warnings = []
-        if unit.completed_allocation() and unit.get_unallocated_student_count() > 0:
-            warnings.append({'type': 'warning', 'content': format_html(f"""
-            <p>There {'are' if unit.get_unallocated_student_count() > 1 else 'is'} {unit.get_unallocated_student_count()} student{'s' if unit.get_unallocated_student_count() > 1 else ''} who {'are' if unit.get_unallocated_student_count() > 1 else 'is'} not allocated to a project.</p>
-            <p class="mb-0">To fix this:</p>
-            <ul class="my-0">
-                <li>run the allocator again (this may change the project allocation if existing students), or</li>
-                <li>manually add the unallocated student{'s' if unit.get_unallocated_student_count() > 1 else ''} to a project.</li>
-            </ul>
-        """)})
-        return warnings if warnings != [] else None
-
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('students').prefetch_related('projects')
+        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('students').prefetch_related('projects').order_by('name')
 
-
-class AreaCreateView(UnitMixin, FormMixin, TemplateView):
-    """
-        Add a single area to the unit
-    """
-    form_class = forms.AreaForm
-    page_title = 'Add Area'
+    def get_page_title_url(self):
+        return reverse('manager:unit-areas', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
 
     def get_success_url(self):
         return reverse('manager:unit-areas', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
-    def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
+
+class AreasListView(AreasListMixin, FilteredTableView):
+    """
+        List of areas in unit
+    """
+    model = models.Area
+
+    table_class = tables.AreasTable
+    filterset_class = filters.AreaFilter
+    filter_formhelper_class = filters.AreaFilterFormHelper
+
+
+class AreaCreateView(AreasListMixin, FormMixin, TemplateView):
+    """
+        Add a single area to the unit
+    """
+    form_class = forms.AreaForm
+    page_subtitle = 'Add Area'
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
@@ -1181,11 +992,11 @@ class AreaCreateView(UnitMixin, FormMixin, TemplateView):
             return self.form_invalid(form)
 
 
-class AreasClearView(UnitMixin, FormMixin, TemplateView):
+class AreasClearView(AreasListMixin, FormMixin, TemplateView):
     """
         Clear all areas from unit
     """
-    page_title = 'Delete All Areas for this Unit?'
+    page_subtitle = 'Remove All Areas'
 
     def get_form(self):
         return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove All Areas from Unit', form_message='<p>Are you sure you want to remove all areas from this unit?</p><p>Any projects and students with an area will be retained.</p>')
@@ -1199,9 +1010,6 @@ class AreasClearView(UnitMixin, FormMixin, TemplateView):
         else:
             return self.form_invalid(form)
 
-    def get_success_url(self):
-        return reverse('manager:unit-areas', kwargs={'pk_unit': self.kwargs['pk_unit']})
-
 
 class AreaPageMixin(UnitMixin):
     """
@@ -1209,7 +1017,7 @@ class AreaPageMixin(UnitMixin):
     """
     model = models.Area
 
-    def get_page_title_actions(self):
+    def get_page_actions(self):
         return [
             {'url': reverse('manager:unit-area-update', kwargs={'pk': self.kwargs.get(
                 'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
@@ -1265,11 +1073,9 @@ class AreaUpdateView(AreaPageMixin, UpdateView):
     """
         Update a area in a unit
     """
-    model = models.Area
-    form_class = forms.AreaUpdateForm
+    page_subtitle = 'Update Area'
 
-    def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
+    form_class = forms.AreaUpdateForm
 
     def get_success_url(self):
         return reverse('manager:unit-area-detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
@@ -1279,9 +1085,253 @@ class AreaDeleteView(AreaPageMixin, DeleteView):
     """
         Remove a single area from a unit
     """
+    page_subtitle = 'Delete Area'
 
     def get_form(self):
         return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Area from Unit', form_message='<p>Are you sure you want to remove this project?</p><p>Any projects and students with this area will be retained.</p>')
 
     def get_success_url(self):
         return reverse('manager:unit-areas', kwargs={'pk_unit': self.kwargs['pk_unit']})
+
+
+"""
+
+Preference Views
+
+"""
+
+
+class PreferencesMixin(UnitMixin, FilteredTableView):
+    page_title = 'Preferences'
+
+    def get_page_info(self):
+        unit = self.get_unit_object()
+        students_exist_info = []
+
+        students_list = unit.students
+        submitted_prefs_count = students_list.annotate(project_preference_count=Count(
+            'project_preferences')).filter(project_preference_count__gt=0).count()
+
+        if unit.students_count != 0:
+            submitted_prefs_perc = round(
+                (submitted_prefs_count/unit.students_count)*100, 1)
+
+            students_exist_info = [
+                {'label': 'Percentage of Students who have Submitted Preferences',
+                 'content': f'{submitted_prefs_perc}% ({submitted_prefs_count} / {unit.students_count} Students)'}
+            ]
+
+        return [
+            {'label': 'Total No. Students', 'content': unit.students_count}
+        ] + students_exist_info
+
+    def get_page_title_url(self):
+        return reverse('manager:unit-preferences', kwargs={'pk_unit': self.get_unit_object().pk})
+
+
+class PreferencesView(PreferencesMixin):
+    """
+        Show a list of all submitted preferences by students for projects in a unit
+    """
+    model = models.ProjectPreference
+    template_name = 'manager/preferences.html'
+    page_title = 'Preferences'
+
+    table_class = tables.PreferencesTable
+    filterset_class = filters.PreferenceFilter
+    filter_formhelper_class = filters.PreferenceFilterFormHelper
+
+    def get_queryset(self):
+        return super().get_queryset().filter(project__unit_id=self.kwargs['pk_unit']).prefetch_related('project').prefetch_related('student')
+
+    def post(self, request, *args, **kwargs):
+        email_results = 'email_results' in request.POST
+        from . import export
+        if email_results:
+            export.email_preferences_csv(
+                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
+            return HttpResponseRedirect(self.request.path)
+        return export.download_preferences_csv(unit_id=self.kwargs['pk_unit'])
+
+
+class PreferencesDistributionView(PreferencesMixin):
+    """
+        Show the distribution of preferences for projects in unit
+    """
+    model = models.Project
+    page_subtitle = 'Project Popularity'
+
+    table_class = tables.PreferencesDistributionTable
+    filterset_class = filters.PreferenceDistributionFilter
+    filter_formhelper_class = filters.PreferenceDistributionFilterFormHelper
+
+    def get_page_info(self):
+        return super().get_page_info() + [
+            {'label': 'Project Popularity', 'content': 'The popularity of a project is calculated by summing the of number of students who preferred a project multiplied by the rank at which they preferred the project. Projects with a higher popularity index were more popular.', 'wide': True},
+        ]
+
+    def get_queryset(self):
+        if not hasattr(self, 'queryset') or self.queryset == None:
+            project_queryset = super().get_queryset().filter(
+                unit_id=self.kwargs['pk_unit']).prefetch_related(
+                'student_preferences')
+            total_projects = project_queryset.count()
+            self.queryset = project_queryset.annotate(popularity=Sum(
+                total_projects - F('student_preferences__rank'))).order_by('number', 'name')
+        return self.queryset
+
+
+"""
+
+Allocation Views
+
+"""
+
+
+class AllocationView(UnitMixin, TemplateView):
+    """
+        View for starting/viewing allocation
+    """
+    template_name = 'manager/allocation.html'
+    page_title = 'Allocation'
+
+    def check_can_start_allocation(self):
+        unit = self.get_unit_object()
+        can_start_allocation = True
+        if unit.is_allocating:
+            self.allocation_warnings.append(
+                {'type': 'secondary', 'content': format_html("""<p>The unit is currently allocating students to projects. Feel free to refresh or leave the page.</p><p class="mb-0">You should recieve an email once the allocation is completed.</p>""")})
+            return False
+        if unit.projects_count == 0:
+            can_start_allocation = False
+            self.allocation_warnings.append(
+                {'type': 'danger', 'content': 'You must add projects to the unit before it can be allocated.'})
+        if unit.students_count == 0:
+            can_start_allocation = False
+            self.allocation_warnings.append(
+                {'type': 'danger', 'content': 'You must add students to the unit before it can be allocated.'})
+        if not unit.preference_submission_set():
+            can_start_allocation = False
+            self.allocation_warnings.append(
+                {'type': 'danger', 'content': 'You must set a preference timeframe for the unit before it can be allocated.'})
+        elif not unit.preference_submission_ended():
+            can_start_allocation = False
+            self.allocation_warnings.append(
+                {'type': 'danger', 'content': 'The preference submission timeframe must end before the unit can be allocated.'})
+        if unit.get_too_few_students():
+            can_start_allocation = False
+            self.allocation_warnings.append(
+                {'type': 'danger', 'content': format_html(f"""<p>There are too few students enrolled in the unit compared to the minimum project spaces.</p>
+                    <p>
+                        <div><span class="fw-semibold">Students:</span> { unit.students_count }</div>
+                        <div><span class="fw-semibold">Minimum Spaces:</span> { unit.get_min_project_spaces() }</div>
+                    </p>
+                    <p class="mb-0">To fix this:</p>
+                    <ul class="my-0">
+                        <li>change the minimum group size for a project, or</li>
+                        <li>add students to the student list.</li>
+                    </ul>""")})
+        if unit.get_too_many_students():
+            can_start_allocation = False
+            self.allocation_warnings.append(
+                {'type': 'danger', 'content': format_html(f"""<p>There are too many students enrolled in the unit compared to the maximum project spaces.</p>
+                    <p>
+                        <div><span class="fw-semibold">Students:</span> {unit.students_count}</div>
+                        <div><span class="fw-semibold">Maximum Spaces:</span> {unit.get_max_project_spaces()}</div>
+                    </p>
+                    <p class="mb-0">To fix this:</p>
+                    <ul class="my-0">
+                        <li>change the maximum group size for a project, or</li>
+                        <li>add projects to the project list, or</li>
+                        <li>remove students from the student list.</li>
+                    </ul>""")})
+
+        return can_start_allocation
+
+    def get_context_data(self, **kwargs):
+        self.allocation_warnings = []
+        return {**super().get_context_data(**kwargs), 'can_start_allocation': self.check_can_start_allocation(), 'allocation_warnings': self.allocation_warnings}
+
+    page_info_column = True
+
+    def get_page_info(self):
+        unit = self.get_unit_object()
+
+        students_list = models.Student.objects.filter(
+            unit=self.kwargs['pk_unit'])
+        students_count = students_list.count()
+
+        if students_count == 0:
+            return [
+                {'label': 'Total No. Students', 'content': unit.students_count},
+            ]
+
+        submitted_prefs_count = students_list.annotate(project_preference_count=Count(
+            'project_preferences')).filter(project_preference_count__gt=0).count()
+        submitted_prefs_perc = round(
+            (submitted_prefs_count/students_count)*100, 1)
+
+        return [
+            {'label': 'Total No. Students', 'content': unit.students_count},
+            {'label': 'Percentage of Students who have Submitted Preferences',
+                'content': f'{ submitted_prefs_perc }% ({ submitted_prefs_count } Students)'},
+        ]
+
+    def get_page_info(self):
+        unit = self.get_unit_object()
+        allocated_info = []
+        if unit.is_allocated():
+            allocated_info = [
+                {'label': 'Allocation Status',
+                 'content': unit.get_allocation_descriptive(), 'classes': 'align-items-center', 'content_classes': f'rounded bg-{"success" if unit.successfully_allocated() else "danger"}-subtle border border-{"success" if unit.successfully_allocated() else "danger"}-subtle p-1 px-2'},
+                {'label': 'Average Allocated Preference',
+                    'content': unit.avg_allocated_pref_rounded},
+                {'label': 'Best Allocated Preference',
+                    'content': unit.min_allocated_pref},
+                {'label': 'Worst Allocated Preference',
+                    'content': unit.max_allocated_pref},
+            ]
+
+        students_list = models.Student.objects.filter(
+            unit=self.kwargs['pk_unit'])
+        students_count = students_list.count()
+        if students_count == 0:
+            return [
+                {'label': 'Total No. Students', 'content': unit.students_count}]
+
+        submitted_prefs_count = students_list.annotate(project_preference_count=Count(
+            'project_preferences')).filter(project_preference_count__gt=0).count()
+        submitted_prefs_perc = round(
+            (submitted_prefs_count/students_count)*100, 1)
+
+        return [
+            {'label': 'Total No. Students', 'content': unit.students_count},
+            {'label': 'Percentage of Students who have Submitted Preferences',
+                'content': f'{ submitted_prefs_perc }% ({ submitted_prefs_count } Students)'},
+        ] + allocated_info
+
+    def get_unit_queryset(self):
+        if not hasattr(self, 'unit_queryset'):
+            self.unit_queryset = super().get_unit_queryset().prefetch_related('projects').prefetch_related('students').annotate(
+                avg_allocated_pref_rounded=Round(Avg('students__allocated_preference_rank'), 2)).annotate(
+                max_allocated_pref=Max('students__allocated_preference_rank')).annotate(
+                min_allocated_pref=Min('students__allocated_preference_rank'))
+        return self.unit_queryset
+
+    def post(self, request, *args, **kwargs):
+        if 'start_allocation' in request.POST:
+            unit = self.get_unit_object()
+            unit.is_allocating = True
+            unit.save()
+
+            tasks.start_allocation.delay(
+                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit-allocation-results', kwargs={'pk_unit': self.kwargs['pk_unit']})))
+            return HttpResponseRedirect(self.request.path)
+        from . import export
+        if 'email_results' in request.POST:
+            export.email_allocation_results_csv(
+                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
+            return HttpResponseRedirect(self.request.path)
+        if 'download_results' in request.POST:
+            return export.download_allocation_results_csv(unit_id=self.kwargs['pk_unit'])
+        return HttpResponseRedirect(self.request.path)

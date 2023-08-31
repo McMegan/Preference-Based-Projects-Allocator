@@ -34,30 +34,6 @@ class ProjectsTable(Table):
     def render_number(self, value, record):
         return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.number}</a>""")
 
-    def render_name(self, value, record):
-        return record.name
-        if record.description:
-            return format_html(f"""
-                        <div class="d-grid gap-2">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <span>{record.name}</span>
-                                <button type="button" onclick="toggle_info({record.id})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>
-                            </div>
-                            <div class="project_info" data-project-id="{record.id}" style="display: none;">
-                                <table class="table table-sm table-bordered m-0">
-                                    <tbody>
-                                        <tr>
-                                            <th style="background-color: transparent;">Description</th>
-                                        </tr>
-                                        <tr>
-                                            <td class="project_description" style="background-color: transparent;">{record.description}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    """)
-
     def render_actions(self, value, record):
         return format_html(f"""<div class="d-flex gap-2 justify-content-end">
                                 <a class="btn btn-primary btn-sm" href="{reverse('manager:unit-project-update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
@@ -80,12 +56,11 @@ class ProjectsAllocatedTable(ProjectsTable):
     allocated_students_count = tables.Column(
         empty_values=(), verbose_name='Allocated Group Size')
     avg_allocated_pref = tables.Column()
-    allocated_students = tables.Column(
-        empty_values=(), orderable=False, verbose_name='Allocated Students')
+    # allocated_students = tables.Column(empty_values=(), orderable=False, verbose_name='Allocated Students')
 
     class Meta(ProjectsTable.Meta):
         sequence = ('number', 'name', 'min_students', 'max_students', 'area',
-                    'allocated_students_count', 'avg_allocated_pref', 'allocated_students')
+                    'allocated_students_count', 'avg_allocated_pref')
 
     def render_avg_allocated_pref(self, value, record):
         return round(value, 2)
@@ -174,6 +149,7 @@ class StudentsTable(Table):
 
     def render_actions(self, value, record):
         return format_html(f"""<div class="d-flex flex-wrap gap-2 justify-content-end">
+                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit-student-update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
                                 <a class="btn btn-danger btn-sm" href="{reverse('manager:unit-student-remove', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
                             </div>
                             """)
@@ -197,12 +173,6 @@ class StudentsAllocatedTable(StudentsTable):
 
     def render_allocated_preference_rank(self, value, record):
         return value if value else 'n/a'
-
-    def render_actions(self, value, record):
-        return format_html(f"""<div class="d-flex flex-wrap gap-2 justify-content-end">
-                                <a class="btn btn-danger btn-sm" href="{reverse('manager:unit-student-remove', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
-                            </div>
-                            """)
 
 
 class StudentPreferencesTable(Table):

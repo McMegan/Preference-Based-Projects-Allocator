@@ -75,13 +75,8 @@ class Allocator:
             # Make a list of the student variables for this project
             projects_student_vars = [self.student_vars[student.id, project.id]
                                      for student in self.students]
-
-            # .... CHECK!!!!!
-            # self.solver.Add(projects_student_vars >= 1 and self.solver.Sum(
-            #     [projects_student_vars * 9999]) >= self.solver.Sum(projects_student_vars))
-            self.solver.Add(self.project_vars[project.id] == 1 and self.solver.Sum(
-                [self.project_vars[project.id] * 9999]) >= self.solver.Sum(projects_student_vars))
-
+            self.solver.Add(self.project_vars[project.id] == 1)
+            #  and self.solver.Sum([self.project_vars[project.id] * 9999]) >= self.solver.Sum(projects_student_vars)
             # Each project must be allocated to a permissable number of students
             self.solver.Add(self.solver.Sum(projects_student_vars)
                             <= project.max_students)

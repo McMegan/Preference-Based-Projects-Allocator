@@ -20,7 +20,9 @@ class Unit(models.Model):
 
     preference_submission_start = models.DateTimeField(null=True, blank=True)
     preference_submission_end = models.DateTimeField(null=True, blank=True)
+
     minimum_preference_limit = models.IntegerField(null=True, blank=True)
+    maximum_preference_limit = models.IntegerField(null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
     limit_by_major = models.BooleanField(default=False)
@@ -79,18 +81,18 @@ class Unit(models.Model):
         return self.preference_submission_set() and self.preference_submission_started() and not self.preference_submission_ended()
 
     def preference_submission_started(self) -> bool:
-        return timezone.now() > self.preference_submission_start
+        return self.preference_submission_set() and timezone.now() > self.preference_submission_start
 
     def preference_submission_ended(self) -> bool:
-        return timezone.now() > self.preference_submission_end
+        return self.preference_submission_set() and timezone.now() > self.preference_submission_end
 
     def is_allocated(self) -> bool:
         return self.completed_allocation() and self.successfully_allocated()
 
-    def completed_allocation(self):
-        return not self.is_allocating and self.allocation_status
+    def completed_allocation(self) -> bool:
+        return not self.is_allocating and self.allocation_status is not None
 
-    def successfully_allocated(self):
+    def successfully_allocated(self) -> bool:
         return self.allocation_status in {self.OPTIMAL, self.FEASIBLE}
 
     def get_allocation_descriptive(self):
@@ -105,13 +107,58 @@ class Unit(models.Model):
     def get_unallocated_student_count(self):
         return self.students.count() - self.get_allocated_student_count()
 
+    def calculate_project_spaces(self):
+        self.too_few_students = None
+        self.min_project_spaces = None
+        self.too_many_students = None
+        self.max_project_spaces = None
+
+        projects_list = self.projects.all()
+        if projects_list.exists():
+            min_spaces = []
+            max_spaces = []
+            for project in projects_list.all():
+                min_spaces.append(project.min_students)
+                max_spaces.append(project.max_students)
+
+            students_count = self.students.count()
+            self.too_few_students = min(min_spaces) > students_count
+            self.min_project_spaces = min(min_spaces)
+            self.too_many_students = sum(max_spaces) < students_count
+            self.max_project_spaces = min(max_spaces)
+            return True
+        return False
+
+    def get_too_few_students(self):
+        if not hasattr(self, 'too_few_students'):
+            self.calculate_project_spaces()
+        return self.too_few_students
+
+    def get_min_project_spaces(self):
+        if not hasattr(self, 'min_project_spaces'):
+            self.calculate_project_spaces()
+        return self.min_project_spaces
+
+    def get_too_many_students(self):
+        if not hasattr(self, 'too_many_students'):
+            self.calculate_project_spaces()
+        return self.too_many_students
+
+    def get_max_project_spaces(self):
+        if not hasattr(self, 'max_project_spaces'):
+            self.calculate_project_spaces()
+        return self.max_project_spaces
+
     class Meta:
         ordering = ['code', 'name']
         constraints = [
             models.UniqueConstraint(
                 fields=['code', 'year', 'semester'], name='%(app_label)s_%(class)s_unique'),
             models.CheckConstraint(check=Q(preference_submission_start__isnull=True) | Q(preference_submission_end__isnull=True) | Q(
-                preference_submission_start__lt=F('preference_submission_end')), name='preference_submission_start_lt_end', violation_error_message='The preference submission end must be after the preference submission start.')
+                preference_submission_start__lt=F('preference_submission_end')), name='preference_submission_start_lt_end', violation_error_message='The preference submission end must be after the preference submission start.'),
+            models.CheckConstraint(check=Q(minimum_preference_limit__isnull=True) | Q(maximum_preference_limit__isnull=True) | Q(
+                minimum_preference_limit=F('maximum_preference_limit')) | Q(
+                minimum_preference_limit__lt=F('maximum_preference_limit')), name='minimum_preference_limit_lt_max', violation_error_message='The minimum preference limit must be less than or equal to the maximum preference limit.')
         ]
 
 

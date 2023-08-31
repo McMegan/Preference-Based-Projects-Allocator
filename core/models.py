@@ -152,7 +152,7 @@ class Project(models.Model):
 
     def get_preference_counts(self):
         if not hasattr(self, 'preference_counts'):
-            self.preference_counts = self.student_preferences.all().values('rank').annotate(
+            self.preference_counts = self.student_preferences.values('rank').annotate(
                 student_count=Count('student')).order_by('rank')
         return self.preference_counts
 

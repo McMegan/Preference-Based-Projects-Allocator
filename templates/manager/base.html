@@ -21,6 +21,9 @@
             {% if not unit.is_active %}
                 <div class="alert alert-warning text-center text-uppercase" role="alert" style="font-size: 0.75rem;">This unit is inactive.</div>
             {% endif %}
+            {% if unit.is_allocating %}
+                <div class="alert alert-danger">This unit is currently being allocated. You can not make changes to the unit while it is allocating.</div>
+            {% endif %}
             <div class="d-flex gap-5">
                 {% if page_title_url %}
                     <a class="text-body text-decoration-none" href="{{ page_title_url }}"><h1>{% if page_title %}{{ page_title }}{% endif %}</h1></a>
@@ -32,16 +35,7 @@
                     <div class="ms-auto d-flex gap-2 align-items-center">
                     {% for page_action in page_title_actions %}
                         {% if page_action.url %}
-                            {% if object %}
-                                {% if unit and object == unit %}
-                                    {% url page_action.url object.id as url %}
-                                {% else %}
-                                    {% url page_action.url unit.id as url %}
-                                {% endif %}
-                            {% else %}
-                                {% url page_action.url unit.id as url %}
-                            {% endif %}
-                            <a class="btn btn-primary  {{ page_action.classes }} {% if request.path ==  url %}disabled{% endif %}" {% if request.path ==  url %}aria-disabled="true"{% endif %} href="{{ url }}" {% if request.path == url %}aria-current="page"{% endif %}>{{ page_action.label }}</a>
+                            <a class="btn btn-primary  {{ page_action.classes }}" href="{{ page_action.url }}" {% if request.path == page_action.url %}aria-current="page"{% endif %}>{{ page_action.label }}</a>
                         {% endif %}
                     {% endfor %}
                     </div>
@@ -52,17 +46,6 @@
                 {% for warning in page_warnings %}
                     <div class="alert alert-{{ warning.type }}">{{ warning.content }}</div>
                 {% endfor %}
-            {% endblock %}{% endif %}
-            {% if page_info %}{% block page_info %}
-                <div class="px-2 d-flex gap-3 column-gap-5 flex-wrap {% if page_info_column %}flex-column{% endif %}">
-                    {% for info in page_info %}
-                        {% if info.wide %}
-                            <div class="d-flex gap-3 flex-column"><div class="fw-semibold">{{ info.label }}</div><div>{{ info.content }}</div></div>
-                        {% else %}
-                            <div class="d-flex gap-3 flex-wrap"><div class="fw-semibold">{{ info.label }}</div><div>{{ info.content }}</div></div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
             {% endblock %}{% endif %}
             {% if page_actions %}{% block page_actions %}
                 <div class="my-3 mx-2 d-flex gap-2 flex-wrap">
@@ -76,6 +59,17 @@
                         <a class="btn btn-primary  {{ page_action.classes }} {% if page_action.disabled %}disabled{% endif %}" {% if page_action.disabled %}aria-disabled="true"{% endif %} href="{{ url }}">{{ page_action.label }}</a>
                     {% endif %}
                 {% endfor %}
+                </div>
+            {% endblock %}{% endif %}
+            {% if page_info %}{% block page_info %}
+                <div class="px-2 d-flex gap-3 column-gap-5 flex-wrap {% if page_info_column %}flex-column{% endif %}">
+                    {% for info in page_info %}
+                        {% if info.wide %}
+                            <div class="d-flex gap-3 flex-column"><div class="fw-semibold">{{ info.label }}</div><div>{{ info.content }}</div></div>
+                        {% else %}
+                            <div class="d-flex gap-3 flex-wrap"><div class="fw-semibold">{{ info.label }}</div><div>{{ info.content }}</div></div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             {% endblock %}{% endif %}
             {% block extra_header %}{% endblock %}

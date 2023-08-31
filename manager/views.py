@@ -164,16 +164,8 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
             self.object = super().get_object(queryset)
         return self.object
 
-
-class RestrictWhileAllocatingMixin:
-
-    def get_page_warnings(self):
-        unit = self.get_unit_object()
-        warnings = []
-        if unit.is_allocating():
-            warnings.append(
-                {'type': 'danger', 'content': 'You can not make changes to the unit while it is allocating.'})
-        return warnings if warnings != [] else None
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
 
 
 """
@@ -225,14 +217,15 @@ class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
 class UnitPageMixin(UnitMixin):
     model = models.Unit
-
     unit_id_arg = 'pk'
 
-    page_title_actions = [
-        {'url': 'manager:unit-update', 'label': 'Edit'},
-        {'url': 'manager:unit-delete',
-            'label': 'Delete', 'classes': 'btn-danger'},
-    ]
+    def get_page_title_actions(self):
+        return [
+            {'url': reverse('manager:unit-update',
+                            kwargs={'pk': self.kwargs['pk']}), 'label': 'Edit'},
+            {'url': reverse('manager:unit-delete', kwargs={'pk': self.kwargs['pk']}),
+             'label': 'Delete', 'classes': 'btn-danger'},
+        ]
 
     def get_page_title_url(self):
         return reverse('manager:unit', kwargs={'pk': self.kwargs['pk']})
@@ -253,9 +246,12 @@ class UnitPageMixin(UnitMixin):
             {'label': 'Semester', 'content': unit.semester},
             {'label': 'Preference Submission Timeframe',
                 'content': f'{ formats.date_format(unit.preference_submission_start, "DATETIME_FORMAT") } - { formats.date_format(unit.preference_submission_end, "DATETIME_FORMAT") }'},
+            {'label': 'Minimum Preference Limit',
+                'content': unit.minimum_preference_limit},
+            {'label': 'Is Active/Current?', 'content': render_exists_badge(
+                unit.is_active)},
             {'label': 'Limiting Preference Selection by Area', 'content': render_exists_badge(
                 unit.limit_by_major)},
-
         ] + allocated_info
 
 
@@ -263,7 +259,7 @@ class UnitDetailView(UnitPageMixin, DetailView):
     pass
 
 
-class UnitUpdateView(UnitPageMixin, RestrictWhileAllocatingMixin, UpdateView):
+class UnitUpdateView(UnitPageMixin, UpdateView):
     form_class = forms.UnitUpdateForm
 
     def get_page_info(self):
@@ -273,9 +269,11 @@ class UnitUpdateView(UnitPageMixin, RestrictWhileAllocatingMixin, UpdateView):
         return reverse('manager:unit', kwargs={'pk': self.kwargs['pk']})
 
 
-class UnitDeleteView(UnitPageMixin, RestrictWhileAllocatingMixin, DeleteView):
+class UnitDeleteView(UnitPageMixin, DeleteView):
     success_url = reverse_lazy('index')
-    form_class = forms.UnitDeleteForm
+
+    def get_form(self):
+        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Delete Unit', form_message='<p>Are you sure you want to delete this unit?</p>')
 
 
 """
@@ -283,6 +281,46 @@ class UnitDeleteView(UnitPageMixin, RestrictWhileAllocatingMixin, DeleteView):
     Student views
     
 """
+
+
+class StudentsListMixin(UnitMixin):
+    model = models.Student
+    page_title = 'Student List'
+
+    page_actions = [
+        {'url': 'manager:unit-students-new-list', 'label': 'Upload Student List'},
+        {'url': 'manager:unit-students-new', 'label': 'Add Student'},
+        {'url': 'manager:unit-students-clear',
+            'label': 'Remove All Students', 'classes': 'btn-danger'},
+    ]
+
+    def get_page_info(self):
+        unit = self.get_unit_object()
+        allocated_info = []
+        if unit.is_allocated():
+            allocated_info = [
+                {'label': 'No. Allocated Students',
+                    'content': unit.get_allocated_student_count()},
+                {'label': 'No. Unallocated Students',
+                    'content': unit.students.count() - unit.get_allocated_student_count()},
+            ]
+        return [
+            {'label': 'Total No. Students', 'content': unit.students_count},
+        ] + allocated_info
+
+    def get_page_warnings(self):
+        unit = self.get_unit_object()
+        warnings = []
+        if unit.completed_allocation() and unit.get_unallocated_student_count() > 0:
+            warnings.append({'type': 'warning', 'content': format_html(f"""
+            <p>There {'are' if unit.get_unallocated_student_count() > 1 else 'is'} {unit.get_unallocated_student_count()} student{'s' if unit.get_unallocated_student_count() > 1 else ''} who {'are' if unit.get_unallocated_student_count() > 1 else 'is'} not allocated to a project.</p>
+            <p class="mb-0">To fix this:</p>
+            <ul class="my-0">
+                <li>run the allocator again (this may change the project allocation if existing students), or</li>
+                <li>manually add the unallocated student{'s' if unit.get_unallocated_student_count() > 1 else ''} to a project.</li>
+            </ul>
+        """)})
+        return warnings if warnings != [] else None
 
 
 class StudentsListView(UnitMixin, FilteredTableView):
@@ -452,14 +490,15 @@ class StudentsUploadListView(UnitMixin, FormMixin, TemplateView):
             return self.form_invalid(form)
 
 
-class StudentsClearView(UnitMixin, FormMixin, TemplateView):
+class StudentsClearView(StudentsListMixin, FormMixin, TemplateView):
     """
         Clear the student list of a unit
     """
     model = models.Student
-    form_class = forms.StudentListClearForm
-
     page_title = 'Remove all Students from this Unit?'
+
+    def get_form(self):
+        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove All Students from Unit', form_message='<p>Are you sure you want to remove all students from this unit?</p>')
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
@@ -481,11 +520,13 @@ class StudentPageMixin(UnitMixin):
     """
     model = models.Student
 
-    page_title_actions = [
-        {'url': 'manager:unit-student-update', 'label': 'Edit'},
-        {'url': 'manager:unit-student-remove',
-            'label': 'Remove', 'classes': 'btn-danger'},
-    ]
+    def get_page_title_actions(self):
+        return [
+            {'url': reverse('manager:unit-student-update', kwargs={'pk': self.kwargs.get(
+                'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
+            {'url': reverse('manager:unit-student-remove', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
+             'label': 'Delete', 'classes': 'btn-danger'},
+        ]
 
     def get_page_info(self):
         student = self.get_object()
@@ -555,7 +596,9 @@ class StudentDeleteView(StudentPageMixin, DeleteView):
     """
         Remove a single student from a unit
     """
-    form_class = forms.StudentDeleteForm
+
+    def get_form(self):
+        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Student from Unit', form_message='<p>Are you sure you want to remove this student?</p>')
 
     def get_success_url(self):
         return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
@@ -715,9 +758,10 @@ class ProjectsClearView(UnitMixin, FormMixin, TemplateView):
     """
         Clear the project list of a unit
     """
-    form_class = forms.ProjectListClearForm
-
     page_title = 'Delete all Projects for this Unit?'
+
+    def get_form(self):
+        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove All Projects from Unit', form_message='<p>Are you sure you want to remove all projects from this unit?</p>')
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
@@ -738,11 +782,13 @@ class ProjectPageMixin(UnitMixin):
     """
     model = models.Project
 
-    page_title_actions = [
-        {'url': 'manager:unit-project-update', 'label': 'Edit'},
-        {'url': 'manager:unit-project-remove',
-            'label': 'Remove', 'classes': 'btn-danger'},
-    ]
+    def get_page_title_actions(self):
+        return [
+            {'url': reverse('manager:unit-project-update', kwargs={'pk': self.kwargs.get(
+                'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
+            {'url': reverse('manager:unit-project-remove', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
+             'label': 'Delete', 'classes': 'btn-danger'},
+        ]
 
     def get_page_info(self):
         project = self.get_object()
@@ -832,7 +878,9 @@ class ProjectDeleteView(ProjectPageMixin, DeleteView):
     """
         Remove a single project from a unit
     """
-    form_class = forms.UnitDeleteForm
+
+    def get_form(self):
+        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Project from Unit', form_message='<p>Are you sure you want to remove this project?</p>')
 
     def get_success_url(self):
         return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
@@ -1012,6 +1060,8 @@ class AllocationResultsView(UnitMixin, TemplateView):
         """)})
         return warnings if warnings != [] else None
 
+    page_info_column = True
+
     def get_page_info(self):
         unit = self.get_unit_object()
 
@@ -1135,9 +1185,10 @@ class AreasClearView(UnitMixin, FormMixin, TemplateView):
     """
         Clear all areas from unit
     """
-    form_class = forms.AreaListClearForm
-
     page_title = 'Delete All Areas for this Unit?'
+
+    def get_form(self):
+        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove All Areas from Unit', form_message='<p>Are you sure you want to remove all areas from this unit?</p><p>Any projects and students with an area will be retained.</p>')
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
@@ -1158,11 +1209,13 @@ class AreaPageMixin(UnitMixin):
     """
     model = models.Area
 
-    page_title_actions = [
-        {'url': 'manager:unit-area-update', 'label': 'Edit'},
-        {'url': 'manager:unit-area-remove',
-            'label': 'Remove', 'classes': 'btn-danger'},
-    ]
+    def get_page_title_actions(self):
+        return [
+            {'url': reverse('manager:unit-area-update', kwargs={'pk': self.kwargs.get(
+                'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
+            {'url': reverse('manager:unit-area-remove', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
+             'label': 'Delete', 'classes': 'btn-danger'},
+        ]
 
     def get_page_info(self):
         area = self.get_object()
@@ -1226,7 +1279,9 @@ class AreaDeleteView(AreaPageMixin, DeleteView):
     """
         Remove a single area from a unit
     """
-    form_class = forms.AreaDeleteForm
+
+    def get_form(self):
+        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Area from Unit', form_message='<p>Are you sure you want to remove this project?</p><p>Any projects and students with this area will be retained.</p>')
 
     def get_success_url(self):
         return reverse('manager:unit-areas', kwargs={'pk_unit': self.kwargs['pk_unit']})

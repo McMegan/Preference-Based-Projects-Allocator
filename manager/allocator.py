@@ -63,11 +63,8 @@ class Allocator:
             allocation_preference = []
             for project in self.projects:
                 allocation.append(self.student_vars[student.id, project.id])
-                student_project_preference = self.get_preference_rank(
-                    student, project)
-                if student_project_preference != None:
-                    allocation_preference.append(
-                        self.student_vars[student.id, project.id] * student_project_preference)
+                allocation_preference.append(
+                    self.student_vars[student.id, project.id] * self.get_preference_rank(student, project))
             # Each student must be assigned to a project
             self.solver.Add(self.solver.Sum(allocation) == 1)
             # Student must have selected the project
@@ -95,15 +92,11 @@ class Allocator:
         allocated_preferences = []
         for project in self.projects:
             for student in self.students:
-                student_project_preference = self.get_preference_rank(
-                    student, project)
-                if student_project_preference != None:
-                    allocated_preferences.append(self.student_vars[student.id, project.id] *
-                                                 student_project_preference)
+                allocated_preferences.append(
+                    self.student_vars[student.id, project.id] * self.get_preference_rank(student, project))
         self.solver.Minimize(self.solver.Sum(allocated_preferences))
 
     def save_allocation(self):
-        project_updated = []
         student_allocated = []
         for project in self.projects:
             if self.project_vars[project.id]:
@@ -137,6 +130,6 @@ class Allocator:
             if preference.exists():
                 return preference.first().rank
             else:
-                return None
+                return self.projects.count() * 2
         else:
             return self.projects.count() + 1

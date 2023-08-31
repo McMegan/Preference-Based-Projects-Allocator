@@ -6,6 +6,7 @@ from core import models
 from . import preferences_full
 from . import preferences_big
 from . import preferences_uneven
+from . import preferences_same
 
 LOAD_PREFS = False
 LOAD_STUDENTS = False
@@ -24,7 +25,7 @@ def load_data():
         # load_prefs(unit_code='SMALL',pref_list=preferences_full.pref_list, replace=True)
         # load_prefs(unit_code='FULL00001',pref_list=preferences_full.pref_list, replace=True)
         load_prefs(unit_code='UNEVEN',
-                   pref_list=preferences_uneven.pref_list, replace=True)
+                   pref_list=preferences_same.pref_list, replace=True)
 
 
 def load_big_unit():

@@ -1,18 +1,14 @@
 import csv
 from io import StringIO
 import os
-from typing import Any, Mapping, Optional, Sequence, Type, Union
 
 from django import forms
 from django.db.models import Q, ExpressionWrapper, BooleanField
 
-from crispy_forms.bootstrap import FormActions, InlineField
+from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML, Field
+from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
-from django.forms.fields import Field
-from django.forms.utils import ErrorList
-from django.forms.widgets import Widget
 
 from core import models
 
@@ -45,6 +41,50 @@ class SplitDateTimeWidget(forms.SplitDateTimeWidget):
 
 class SplitDateTimeField(forms.SplitDateTimeField):
     widget = SplitDateTimeWidget
+
+
+class UnitKwargMixin:
+    def __init__(self, *args, **kwargs):
+        self.unit = kwargs.pop('unit', None)
+        if self.unit:
+            self.disabled = self.unit.is_allocating
+
+        super().__init__(*args, **kwargs)
+
+        self.init_fields()
+
+        if self.disabled:
+            for field_name in self.fields:
+                field = self.fields[field_name]
+                field.disabled = True
+
+        self.helper = FormHelper()
+        self.submit_button = Submit('submit', self.submit_label if hasattr(
+            self, 'submit_label') else 'Submit', css_class='btn ' + self.submit_button_variant if hasattr(self, 'submit_button_variant') else 'btn-primary', disabled=self.disabled)
+        self.form_actions = FormActions(self.submit_button)
+
+        self.helper.layout = Layout(self.form_layout, self.form_actions) if hasattr(
+            self, 'form_layout') and self.form_layout else Layout(self.form_actions)
+
+    def init_fields(self):
+        pass
+
+
+class DeleteForm(UnitKwargMixin, forms.Form):
+    """
+
+    Generic delete form
+
+    """
+    submit_button_variant = 'btn-danger'
+
+    def __init__(self, *args, **kwargs):
+        self.submit_label = kwargs.pop('submit_label', 'Yes, Delete')
+        self.form_message = kwargs.pop('form_message', None)
+        if self.form_message:
+            self.form_layout = HTML(self.form_message)
+
+        super().__init__(*args, **kwargs)
 
 
 """
@@ -95,44 +135,22 @@ class UnitCreateForm(forms.ModelForm):
                   'preference_submission_end', 'minimum_preference_limit', 'is_active', 'limit_by_major']
 
 
-class UnitUpdateForm(UnitCreateForm):
+class UnitUpdateForm(UnitKwargMixin, UnitCreateForm):
+    """
+        Form for updating a unit
+    """
+    submit_label = 'Save Unit'
+    form_layout = Layout(
+        unit_form_layout_main,
+        unit_form_layout_allocator,
+        'is_active',
+        'limit_by_major'
+    )
+
     is_active = forms.BooleanField(
         label='Unit is current/active', required=False, help_text='If this is un-checked students will be unabled to access the unit.')
     limit_by_major = forms.BooleanField(
         label='Limit project preference selection by major/area', required=False, help_text='This will limit each students project preference options to those which match the students area. If a student has no area, all projects will be displayed. If a project has no area, it will be displayed to all students.')
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper.layout = Layout(
-            unit_form_layout_main,
-            unit_form_layout_allocator,
-            'is_active',
-            'limit_by_major',
-            FormActions(
-                Submit('submit', 'Save Unit', css_class='btn btn-primary'),
-                HTML(
-                    """<a href="{% url 'manager:unit-delete' unit.id %}" class="btn btn-danger">Delete Unit</a>""")
-            )
-        )
-
-
-class UnitDeleteForm(forms.Form):
-    """
-        Form for deleting a unit
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            HTML('<p>Are you sure you want to delete this unit?</p>'),
-            FormActions(
-                Submit('submit', 'Yes, Remove Delete Unit',
-                       css_class='btn btn-danger'),
-            )
-        )
 
 
 """
@@ -142,28 +160,19 @@ Student forms
 """
 
 
-class StudentForm(forms.ModelForm):
+class StudentForm(UnitKwargMixin, forms.ModelForm):
     """
         Form for adding a single student to a unit
     """
+    submit_label = 'Add Student to Unit'
+    form_layout = Layout(
+        FloatingField('student_id'),
+        'area',
+    )
 
-    def __init__(self, *args, **kwargs):
-        self.unit = kwargs.pop('unit', None)
-
-        super().__init__(*args, **kwargs)
-
+    def init_fields(self):
         self.fields['area'] = forms.ModelMultipleChoiceField(
             queryset=self.unit.areas, required=False)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            FloatingField('student_id'),
-            'area',
-            FormActions(
-                Submit('submit', 'Add Student to Unit',
-                       css_class='btn btn-primary'),
-            )
-        )
 
     def clean(self):
         student_id = self.cleaned_data.get('student_id')
@@ -177,10 +186,18 @@ class StudentForm(forms.ModelForm):
         fields = ['student_id']
 
 
-class StudentListForm(forms.Form):
+class StudentListForm(UnitKwargMixin, forms.Form):
     """
         Form for uploading a list of students
     """
+    submit_label = 'Upload List of Students to Unit'
+    form_layout = Layout(
+        'file',
+        'list_override',
+        FloatingField('student_id_column'),
+        FloatingField('area_column'),
+    )
+
     file = forms.FileField(label='')
     list_override = forms.BooleanField(
         label='Replace current students', required=False)
@@ -190,25 +207,8 @@ class StudentListForm(forms.Form):
     area_column = forms.CharField(
         label='Project Area Column Name', help_text='Leave blank if none. Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+    def init_fields(self):
         self.fields['student_id_column'].initial = 'user_id'
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            Fieldset(
-                '',
-                'file',
-                'list_override',
-                FloatingField('student_id_column'),
-                FloatingField('area_column'),
-            ),
-            FormActions(
-                Submit('submit', 'Upload List of Students to Unit',
-                       css_class='btn btn-primary'),
-            )
-        )
 
     def clean(self):
         valid_csv_file(self.cleaned_data.get('file'))
@@ -227,27 +227,16 @@ class AllocatedProjectChoiceField(forms.ModelChoiceField):
         return f'{str(obj)}    (Current Group Size = {obj.allocated_students.count()})'
 
 
-class StudentUpdateForm(forms.ModelForm):
+class StudentUpdateForm(UnitKwargMixin, forms.ModelForm):
     """
         Form for updating a student in a unit
     """
+    submit_label = 'Update Student'
+    form_layout = Layout('area')
 
-    def __init__(self, *args, **kwargs):
-        self.unit = kwargs.pop('unit', None)
-
-        super().__init__(*args, **kwargs)
-
+    def init_fields(self):
         self.fields['area'] = forms.ModelMultipleChoiceField(
             queryset=self.unit.areas, required=False)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            'area',
-            FormActions(
-                Submit('submit', 'Save Student',
-                       css_class='btn btn-primary')
-            )
-        )
 
     class Meta:
         model = models.Student
@@ -258,24 +247,15 @@ class StudentAllocatedUpdateForm(StudentUpdateForm):
     """
         Form for updating a student in a unit that has been allocated
     """
+    form_layout = Layout(
+        FloatingField('allocated_project',
+                      css_class='my-3'),
+        'area'
+    )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if self.unit.is_allocated():
-            self.fields['allocated_project'] = AllocatedProjectChoiceField(
-                queryset=self.unit.projects.prefetch_related('allocated_students'), required=False, label='Allocated Project')
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            FloatingField('allocated_project',
-                          css_class='my-3'),
-            'area',
-            FormActions(
-                Submit('submit', 'Save Student',
-                       css_class='btn btn-primary')
-            )
-        )
+    def init_fields(self):
+        self.fields['allocated_project'] = AllocatedProjectChoiceField(
+            queryset=self.unit.projects.prefetch_related('allocated_students'), required=False, label='Allocated Project')
 
     def save(self, commit: bool = ...):
         # Update allocated preference
@@ -288,42 +268,6 @@ class StudentAllocatedUpdateForm(StudentUpdateForm):
 
     class Meta(StudentUpdateForm.Meta):
         fields = ['allocated_project', 'area']
-
-
-class StudentDeleteForm(forms.Form):
-    """
-        Form for deleting a single student
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            HTML('<p>Are you sure you want to remove this student?</p>'),
-            FormActions(
-                Submit('submit', 'Yes, Remove Student from Unit',
-                       css_class='btn btn-danger'),
-            )
-        )
-
-
-class StudentListClearForm(forms.Form):
-    """
-        Form for clearing the list of students
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            HTML('<p>Are you sure you want to remove all students from this unit?</p>'),
-            FormActions(
-                Submit('submit', 'Yes, Remove All Students from Unit',
-                       css_class='btn btn-danger'),
-            )
-        )
 
 
 """
@@ -344,27 +288,16 @@ project_form_layout_main = Layout(
 )
 
 
-class ProjectForm(forms.ModelForm):
+class ProjectForm(UnitKwargMixin, forms.ModelForm):
     """
         Form for adding a single project to a unit
     """
+    submit_label = 'Add Project to Unit'
+    form_layout = Layout(project_form_layout_main)
 
-    def __init__(self, *args, **kwargs):
-        self.unit = kwargs.pop('unit')
-
-        super().__init__(*args, **kwargs)
-
+    def init_fields(self):
         self.fields['area'] = forms.ModelMultipleChoiceField(
             queryset=self.unit.areas, required=False)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            project_form_layout_main,
-            FormActions(
-                Submit('submit', 'Add Project to Unit',
-                       css_class='btn btn-primary'),
-            )
-        )
 
     def clean(self):
         number = self.cleaned_data.get('number')
@@ -383,21 +316,12 @@ class ProjectUpdateForm(ProjectForm):
     """
         Form for updating a project in a unit
     """
+    submit_label = 'Update Unit'
+    form_layout = Layout(project_form_layout_main)
 
-    def __init__(self, *args, **kwargs):
-        super(forms.ModelForm, self).__init__(*args, **kwargs)
-
+    def init_fields(self):
         self.fields['area'] = forms.ModelMultipleChoiceField(
             queryset=self.instance.unit.areas, required=False)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            project_form_layout_main,
-            FormActions(
-                Submit('submit', 'Save Project',
-                       css_class='btn btn-primary'),
-            )
-        )
 
     def clean(self):
         return super(forms.ModelForm, self).clean()
@@ -407,22 +331,14 @@ class ProjectAllocatedUpdateForm(ProjectUpdateForm):
     """
         Form for updating a project in a unit
     """
+    submit_label = 'Update Unit'
+    form_layout = Layout(project_form_layout_main,
+                         Fieldset('', 'allocated_students'))
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+    def init_fields(self):
         self.fields['allocated_students'] = forms.ModelMultipleChoiceField(
             queryset=models.Student.objects.filter(unit_id=self.instance.unit_id).annotate(is_assigned=ExpressionWrapper(Q(allocated_project_id=self.instance.id), output_field=BooleanField())).order_by('-is_assigned'), initial=self.instance.allocated_students.all(), required=False)
         self.fields['allocated_students'].widget.attrs['size'] = '10'
-
-        self.helper.layout = Layout(
-            project_form_layout_main,
-            Fieldset('', 'allocated_students'),
-            FormActions(
-                Submit('submit', 'Save Project',
-                       css_class='btn btn-primary'),
-            )
-        )
 
     def save(self, commit: bool = ...):
         current_students = self.instance.allocated_students
@@ -444,10 +360,28 @@ class ProjectAllocatedUpdateForm(ProjectUpdateForm):
         return super().save(commit)
 
 
-class ProjectListForm(forms.Form):
+class ProjectListForm(UnitKwargMixin, forms.Form):
     """
         Form for uploading a list of projects
     """
+    submit_label = 'Upload List of Projects to Unit'
+    form_layout = Layout(
+        'file',
+        'list_override',
+        FloatingField('number_column'),
+        FloatingField('name_column'),
+        FloatingField('min_students_column'),
+        FloatingField('max_students_column'),
+        FloatingField('description_column'),
+        FloatingField('area_column'),
+    )
+
+    def init_fields(self):
+        self.initial['number_column'] = 'number'
+        self.initial['name_column'] = 'name'
+        self.initial['min_students_column'] = 'min_students'
+        self.initial['max_students_column'] = 'max_students'
+
     file = forms.FileField(label='')
     list_override = forms.BooleanField(
         label='Replace current projects', required=False)
@@ -465,33 +399,6 @@ class ProjectListForm(forms.Form):
 
     area_column = forms.CharField(
         label='Project Area Column Name', help_text='Leave blank if none. Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.initial['number_column'] = 'number'
-        self.initial['name_column'] = 'name'
-        self.initial['min_students_column'] = 'min_students'
-        self.initial['max_students_column'] = 'max_students'
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            Fieldset(
-                '',
-                'file',
-                'list_override',
-                FloatingField('number_column'),
-                FloatingField('name_column'),
-                FloatingField('min_students_column'),
-                FloatingField('max_students_column'),
-                FloatingField('description_column'),
-                FloatingField('area_column'),
-            ),
-            FormActions(
-                Submit('submit', 'Upload List of Projects to Unit',
-                       css_class='btn btn-primary'),
-            )
-        )
 
     def clean(self):
         valid_csv_file(self.cleaned_data.get('file'))
@@ -530,42 +437,6 @@ class ProjectListForm(forms.Form):
         return super().clean()
 
 
-class UnitDeleteForm(forms.Form):
-    """
-        Form for deleting a single project
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            HTML('<p>Are you sure you want to remove this project?</p>'),
-            FormActions(
-                Submit('submit', 'Yes, Remove Project from Unit',
-                       css_class='btn btn-danger'),
-            )
-        )
-
-
-class ProjectListClearForm(forms.Form):
-    """
-        Form for clearing the list of projects
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            HTML('<p>Are you sure you want to remove all projects from this unit?</p>'),
-            FormActions(
-                Submit('submit', 'Yes, Remove All Projects from Unit',
-                       css_class='btn btn-danger'),
-            )
-        )
-
-
 """
 
 Area forms
@@ -573,24 +444,12 @@ Area forms
 """
 
 
-class AreaForm(forms.ModelForm):
+class AreaForm(UnitKwargMixin, forms.ModelForm):
     """
         Form for adding a single area to a unit
     """
-
-    def __init__(self, *args, **kwargs):
-        self.unit = kwargs.pop('unit', None)
-
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            FloatingField('name'),
-            FormActions(
-                Submit('submit', 'Add Area to Unit',
-                       css_class='btn btn-primary'),
-            )
-        )
+    submit_label = 'Add Area to Unit'
+    form_layout = Layout(FloatingField('name'))
 
     def clean(self):
         name = self.cleaned_data.get('name')
@@ -608,26 +467,18 @@ class AreaUpdateForm(AreaForm):
     """
         Form for updating a single area to a unit
     """
+    submit_label = 'Update Area'
+    form_layout = Layout(
+        FloatingField('name'),
+        'projects',
+        'students',
+    )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+    def init_fields(self):
         self.fields['projects'] = forms.ModelMultipleChoiceField(
             queryset=self.unit.projects.all(), initial=self.instance.projects.all(), required=False)
-
         self.fields['students'] = forms.ModelMultipleChoiceField(
             queryset=self.unit.students.all(), initial=self.instance.students.all(), required=False)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            FloatingField('name'),
-            'projects',
-            'students',
-            FormActions(
-                Submit('submit', 'Save Area',
-                       css_class='btn btn-primary'),
-            )
-        )
 
     def clean(self):
         self.instance.projects.set(self.cleaned_data.get('projects'))
@@ -636,39 +487,3 @@ class AreaUpdateForm(AreaForm):
 
     class Meta(AreaForm.Meta):
         fields = ['name']
-
-
-class AreaDeleteForm(forms.Form):
-    """
-        Form for deleting a single area
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            HTML('<p>Are you sure you want to remove this project?</p><p>Any projects and students with this area will be retained.</p>'),
-            FormActions(
-                Submit('submit', 'Yes, Remove Area from Unit',
-                       css_class='btn btn-danger'),
-            )
-        )
-
-
-class AreaListClearForm(forms.Form):
-    """
-        Form for clearing all areas
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            HTML('<p>Are you sure you want to remove all areas from this unit?</p><p>Any projects and students with an area will be retained.</p>'),
-            FormActions(
-                Submit('submit', 'Yes, Remove All Areas from Unit',
-                       css_class='btn btn-danger'),
-            )
-        )

@@ -3,6 +3,7 @@ import os
 from .settings import *
 from .settings import BASE_DIR
 
+
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # Configure the domain name using the environment variable
@@ -13,6 +14,30 @@ ALLOWED_HOSTS = [os.environ['WEBSITE_HOSTNAME']
 CSRF_TRUSTED_ORIGINS = ['https://' + os.environ['WEBSITE_HOSTNAME']
                         ] if 'WEBSITE_HOSTNAME' in os.environ else []
 DEBUG = False
+
+# Installed apps
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+
+    'core',
+    'manager',
+    'student',
+
+    'crispy_forms',
+    'crispy_bootstrap5',
+
+    'django_tables2',
+    'django_filters',
+    'django_bootstrap5',
+
+    'celery'
+]
 
 # WhiteNoise configuration
 MIDDLEWARE = [
@@ -33,7 +58,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Configure Postgres database based on connection string of the libpq Keyword/Value form
 # https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
 
-
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -43,7 +68,7 @@ DATABASES = {
         'PASSWORD': os.environ.get('DBPASS'),
     }
 }
-
+"""
 conn_str = os.environ['AZURE_POSTGRESQL_CONNECTIONSTRING']
 conn_str_params = {pair.split('=')[0]: pair.split(
     '=')[1] for pair in conn_str.split(' ')}

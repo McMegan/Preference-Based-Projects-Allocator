@@ -19,6 +19,7 @@ django-filter = "*"
 django-bootstrap5 = "*"
 psycopg2 = "*"
 psycopg2-binary = "*"
+django-environ = "*"
 
 [dev-packages]
 

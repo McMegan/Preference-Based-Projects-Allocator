@@ -7,62 +7,14 @@ environ.Env.read_env()
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = True
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-ALLOWED_HOSTS = []
 
 if 'CODESPACE_NAME' in os.environ:
     CSRF_TRUSTED_ORIGINS = [
         f'https://{os.getenv("CODESPACE_NAME")}-8000.{os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN")}']
 
-# Application definition
-
-INSTALLED_APPS = [
-    'whitenoise.runserver_nostatic',
-
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
-    'core',
-    'manager',
-    'student',
-
-    'crispy_forms',
-    'crispy_bootstrap5',
-
-    'django_tables2',
-    'django_filters',
-    'django_bootstrap5',
-
-    'celery',
-
-    'django_browser_reload',
-    'debug_toolbar',
-]
-
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-
-    # Add whitenoise middleware after the security middleware
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'django_browser_reload.middleware.BrowserReloadMiddleware',
-]
 
 ROOT_URLCONF = 'cpa.urls'
 
@@ -83,20 +35,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'cpa.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': os.environ.get('DB_PORT'),
-    }
-}
 
 
 # Password validation
@@ -158,7 +96,6 @@ INTERNAL_IPS = [
 ]
 
 # Custom Auth User
-
 AUTH_USER_MODEL = 'core.User'
 
 # LOGIN / LOGOUT REDIRECTION
@@ -174,7 +111,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Celery Settings
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 CELERY_TIMEZONE = 'Australia/Melbourne'
 
 DJANGO_CELERY_RESULTS_TASK_ID_MAX_LENGTH = 191

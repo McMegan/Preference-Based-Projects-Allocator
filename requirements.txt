@@ -32,7 +32,6 @@ kombu==5.3.1
 markdown-it-py==3.0.0
 MarkupSafe==2.1.3
 mdurl==0.1.2
-mysqlclient==2.2.0
 numpy==1.25.2
 ortools==9.7.2996
 prompt-toolkit==3.0.39
@@ -41,7 +40,6 @@ psycopg2==2.9.7
 psycopg2-binary==2.9.7
 pycparser==2.21
 Pygments==2.15.1
-PyMySQL==1.1.0
 python-dateutil==2.8.2
 python-slugify==8.0.1
 PyYAML==6.0.1

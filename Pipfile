@@ -6,8 +6,6 @@ name = "pypi"
 [packages]
 django = "*"
 django-debug-toolbar = "*"
-mysqlclient = "*"
-pymysql = "*"
 cryptography = "*"
 django-crispy-forms = "*"
 crispy-bootstrap5 = "*"

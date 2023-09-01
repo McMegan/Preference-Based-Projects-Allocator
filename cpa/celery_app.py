@@ -7,20 +7,20 @@ from celery import Celery
 settings_module = 'cpa.production' if 'WEBSITE_HOSTNAME' in os.environ else 'cpa.test'
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_module)
 
-app = Celery('cpa')
+celery_app = Celery('cpa')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
-app.config_from_object('django.conf:settings', namespace='CELERY')
+celery_app.config_from_object('django.conf:settings', namespace='CELERY')
 
-print(f'Broker URL: {app.conf.broker_url}')
+print(f'Broker URL: {celery_app.conf.broker_url}')
 
 # Load task modules from all registered Django apps.
-app.autodiscover_tasks()
+celery_app.autodiscover_tasks()
 
 
-@app.task(bind=True, ignore_result=True)
+@celery_app.task(bind=True, ignore_result=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')

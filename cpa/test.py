@@ -1,7 +1,6 @@
 import os
 
 from .settings import *
-from .settings import BASE_DIR
 
 DEBUG = True
 
@@ -31,7 +30,7 @@ INSTALLED_APPS = [
     'celery',
 
     'django_browser_reload',
-    'debug_toolbar',
+    'debug_toolbar'
 ]
 
 MIDDLEWARE = [

@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.urls import path, include
 
 # DELETE
-from preferences.load_preferences import export_data
-export_data()
+import os
+if 'WEBSITE_HOSTNAME' not in os.environ:
+    from data_management.load_preferences import export_data
+    export_data()
 # DELETE
 
 

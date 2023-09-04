@@ -15,8 +15,6 @@ celery_app = Celery('cpa')
 #   should have a `CELERY_` prefix.
 celery_app.config_from_object('django.conf:settings', namespace='CELERY')
 
-print(f'Broker URL: {celery_app.conf.broker_url}')
-
 # Load task modules from all registered Django apps.
 celery_app.autodiscover_tasks()
 

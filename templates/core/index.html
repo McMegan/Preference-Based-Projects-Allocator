@@ -31,7 +31,7 @@
                         {% if unit.preference_submission_start and unit.preference_submission_end %}
                         <li class="list-group-item">
                             <div class="d-flex gap-3">
-                                <div class="fw-semibold">Preference Submission Timeframe</div><div>{{ unit.preference_submission_start }} - {{ unit.preference_submission_end }}</div>
+                                <div class="fw-semibold">Preference Submission Timeframe</div><div>{{ unit.get_preference_submission_start }} - {{ unit.get_preference_submission_end }}</div>
                             </div>
                         </li>
                         {% endif %}

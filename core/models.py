@@ -1,3 +1,4 @@
+from typing import Iterable, Optional
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -8,8 +9,20 @@ from django.utils.translation import gettext_lazy as _
 
 
 class User(AbstractUser):
+    email = models.EmailField(_("email address"), unique=True)
+
     is_manager = models.BooleanField(default=False)
     is_student = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        save = super().save(*args, **kwargs)
+        # Link to user
+        student_objects = Student.objects.filter(student_id=self.username)
+        if student_objects.exists():
+            for student in student_objects:
+                student.user = self
+                student.save()
+        return save
 
 
 class Unit(models.Model):
@@ -59,7 +72,8 @@ class Unit(models.Model):
     allocation_status = models.CharField(
         max_length=2,
         choices=ALLOCATION_STATUS_CHOICES,
-        null=True
+        null=True,
+        blank=True
     )
 
     def __str__(self):
@@ -85,6 +99,12 @@ class Unit(models.Model):
 
     def preference_submission_ended(self) -> bool:
         return self.preference_submission_set() and timezone.now() > self.preference_submission_end
+
+    def get_preference_submission_start(self):
+        return self.preference_submission_start.strftime('%a %d %b %Y, %I:%M%p')
+
+    def get_preference_submission_end(self):
+        return self.preference_submission_end.strftime('%a %d %b %Y, %I:%M%p')
 
     def is_allocated(self) -> bool:
         return self.completed_allocation() and self.successfully_allocated()
@@ -225,10 +245,11 @@ class Student(models.Model):
         Unit, on_delete=models.CASCADE, related_name='students')
 
     allocated_project = models.ForeignKey(
-        Project, on_delete=models.SET_NULL, null=True, related_name='allocated_students')
-    allocated_preference_rank = models.PositiveIntegerField(null=True)
+        Project, on_delete=models.SET_NULL, null=True, related_name='allocated_students', blank=True)
+    allocated_preference_rank = models.PositiveIntegerField(
+        null=True, blank=True)
 
-    area = models.ManyToManyField(to=Area, related_name='students')
+    area = models.ManyToManyField(to=Area, related_name='students', blank=True)
 
     def __str__(self):
         return self.student_id
@@ -237,6 +258,13 @@ class Student(models.Model):
         if not hasattr(self, 'is_registered'):
             self.is_registered = self.user != None
         return self.is_registered
+
+    def save(self, *args, **kwargs):
+        # Link to user
+        user = User.objects.filter(username=self.student_id)
+        if user.exists():
+            self.user = user.first()
+        return super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['student_id']

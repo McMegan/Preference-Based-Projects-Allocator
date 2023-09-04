@@ -2,8 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 
 # DELETE
-from preferences.load_preferences import load_data
-load_data()
+from preferences.load_preferences import export_data
+export_data()
 # DELETE
 
 

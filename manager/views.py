@@ -5,10 +5,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
 from django.db.models import Count, Sum, F, Avg, Min, Max
 from django.db.models.functions import Round
-from django.forms.models import BaseModelForm
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
-from django.utils import formats
 from django.utils.html import format_html
 from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.edit import FormMixin
@@ -90,42 +88,6 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def get_context_for_sidebar(self):
         unit = self.get_unit_object()
-        """
-        nav_items = [
-            {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
-                'classes': f'fs-6'},
-            # Allocator Settings / Setup
-            {'label': 'Unit Actions', 'classes': 'fw-semibold'},
-            {'url': reverse('manager:unit-students-new-list', kwargs={'pk_unit': unit.pk}),
-             'label': 'Upload Student List', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-students-new', kwargs={'pk_unit': unit.pk}),
-             'label': 'Add Student', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-projects-new-list', kwargs={'pk_unit': unit.pk}),
-             'label': 'Upload Project List', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-projects-new', kwargs={'pk_unit': unit.pk}),
-             'label': 'Add Project', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-areas-new', kwargs={'pk_unit': unit.pk}),
-             'label': 'Add Area', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-allocation-start', kwargs={'pk_unit': unit.pk}),
-             'label': 'Start Allocation', 'classes': 'ms-3'},
-            # Unit Information
-            {'label': 'Unit Information', 'classes': 'fw-semibold'},
-            {'url': reverse('manager:unit-students', kwargs={'pk_unit': unit.pk}),
-             'label': f'Student List ({unit.students_count})', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-projects', kwargs={'pk_unit': unit.pk}),
-             'label': f'Project List ({unit.projects_count})', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-areas', kwargs={'pk_unit': unit.pk}),
-             'label': f'Area List ({unit.areas_count})', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-preferences', kwargs={'pk_unit': unit.pk}),
-             'label': 'Preferences', 'classes': 'ms-3', 'disabled': not unit.preference_count},
-            {'url': reverse('manager:unit-preferences-distribution', kwargs={'pk_unit': unit.pk}),
-             'label': 'Project Popularity', 'classes': 'ms-3', 'disabled': not unit.preference_count},
-            {'url': reverse('manager:unit-allocation-results', kwargs={'pk_unit': unit.pk}),
-             'label': 'Allocation Results', 'classes': 'ms-3', 'disabled': not unit.successfully_allocated()},
-        ]
-
-        
-        """
         nav_items = [
             {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
                 'classes': f'fs-6'},
@@ -306,12 +268,14 @@ class UnitPageMixin(UnitMixin):
             {'label': 'Name', 'content': unit.name},
             {'label': 'Year', 'content': unit.year},
             {'label': 'Semester', 'content': unit.semester},
-            {'label': 'Preference Submission Timeframe',
-                'content': f'{ formats.date_format(unit.preference_submission_start, "DATETIME_FORMAT") if unit.preference_submission_start else "Not Set" } - { formats.date_format(unit.preference_submission_end, "DATETIME_FORMAT") if unit.preference_submission_end else "Not Set" }'},
-            {'label': 'Minimum Preference Limit',
-                'content': unit.minimum_preference_limit if unit.minimum_preference_limit else "Not Set"},
             {'label': 'Is Active/Current?', 'content': render_exists_badge(
                 unit.is_active)},
+            {'label': 'Preference Submission Timeframe',
+                'content': f'{ unit.get_preference_submission_start() if unit.preference_submission_start else "Not Set" } - { unit.get_preference_submission_end() if unit.preference_submission_end else "Not Set" }'},
+            {'label': 'Minimum Preference Limit',
+                'content': unit.minimum_preference_limit if unit.minimum_preference_limit else "Not Set"},
+            {'label': 'Maximum Preference Limit',
+                'content': unit.maximum_preference_limit if unit.maximum_preference_limit else "Not Set"},
             {'label': 'Limiting Preference Selection by Area', 'content': render_exists_badge(
                 unit.limit_by_major)},
         ] + allocated_info
@@ -1325,7 +1289,7 @@ class AllocationView(UnitMixin, TemplateView):
             unit.save()
 
             tasks.start_allocation.delay(
-                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit-allocation-results', kwargs={'pk_unit': self.kwargs['pk_unit']})))
+                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit-allocation', kwargs={'pk_unit': self.kwargs['pk_unit']})))
             return HttpResponseRedirect(self.request.path)
         from . import export
         if 'email_results' in request.POST:

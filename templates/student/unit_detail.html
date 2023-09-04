@@ -11,7 +11,7 @@
         <div class="d-flex gap-2 flex-wrap"><div class="fw-semibold">Year</div><div>{{ unit.year }}</div></div>
         <div class="d-flex gap-2 flex-wrap"><div class="fw-semibold">Semester</div><div>{{ unit.semester }}</div></div>
         {% if unit.preference_submission_start and unit.preference_submission_end %}
-        <div class="d-flex gap-2 flex-wrap"><div class="fw-semibold">Preference Submission Timeframe</div><div>{{ unit.preference_submission_start }} - {{ unit.preference_submission_end }}</div></div>
+        <div class="d-flex gap-2 flex-wrap"><div class="fw-semibold">Preference Submission Timeframe</div><div>{{ unit.get_preference_submission_start }} - {{ unit.get_preference_submission_end }}</div></div>
         {% endif %}
     </div>
     <hr class="my-3">

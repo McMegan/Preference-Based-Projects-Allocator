@@ -1,4 +1,4 @@
-from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, UserCreationForm, UserChangeForm
 from django import forms
 
 from crispy_forms.bootstrap import FormActions

@@ -38,10 +38,10 @@ class StudentRegistrationView(FormMixin, TemplateView):
             user = form.save()
             # Add to enrolled units
             student_objects = models.Student.objects.filter(
-                student_id=form.instance.username)
+                student_id=user.username)
             if student_objects.exists():
                 for student in student_objects:
-                    student.user = form.instance
+                    student.user = user
                     student.save()
             # Log user in
             login(request, user)

@@ -5,7 +5,7 @@ asgiref==3.7.2
 beautifulsoup4==4.12.2
 billiard==4.1.0
 binaryornot==0.4.4
-celery==5.3.3
+celery==5.3.4
 certifi==2023.7.22
 cffi==1.15.1
 chardet==5.2.0
@@ -23,7 +23,7 @@ django-browser-reload==1.11.0
 django-compat==1.0.15
 django-crispy-forms==2.0
 django-debug-toolbar==4.2.0
-django-environ==0.11.1
+django-environ==0.11.2
 django-filter==23.2
 django-tables2==2.6.0
 gunicorn==21.2.0

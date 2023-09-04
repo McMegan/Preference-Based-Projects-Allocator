@@ -11,7 +11,6 @@ django-crispy-forms = "*"
 crispy-bootstrap5 = "*"
 ortools = "*"
 redis = "*"
-celery = "*"
 django-tables2 = "*"
 django-filter = "*"
 django-bootstrap5 = "*"
@@ -20,6 +19,7 @@ psycopg2-binary = "*"
 django-environ = "*"
 whitenoise = "*"
 gunicorn = "*"
+celery = "*"
 
 [dev-packages]
 

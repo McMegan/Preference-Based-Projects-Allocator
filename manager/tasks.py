@@ -4,7 +4,7 @@ from celery import shared_task
 
 from core import models
 from .allocator import Allocator
-from .export import generate_allocation_results_csv
+from .export import *
 
 
 @shared_task
@@ -36,26 +36,10 @@ def start_allocation(unit_id, manager_id, results_url):
 
 
 @shared_task
-def export_allocation_results(unit_id, manager_id, email_results):
-    unit = models.Unit.objects.filter(pk=unit_id).prefetch_related('projects').prefetch_related(
-        'students').prefetch_related('students__project_preferences').first()
-    filename = f'{unit.code}-project-allocation.csv'
+def email_allocation_results(unit_id, manager_id):
+    return email_allocation_results_csv(unit_id, manager_id)
 
-    attachment = generate_allocation_results_csv(unit)
 
-    # Email with attached file
-    if email_results:
-        manager = models.User.objects.filter(pk=manager_id).first()
-        if manager.email != None:
-            email = EmailMessage(
-                subject=f'{unit.name}: Project Allocation Results',
-                body=f'The results of the allocation of students to projects for {unit.name} are attached.',
-                from_email=None,
-                to=[manager.email]
-            )
-            email.attach(filename, attachment.read(), 'text/csv')
-            result = email.send(fail_silently=False)
-            return 'Email successful' if result else 'Email failed'
-        return 'No email specified'
-    else:
-        return ''
+@shared_task
+def email_preferences(unit_id, manager_id):
+    return email_preferences_csv(unit_id, manager_id)

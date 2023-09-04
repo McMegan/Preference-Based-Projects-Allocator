@@ -523,14 +523,14 @@ class StudentPageMixin(UnitMixin):
             {'label': 'Registered', 'content': render_exists_badge(
                 student.get_is_registered())},
             {'label': 'Submitted Preferences', 'content': render_exists_badge(
-                student.project_preferences_count)},
+                student.preferences_count)},
             {'label': 'Area', 'content': render_area_list(
                 student.area) if student.area.count() else '-'},
 
         ] + allocated_info
 
     def get_queryset(self):
-        return super().get_queryset().select_related('user').prefetch_related('project_preferences').annotate(project_preferences_count=Count('project_preferences', distinct=True))
+        return super().get_queryset().select_related('user').prefetch_related('project_preferences').annotate(preferences_count=Count('project_preferences', distinct=True))
 
     def get_page_title(self):
         if not hasattr(self, 'page_title'):
@@ -1112,7 +1112,7 @@ class PreferencesView(PreferencesMixin):
         email_results = 'email_results' in request.POST
         from . import export
         if email_results:
-            export.email_preferences_csv(
+            tasks.email_preferences.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
             return HttpResponseRedirect(self.request.path)
         return export.download_preferences_csv(unit_id=self.kwargs['pk_unit'])
@@ -1293,7 +1293,7 @@ class AllocationView(UnitMixin, TemplateView):
             return HttpResponseRedirect(self.request.path)
         from . import export
         if 'email_results' in request.POST:
-            export.email_allocation_results_csv(
+            tasks.email_allocation_results.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
             return HttpResponseRedirect(self.request.path)
         if 'download_results' in request.POST:

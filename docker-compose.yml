@@ -34,7 +34,7 @@ services:
     container_name: cpa-nginx
     domainname: 'capstone-projects-allocator'
     ports:
-      - 80:80
+      - 8080:80
     depends_on:
       - web
 

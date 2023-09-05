@@ -15,7 +15,7 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:1337']
 
 if 'CODESPACE_NAME' in os.environ:
     CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS + [
-        f'https://{os.getenv("CODESPACE_NAME")}-8000.{os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN")}']
+        f'https://{os.getenv("CODESPACE_NAME")}-8080.{os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN")}']
 
 
 ROOT_URLCONF = 'cpa.urls'

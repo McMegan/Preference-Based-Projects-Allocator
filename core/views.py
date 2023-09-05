@@ -1,13 +1,16 @@
 from django.contrib.auth import login
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView
 from django.views.generic.edit import FormMixin
 
+from django_filters.views import FilterView
 
 from . import models
 from . import forms
+from . import filters
 
 
 def index_view(request):
@@ -19,6 +22,36 @@ def index_view(request):
         if request.user.is_superuser:
             return redirect('admin:index')
     return redirect('login')
+
+
+class IndexView(LoginRequiredMixin, UserPassesTestMixin, FilterView):
+    model = models.Unit
+    template_name = 'core/index.html'
+    paginate_by = 10
+
+    def get_filter_formhelper_class(self):
+        if self.request.user.is_manager and self.request.path == reverse('manager:index'):
+            return filters.ManagerUnitFilterFormHelper
+        return filters.UnitFilterFormHelper
+
+    def get_filterset_class(self):
+        if self.request.user.is_manager and self.request.path == reverse('manager:index'):
+            return filters.ManagerUnitFilter
+        return filters.UnitFilter
+
+    def get_filterset(self, filterset_class):
+        kwargs = self.get_filterset_kwargs(filterset_class)
+        filterset = filterset_class(**kwargs)
+        filterset.form.helper = self.get_filter_formhelper_class()()
+        return filterset
+
+    def get_context_data(self, **kwargs):
+        f = self.get_filterset(self.get_filterset_class())
+        return {**super().get_context_data(**kwargs), 'filter': f, 'has_filter': any(
+            field in self.request.GET for field in set(f.get_fields()))}
+
+    def test_func(self):
+        return self.request.user.is_manager or self.request.user.is_student
 
 
 class StudentRegistrationView(FormMixin, TemplateView):

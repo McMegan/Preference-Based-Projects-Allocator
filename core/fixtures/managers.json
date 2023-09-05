@@ -1,18 +1,18 @@
 [
 	{
 		"model": "core.user",
-		"pk": 2,
+		"pk": 99,
 		"fields": {
 			"password": "pbkdf2_sha256$600000$asGtcOu0yFqc5YCw22Y1Cx$aZzGNa4IW2CuGntC03bd7ERPZ2iHxLTddyOR6F21dj0=",
 			"last_login": "2023-08-31T18:55:40.370",
 			"is_superuser": false,
-			"username": "Manager",
+			"username": "TestManager2",
 			"first_name": "",
 			"last_name": "",
 			"is_staff": false,
 			"is_active": true,
 			"date_joined": "2023-08-28T20:25:46.196",
-			"email": "meganmccrthy@gmail.com",
+			"email": "testmanager2@domain.com",
 			"is_manager": true,
 			"is_student": false,
 			"groups": [],

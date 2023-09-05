@@ -1,7 +1,14 @@
 {% if filter %}
     {% load crispy_forms_tags %} 
-    <div class="my-4">
-        {% crispy filter.form filter.form.helper %}
+    <div class="accordion mb-4" id="accordion-filters">
+        <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button {% if not has_filter %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#filters" aria-expanded="{% if has_filter %}true{% else %}false{% endif %}" aria-controls="filters">Filters</button></h2>
+            <div id="filters" class="accordion-collapse collapse  {% if has_filter %}show{% endif %}" aria-labelledby="filters" data-bs-parent="#accordion-filters"> 
+                <div class="accordion-body">
+                    {% crispy filter.form filter.form.helper %}
+                </div>
+            </div>
+        </div>
     </div>
 {% endif %}
 {% load render_table from django_tables2 %}

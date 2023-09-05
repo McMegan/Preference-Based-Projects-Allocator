@@ -1,7 +1,23 @@
 {% extends 'core/base.html' %}
 {% block main %}
+    {% url 'manager:index' as manager_index_url %}
+    {% url 'student:index' as student_index_url %}
+
     {% if user.is_student %}
         <p>If you don't see your unit here, please contact your unit convenor.</p>
+    {% endif %}
+    {% if filter %}
+        {% load crispy_forms_tags %} 
+        <div class="accordion mb-4" id="accordion-filters">
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button {% if not has_filter %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#filters" aria-expanded="{% if has_filter %}true{% else %}false{% endif %}" aria-controls="filters">Filters</button></h2>
+                <div id="filters" class="accordion-collapse collapse  {% if has_filter %}show{% endif %}" aria-labelledby="filters" data-bs-parent="#accordion-filters"> 
+                    <div class="accordion-body">
+                        {% crispy filter.form filter.form.helper %}
+                    </div>
+                </div>
+            </div>
+        </div>
     {% endif %}
     <div class="mb-4 row row-cols-1 row-cols-md-2 g-4">
         {% for unit in object_list %}
@@ -12,9 +28,7 @@
                     {% endif %}
                     <div class="card-body">
                         <h4 class="card-title mb-0">
-                            {% if user.is_manager or user.is_student %}
-                                <a class="text-decoration-none" href="{% if user.is_manager %}{% url 'manager:unit' unit.id %}{% endif %}{% if user.is_student %}{% url 'student:unit-detail' unit.id %}{% endif %}">{{ unit }}</a>
-                            {% endif %}
+                            <a class="text-decoration-none" href="{% if user.is_manager and request.path == manager_index_url %}{% url 'manager:unit' unit.id %}{% endif %}{% if user.is_student and request.path == student_index_url %}{% url 'student:unit-detail' unit.id %}{% endif %}">{{ unit }}</a>
                         </h4>
                     </div>
                     <ul class="list-group list-group-flush">
@@ -36,7 +50,7 @@
                         </li>
                         {% endif %}
                     </ul>
-                    {% if user.is_manager %}
+                    {% if user.is_manager and request.path == manager_index_url %}
                         <div class="card-footer">
                             <a href="{% url 'manager:unit-delete' unit.id %}" class="btn btn-danger btn-sm">Delete</a>
                         </div>
@@ -49,7 +63,7 @@
             </div>
         {% endfor %}
     </div>
-    {% if user.is_manager %}
+    {% if user.is_manager and request.path == manager_index_url %}
         <div class="d-flex justify-content-center">
             <a class="btn btn-primary" href="{% url 'manager:unit-new' %}">Add unit</a>
         </div>

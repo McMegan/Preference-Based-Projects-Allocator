@@ -6,19 +6,18 @@ from django.views.generic import ListView
 from django.views.generic.edit import FormMixin
 
 from core import models
+from core.views import IndexView
 from . import forms
 
 
-class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    template_name = 'core/index.html'
-    model = models.Unit
-    paginate_by = 10
+class IndexView(IndexView):
+
 
     def get_queryset(self):
-        return super().get_queryset().filter(students__user__id=self.request.user.id).filter(is_active=True)
+        return super().get_queryset().filter(students__user__id=self.request.user.id).filter(is_active=True).order_by('year', 'code', 'name')
 
     def test_func(self):
-        return self.request.user.is_student
+        return super().test_func() and self.request.user.is_student
 
 
 class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListView):

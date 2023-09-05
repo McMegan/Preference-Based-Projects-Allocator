@@ -5,21 +5,23 @@
     <div class="sticky-top navbar_sticky">
         <nav class="navbar py-2 navbar-expand-md bg-white border-bottom">
             <div class="container container-xl d-flex align-items-center">
-                <a class="navbar-brand fs-4" href="{% url 'index' %}">Projects Allocator</a>
+                <a class="navbar-brand fs-4" href="{% url 'index' %}" title="Captstone Projects Allocator">CPA</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-toggled" aria-controls="navbar-toggled" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbar-toggled">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
                         {% if user.is_authenticated %}
                             {% if user.is_manager and user.is_student %}
-                                <li class="nav-item"><a href="{% url 'manager:index' %}" class="nav-link" aria-current="page">Managed Units</a></li>
-                                <li class="nav-item"><a href="{% url 'student:index' %}" class="nav-link">Enrolled Units</a></li>
+                                {% url 'manager:index' as manager_index_url %}
+                                <li class="nav-item"><a href="{{ manager_index_url }}" class="nav-link {% if request.path == manager_index_url %}active fw-bold{% endif %}" {% if request.path == manager_index_url %}aria-current="page"{% endif %}>Managed Units</a></li>
+                                {% url 'student:index' as student_index_url %}
+                                <li class="nav-item"><a href="{{ student_index_url }}"  class="nav-link {% if request.path == student_index_url %}active fw-bold{% endif %}" {% if request.path == student_index_url %}aria-current="page"{% endif %}>Enrolled Units</a></li>
                             {% endif %}
                         {% endif %}
                     </ul>
                     {% if user.is_authenticated %}
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <ul class="navbar-nav mb-2 mb-md-0">
                         <li class="nav-item"><span class="nav-link">{{ user.username }}</span></li>
                         <li class="nav-item"><a href="{% url 'logout' %}" class="nav-link link-danger">Log Out</a></li>
                         <li class="nav-item"><a href="{% url 'password_change' %}" class="nav-link">Change Password</a></li>

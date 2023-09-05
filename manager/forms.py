@@ -309,7 +309,7 @@ class ProjectForm(UnitKwargMixin, forms.ModelForm):
 
     def init_fields(self):
         self.fields['area'] = forms.ModelMultipleChoiceField(
-            queryset=self.unit.areas, required=False)
+            queryset=self.unit.areas, required=False, help_text='Select from areas that have already been added to the unit.')
 
     def clean(self):
         number = self.cleaned_data.get('number')
@@ -328,7 +328,7 @@ class ProjectUpdateForm(ProjectForm):
     """
         Form for updating a project in a unit
     """
-    submit_label = 'Save Unit'
+    submit_label = 'Save Project'
     form_layout = Layout(project_form_layout_main)
 
     def init_fields(self):

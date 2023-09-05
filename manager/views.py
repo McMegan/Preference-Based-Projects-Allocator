@@ -15,6 +15,7 @@ from django_filters.views import FilterView, FilterMixin
 from django_tables2 import SingleTableMixin, MultiTableMixin
 
 from core import models
+from core.views import IndexView
 from . import filters
 from . import forms
 from . import tables
@@ -97,19 +98,19 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
             {'url': reverse('manager:unit-projects-new-list', kwargs={'pk_unit': unit.pk}),
              'label': 'Upload Project List', 'classes': 'ms-3'},
             {'url': reverse('manager:unit-projects-new', kwargs={'pk_unit': unit.pk}),
-             'label': 'Add Project', 'classes': 'ms-3'},
+             'label': 'Add a Project', 'classes': 'ms-3'},
 
             {'url': reverse('manager:unit-students', kwargs={'pk_unit': unit.pk}),
              'label': f'Students ({unit.students_count})'},
             {'url': reverse('manager:unit-students-new-list', kwargs={'pk_unit': unit.pk}),
              'label': 'Upload Student List', 'classes': 'ms-3'},
             {'url': reverse('manager:unit-students-new', kwargs={'pk_unit': unit.pk}),
-             'label': 'Add Student', 'classes': 'ms-3'},
+             'label': 'Add a Student', 'classes': 'ms-3'},
 
             {'url': reverse('manager:unit-areas', kwargs={'pk_unit': unit.pk}),
              'label': f'Areas ({unit.areas_count})'},
             {'url': reverse('manager:unit-areas-new', kwargs={'pk_unit': unit.pk}),
-             'label': 'Add Area', 'classes': 'ms-3'},
+             'label': 'Add an Area', 'classes': 'ms-3'},
 
             {'url': reverse('manager:unit-preferences', kwargs={'pk_unit': unit.pk}),
              'label': 'Preferences'},
@@ -199,16 +200,12 @@ Index view
 """
 
 
-class IndexView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    model = models.Unit
-    template_name = 'core/index.html'
-    paginate_by = 10
-
+class IndexView(IndexView):
     def get_queryset(self):
-        return self.request.user.managed_units.all().order_by('-is_active', 'year', 'code', 'name')
+        return super().get_queryset().filter(manager=self.request.user).order_by('-is_active', 'year', 'code', 'name')
 
     def test_func(self):
-        return user_is_manager(self.request.user)
+        return super().test_func() and user_is_manager(self.request.user)
 
 
 """
@@ -224,6 +221,7 @@ class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     success_url = reverse_lazy('manager:index')
 
     def post(self, request, *args, **kwargs):
+        self.object = None
         form = self.get_form()
         if form.is_valid():
             form.instance.manager_id = request.user.id
@@ -387,7 +385,10 @@ class StudentCreateView(StudentsListMixin, FormMixin, TemplateView):
             user = models.User.objects.filter(
                 username=form.cleaned_data.get('student_id'))
             if user.exists():
-                form.instance.user_id = user.first().id
+                user = user.first()
+                form.instance.user_id = user.id
+                user.is_student = True
+                user.save()
             form.instance.save()
             form.instance.area.set(form.cleaned_data.get('area'))
             return self.form_valid(form)

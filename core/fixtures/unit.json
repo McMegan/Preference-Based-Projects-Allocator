@@ -1,7 +1,7 @@
 [
 	{
 		"model": "core.unit",
-		"pk": 1,
+		"pk": 99,
 		"fields": {
 			"code": "FULL",
 			"name": "Full Unit",
@@ -13,7 +13,7 @@
 			"maximum_preference_limit": null,
 			"is_active": true,
 			"limit_by_major": false,
-			"manager": 2,
+			"manager": 99,
 			"is_allocating": false,
 			"allocation_status": "OP"
 		}

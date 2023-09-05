@@ -68,10 +68,11 @@ class UserAdmin(BaseUserAdmin):
     ]
 
     def get_inlines(self, request, obj=None):
-        if obj.is_manager:
-            return [UnitInlineModelAdmin]
-        if obj.is_student:
-            return [StudentInlineModelAdmin]
+        if obj != None:
+            if obj.is_manager:
+                return [UnitInlineModelAdmin]
+            if obj.is_student:
+                return [StudentInlineModelAdmin]
         return super().get_inlines(request, obj)
 
     def save_model(self, request, obj, form, change):

@@ -2,9 +2,9 @@ import os
 
 from .settings import *
 
-DEBUG = True
+DEBUG = bool(os.environ.get('DEBUG', default=0))
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS').split(' ')
 
 INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
@@ -64,4 +64,4 @@ DATABASES = {
 }
 
 # Celery
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+# CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'

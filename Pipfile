@@ -14,13 +14,12 @@ redis = "*"
 django-tables2 = "*"
 django-filter = "*"
 django-bootstrap5 = "*"
+psycopg2 = "*"
+psycopg2-binary = "*"
 django-environ = "*"
 whitenoise = "*"
 gunicorn = "*"
 celery = "*"
-setuptools = "*"
-psycopg2 = "*"
-psycopg2-binary = "*"
 
 [dev-packages]
 

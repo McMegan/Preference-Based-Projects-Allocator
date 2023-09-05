@@ -1284,6 +1284,10 @@ class AllocationView(UnitMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         if 'start_allocation' in request.POST:
+            unit = self.get_unit_object()
+            unit.is_allocating = True
+            unit.save()
+
             tasks.start_allocation.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit-allocation', kwargs={'pk_unit': self.kwargs['pk_unit']})))
             return HttpResponseRedirect(self.request.path)

@@ -2,9 +2,9 @@ import os
 
 from .settings import *
 
-DEBUG = bool(os.environ.get('DEBUG', default=0))
+DEBUG = True
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS').split(' ')
+ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
@@ -62,3 +62,6 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT'),
     }
 }
+
+# Celery
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'

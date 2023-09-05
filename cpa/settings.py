@@ -11,11 +11,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:1337']
-
 if 'CODESPACE_NAME' in os.environ:
-    CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS + [
-        f'https://{os.getenv("CODESPACE_NAME")}-8080.{os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN")}']
+    CSRF_TRUSTED_ORIGINS = [
+        f'https://{os.getenv("CODESPACE_NAME")}-8000.{os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN")}']
 
 
 ROOT_URLCONF = 'cpa.urls'
@@ -116,11 +114,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 CELERY_TIMEZONE = 'Australia/Melbourne'
 
 DJANGO_CELERY_RESULTS_TASK_ID_MAX_LENGTH = 191
-
-
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
-CELERY_RESULT_BACKEND = os.environ.get(
-    "CELERY_BACKEND", "redis://redis:6379/0")
 
 # Tables
 DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5-responsive.html'

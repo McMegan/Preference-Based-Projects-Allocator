@@ -9,6 +9,8 @@ services:
     command: /usr/local/bin/start.sh
     container_name: cpa-web
     restart: always
+    expose:
+      - 8080
     env_file:
       - ./.env.prod
     environment:

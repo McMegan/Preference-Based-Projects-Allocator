@@ -5,7 +5,7 @@ services:
     image: python
     build:
       context: .
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile
     command: /usr/local/bin/start.sh
     container_name: cpa-web
     restart: always
@@ -46,7 +46,7 @@ services:
     image: celery
     build:
       context: .
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile
     container_name: cpa-celery
     command: /usr/local/bin/start-celeryworker.sh
     volumes:

@@ -35,9 +35,9 @@ COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 
 # copy entrypoint.prod.sh
-COPY ./entrypoint.prod.sh /usr/local/bin/
-RUN sed -i 's/\r$//g' /usr/local/bin/entrypoint.prod.sh
-RUN chmod +x /usr/local/bin/entrypoint.prod.sh
+COPY ./entrypoint.sh /usr/local/bin/
+RUN sed -i 's/\r$//g' /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 COPY ./start.sh /usr/local/bin/
 RUN sed -i 's/\r$//g' /usr/local/bin/start.sh
@@ -56,5 +56,5 @@ RUN chown -R app:app $APP_HOME
 # change to the app user
 USER app
 
-# run entrypoint.prod.sh
-ENTRYPOINT ["/usr/local/bin/entrypoint.prod.sh"]
+# run entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

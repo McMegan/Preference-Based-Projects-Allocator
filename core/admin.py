@@ -28,7 +28,8 @@ class StudentInlineModelAdmin(admin.TabularInline):
     model = models.Student
     verbose_name = 'Enrolment'
 
-    fields = ['unit', 'allocated_project', 'allocated_preference_rank', 'area']
+    fields = ['unit', 'allocated_project',
+              'allocated_preference_rank', 'area']
 
     extra = 0
 
@@ -202,7 +203,7 @@ class StudentAdmin(admin.ModelAdmin):
                 }))
             return format_html('<a href="{}">{}</a>', url, student.user)
         return '-'
-    user_link.short_description = 'unit'
+    user_link.short_description = 'user'
 
     @admin.display(ordering='unit')
     def unit_link(self, student):

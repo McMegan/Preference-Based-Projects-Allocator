@@ -260,10 +260,14 @@ class Student(models.Model):
         return self.is_registered
 
     def save(self, *args, **kwargs):
-        # Link to user
-        user = User.objects.filter(username=self.student_id)
-        if user.exists():
-            self.user = user.first()
+        print(self.student_id == '', self.user)
+        if self.user == None and self.student_id != '':
+            # Link to user
+            user = User.objects.filter(username=self.student_id)
+            if user.exists():
+                self.user = user.first()
+        elif self.user != None and self.student_id == '':
+            self.student_id = self.user.username
         return super().save(*args, **kwargs)
 
     class Meta:

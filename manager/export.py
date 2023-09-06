@@ -5,6 +5,7 @@ from io import StringIO
 from django.core.mail import EmailMessage
 from django.http import HttpResponse
 
+
 from core import models
 
 """
@@ -137,5 +138,6 @@ def email_preferences_csv(unit_id, manager_id):
         email.attach(generate_preferences_filename(
             unit), attachment.read(), 'text/csv')
         result = email.send(fail_silently=False)
+
         return 'Email successful' if result else 'Email failed'
     return 'No email specified'

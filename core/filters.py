@@ -113,6 +113,3 @@ class ManagerUnitFilterFormHelper(UnitFilterFormHelper):
         'is_active',
         unit_filter_form_layout_actions,
     )
-
-
-print(Layout('').__dict__)

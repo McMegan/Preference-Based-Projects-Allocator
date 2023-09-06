@@ -107,13 +107,14 @@ LOGOUT_REDIRECT_URL = '/login/'
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
-# EMAIL -> BACKEND
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
 # Celery Settings
 CELERY_TIMEZONE = 'Australia/Melbourne'
-
 DJANGO_CELERY_RESULTS_TASK_ID_MAX_LENGTH = 191
+BROKER_CONNECTION_RETRY = True
 
 # Tables
 DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5-responsive.html'
+
+
+# EMAIL BACKEND
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

@@ -1,14 +1,6 @@
 import os
 
-from django.core.mail.backends.smtp import EmailBackend
-from django.core.mail.backends.base import BaseEmailBackend
-from django.core.mail import EmailMessage
-
-from azure.communication.email import EmailClient
-from azure.core.exceptions import HttpResponseError
-
 from .settings import *
-from .settings import BASE_DIR
 
 
 # Configure the domain name using the environment variable

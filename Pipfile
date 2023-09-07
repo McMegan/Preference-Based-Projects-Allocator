@@ -20,6 +20,8 @@ django-environ = "*"
 whitenoise = "*"
 gunicorn = "*"
 celery = "*"
+django-storages = "*"
+azure-storage-blob = "*"
 
 [dev-packages]
 

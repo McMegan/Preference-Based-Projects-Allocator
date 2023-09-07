@@ -25,14 +25,13 @@ def start_allocation(unit_id, manager_id, results_url):
         email = EmailMultiAlternatives(
             subject=f'{unit.name}: Project Allocation Finished',
             body=email_message,
-            from_email=None,
             to=[manager.email],
         )
         email.attach_alternative(email_message_html, 'text/html')
         result = email.send(fail_silently=False)
-        return 'Email successful' if result else 'Email failed', models.Unit.ALLOCATION_STATUS[unit.allocation_status]
+        return 'Email successful' if result else 'Email failed', unit.get_allocation_descriptive()
 
-    return 'No email specified', models.Unit.ALLOCATION_STATUS[unit.allocation_status]
+    return 'No email specified', unit.get_allocation_descriptive()
 
 
 @shared_task

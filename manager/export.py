@@ -65,8 +65,7 @@ def email_allocation_results_csv(unit_id, manager_id):
     if manager.email != None:
         email = EmailMessage(
             subject=f'{unit.name}: Project Allocation Results',
-            body=f'The results of the allocation of students to projects for {unit.name} are attached.',
-            from_email=None,
+            body=f'The results of the allocation of students to projects for {unit.name} are attached.\n',
             to=[manager.email]
         )
         email.attach(generate_allocation_results_filename(
@@ -131,8 +130,7 @@ def email_preferences_csv(unit_id, manager_id):
     if manager.email != None:
         email = EmailMessage(
             subject=f'{unit.name}: Student Preferences',
-            body=f'The student project preferences for {unit.name} are attached.',
-            from_email=None,
+            body=f'The student project preferences for {unit.name} are attached.\n',
             to=[manager.email]
         )
         email.attach(generate_preferences_filename(

@@ -1,11 +1,11 @@
-from typing import Any, List, Optional
+from typing import Any
 from django.contrib.admin import SimpleListFilter
 from django.contrib import admin
-from django.contrib.admin.options import InlineModelAdmin
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import PasswordResetForm
 from django.db.models import Count, Q
+from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from django.urls import reverse
 from django.utils.crypto import get_random_string
@@ -20,25 +20,11 @@ from . import forms
 admin.site.unregister(Group)
 
 
-class PreferenceInlineModelAdmin(admin.TabularInline):
-    model = models.ProjectPreference
+"""
 
+User admin
 
-class StudentInlineModelAdmin(admin.TabularInline):
-    model = models.Student
-    verbose_name = 'Enrolment'
-
-    fields = ['unit', 'allocated_project',
-              'allocated_preference_rank', 'area']
-
-    extra = 0
-
-
-class UnitInlineModelAdmin(admin.StackedInline):
-    model = models.Unit
-    verbose_name = 'Managed Unit'
-
-    extra = 0
+"""
 
 
 @admin.register(models.User)
@@ -53,8 +39,33 @@ class UserAdmin(BaseUserAdmin):
     )
 
     list_display = ('username', 'email', 'is_staff',
-                    'is_manager', 'is_student', 'last_login')
+                    'is_manager', 'managed_unit_count', 'is_student', 'enrolled_unit_count')
     list_filter = BaseUserAdmin.list_filter + ('is_manager', 'is_student')
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(managed_unit_count=Count('managed_units')).annotate(enrolled_unit_count=Count('enrollments'))
+
+    @admin.display(ordering='managed_unit_count')
+    def managed_unit_count(self, user: models.User):
+        url = (
+            reverse('admin:core_unit_changelist')
+            + '?'
+            + urlencode({
+                'manager_id': str(user.id)
+            }))
+        return format_html('<a href="{}">{}</a>', url, user.managed_unit_count)
+    managed_unit_count.short_description = 'managed unit count'
+
+    @admin.display(ordering='enrolled_unit_count')
+    def enrolled_unit_count(self, user: models.User):
+        url = (
+            reverse('admin:core_student_changelist')
+            + '?'
+            + urlencode({
+                'user_id': str(user.id)
+            }))
+        return format_html('<a href="{}">{}</a>', url, user.enrolled_unit_count)
+    enrolled_unit_count.short_description = 'enrollment count'
 
     fieldsets = (
         (None, {'fields': ('username', 'password', 'email')}),
@@ -63,18 +74,9 @@ class UserAdmin(BaseUserAdmin):
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
         ('User type', {'fields': ('is_manager', 'is_student')}),
     )
-
     readonly_fields = [
         'date_joined', 'last_login'
     ]
-
-    def get_inlines(self, request, obj=None):
-        if obj is not None:
-            if obj.is_manager:
-                return [UnitInlineModelAdmin]
-            if obj.is_student:
-                return [StudentInlineModelAdmin]
-        return super().get_inlines(request, obj)
 
     def save_model(self, request, obj, form, change):
         if not change and (not form.cleaned_data['password1'] or not obj.has_usable_password()):
@@ -95,6 +97,13 @@ class UserAdmin(BaseUserAdmin):
             super().save_model(request, obj, form, change)
 
 
+"""
+
+Unit admin
+
+"""
+
+
 @admin.register(models.Unit)
 class UnitAdmin(admin.ModelAdmin):
     autocomplete_fields = ['manager']
@@ -104,6 +113,16 @@ class UnitAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'year', 'semester', 'preference_submission_start',
                    'preference_submission_end', 'allocation_status']
     search_fields = ['code', 'name']
+
+    fieldsets = (
+        ('Unit Information', {
+            'fields': (('code', 'name'), ('year', 'semester'), ('manager'))
+        }),
+        ('Unit Settings', {
+            'fields': (('preference_submission_start', 'preference_submission_end'), ('minimum_preference_limit', 'maximum_preference_limit'), ('is_active', 'limit_by_major'), ('is_allocating', 'allocation_status')),
+        }),
+    )
+    readonly_fields = ('is_allocating', 'allocation_status')
 
     @admin.display(ordering='manager_id')
     def manager_link(self, unit):
@@ -144,6 +163,13 @@ class UnitAdmin(admin.ModelAdmin):
         )
 
 
+"""
+
+Student admin
+
+"""
+
+
 class RegisteredFilter(SimpleListFilter):
     title = 'Is Registered'
     parameter_name = 'is_registered'
@@ -176,9 +202,61 @@ class PreferencesFilter(SimpleListFilter):
 class StudentAdmin(admin.ModelAdmin):
     list_select_related = ['user', 'unit']
     list_display = ['student_id', 'is_registered',
-                    'user_link', 'unit_link', 'submitted_preferences']
+                    'user_link', 'unit_link', 'submitted_preferences', 'preferences_count', 'allocated_project_link', 'allocated_preference_rank']
     list_filter = [RegisteredFilter, PreferencesFilter]
     search_fields = ['student_id']
+
+    form = forms.AdminStudentChangeForm
+    add_form = forms.AdminStudentAddForm
+
+    # Add fields/sets
+    add_fields = ['unit', 'student_id']
+    add_fieldset = (
+        ('', {
+            'fields': ('unit', 'student_id')
+        }),
+    )
+
+    # Change fields/sets
+    fieldsets = (
+        ('', {
+            'fields': (('user', 'student_id'),)
+        }),
+        ('Unit', {
+            'description': 'A student object\'s unit cannot be changed. You must create a new student object to add this student to a different unit.',
+            'fields': ('unit',)
+        }),
+        ('Area', {
+            'fields': ('area',)
+        }),
+        ('Allocation', {
+            'fields': ('allocated_project',
+                       'allocated_preference_rank')
+        }),
+    )
+    readonly_fields = ('unit', 'allocated_preference_rank')
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return self.add_fieldset
+        return super().get_fieldsets(request, obj)
+
+    def get_fields(self, request, obj=None):
+        if obj is None:
+            return self.add_fields
+        return super().get_fields(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj is None:
+            return []
+        return super().get_readonly_fields(request, obj)
+
+    def get_form(self, request, obj=None, **kwargs):
+        defaults = {}
+        if obj is None:
+            defaults['form'] = self.add_form
+        defaults.update(kwargs)
+        return super().get_form(request, obj, **defaults)
 
     @admin.display(ordering='user')
     def is_registered(self, student):
@@ -216,14 +294,69 @@ class StudentAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', url, student.unit)
     unit_link.short_description = 'unit'
 
+    @admin.display(ordering='preferences_count')
+    def preferences_count(self, student):
+        url = (
+            reverse('admin:core_projectpreference_changelist')
+            + '?'
+            + urlencode({
+                'student_id': str(student.id)
+            }))
+        return format_html('<a href="{}">{}</a>', url, student.preferences_count)
+    preferences_count.short_description = 'no. preference(s)'
+
+    @admin.display(ordering='allocated_project')
+    def allocated_project_link(self, student):
+        if student.allocated_project:
+            url = (
+                reverse('admin:core_project_changelist')
+                + '?'
+                + urlencode({
+                    'id': str(student.allocated_project_id)
+                }))
+            return format_html('<a href="{}">{}</a>', url, student.allocated_project)
+        return '-'
+    user_link.short_description = 'user'
+
     def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related('project_preferences')
+        return super().get_queryset(request).prefetch_related('project_preferences').annotate(preferences_count=Count('project_preferences', distinct=True))
+
+
+"""
+
+Projects admin
+
+"""
+
+
+class ProjectStudentInlineModelAdmin(admin.TabularInline):
+    model = models.Student
+    verbose_name = 'Allocated Student'
+
+    fields = ['student_id', 'allocated_preference_rank']
+    readonly_fields = ['student_id', 'allocated_preference_rank']
+
+    extra = 0
+
+    show_change_link = True
+    can_delete = False
+
+    def has_add_permission(self, request, obj):
+        return False
 
 
 @admin.register(models.Project)
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ['number', 'name', 'unit_link']
     search_fields = ['name', 'number']
+
+    fields = ('unit', 'number', 'name', 'description',
+              'area', 'min_students', 'max_students')
+
+    def get_inlines(self, request, obj=None):
+        if obj is not None:
+            return [ProjectStudentInlineModelAdmin]
+        return super().get_inlines(request, obj)
 
     @admin.display(ordering='unit')
     def unit_link(self, project):
@@ -235,6 +368,13 @@ class ProjectAdmin(admin.ModelAdmin):
             }))
         return format_html('<a href="{}">{}</a>', url, project.unit)
     unit_link.short_description = 'unit'
+
+
+"""
+
+Preferences admin
+
+"""
 
 
 @admin.register(models.ProjectPreference)
@@ -285,10 +425,17 @@ class ProjectPreferenceAdmin(admin.ModelAdmin):
         return False
 
 
+"""
+
+Area admin
+
+"""
+
+
 @admin.register(models.Area)
 class AreaAdmin(admin.ModelAdmin):
     list_select_related = ['unit']
-    list_display = ['unit_link', 'name']
+    list_display = ['name', 'unit_link']
     search_fields = ['unit_link', 'name']
 
     ordering = ['unit', 'name']

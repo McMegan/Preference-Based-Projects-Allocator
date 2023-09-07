@@ -1,4 +1,4 @@
-from typing import Iterable, Optional
+from django import forms
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -229,7 +229,7 @@ class Project(models.Model):
         return self.allocated
 
     class Meta:
-        ordering = ['number']
+        ordering = ['unit', 'number']
         constraints = [
             models.UniqueConstraint(
                 fields=['unit', 'number'], name='%(app_label)s_%(class)s_rank_unique', violation_error_message='Each project in a unit must have a unique number. A project with that number is already included in this unit.'),
@@ -259,8 +259,14 @@ class Student(models.Model):
             self.is_registered = self.user != None
         return self.is_registered
 
+    def clean(self):
+        if self.user != None and self.student_id != None and self.student_id != '':
+            if self.user.username != self.student_id:
+                raise forms.ValidationError(
+                    'The chosen user\'s username must match the specified student ID.')
+        return super().clean()
+
     def save(self, *args, **kwargs):
-        print(self.student_id == '', self.user)
         if self.user == None and self.student_id != '':
             # Link to user
             user = User.objects.filter(username=self.student_id)
@@ -268,13 +274,22 @@ class Student(models.Model):
                 self.user = user.first()
         elif self.user != None and self.student_id == '':
             self.student_id = self.user.username
+        if self.allocated_project:
+            allocated_project_pref = self.project_preferences.filter(
+                project_id=self.allocated_project.id)
+            self.allocated_preference_rank = allocated_project_pref.first(
+            ).rank if allocated_project_pref.exists() else None
+        else:
+            self.allocated_preference_rank = None
         return super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['student_id']
         constraints = [
             models.UniqueConstraint(
-                fields=['student_id', 'unit'], name='%(app_label)s_%(class)s_unique'),
+                fields=['student_id', 'unit'], name='%(app_label)s_%(class)s_unique_id'),
+            models.UniqueConstraint(
+                fields=['user', 'unit'], name='%(app_label)s_%(class)s_unique_user'),
         ]
 
 

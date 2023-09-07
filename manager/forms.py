@@ -270,14 +270,6 @@ class StudentAllocatedUpdateForm(StudentUpdateForm):
         self.fields['allocated_project'] = AllocatedProjectChoiceField(
             queryset=self.unit.projects.prefetch_related('allocated_students'), required=False, label='Allocated Project')
 
-    def save(self, commit: bool = ...):
-        if self.instance.allocated_project:
-            allocated_project_pref = self.instance.project_preferences.filter(
-                project_id=self.instance.allocated_project.id)
-            self.instance.allocated_preference_rank = allocated_project_pref.first(
-            ).rank if allocated_project_pref.exists() else None
-        return super().save(commit)
-
     class Meta(StudentUpdateForm.Meta):
         fields = ['allocated_project', 'area']
 

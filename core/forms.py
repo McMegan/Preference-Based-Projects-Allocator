@@ -120,3 +120,35 @@ class UserPasswordResetForm(PasswordResetForm):
                     """<a href="{% url 'login' %}" class="btn btn-outline-secondary">Log In</a>"""),
             )
         )
+
+
+"""
+
+Student forms
+
+"""
+
+
+class AdminStudentAddForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['student_id'].label = 'Student ID'
+        self.fields['student_id'].help_text = 'If a user exists for this student ID, their user account will be linked automatically.'
+
+    class Meta:
+        model = models.Student
+        fields = ['unit', 'student_id']
+
+
+class AdminStudentChangeForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['area'].queryset = models.Area.objects.filter(
+            unit=self.instance.unit)
+        self.fields['allocated_project'].queryset = models.Project.objects.filter(
+            unit=self.instance.unit)
+
+    class Meta(AdminStudentAddForm.Meta):
+        model = models.Student
+        fields = ['unit', 'user', 'student_id', 'area', 'allocated_project']

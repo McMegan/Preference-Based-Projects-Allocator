@@ -202,7 +202,10 @@ Index view
 
 class IndexView(IndexView):
     def get_queryset(self):
-        return super().get_queryset().filter(manager=self.request.user).order_by('-is_active', 'year', 'code', 'name')
+        qs = models.Unit.objects
+        if hasattr(super(), 'get_queryset'):
+            qs = super().get_queryset()
+        return qs.filter(manager=self.request.user).order_by('-is_active', 'year', 'code', 'name')
 
     def test_func(self):
         return super().test_func() and user_is_manager(self.request.user)
@@ -229,9 +232,6 @@ class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
-
-    def get_queryset(self):
-        return self.request.user.managed_units.all()
 
     def test_func(self):
         return user_is_manager(self.request.user)
@@ -336,7 +336,10 @@ class StudentsListMixin(UnitMixin):
         ] + allocated_info
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('allocated_project').prefetch_related('area').order_by('student_id')
+        qs = models.Student.objects
+        if hasattr(super(), 'get_queryset'):
+            qs = super().get_queryset()
+        return qs.filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('allocated_project').prefetch_related('area').order_by('student_id')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -531,7 +534,10 @@ class StudentPageMixin(UnitMixin):
         ] + allocated_info
 
     def get_queryset(self):
-        return super().get_queryset().select_related('user').prefetch_related('project_preferences').annotate(preferences_count=Count('project_preferences', distinct=True))
+        qs = models.Student.objects
+        if hasattr(super(), 'get_queryset'):
+            qs = super().get_queryset()
+        return qs.select_related('user').prefetch_related('project_preferences').annotate(preferences_count=Count('project_preferences', distinct=True))
 
     def get_page_title(self):
         if not hasattr(self, 'page_title'):
@@ -617,7 +623,10 @@ class ProjectsListMixin(UnitMixin):
         ] + allocated_info
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('unit').prefetch_related('area').prefetch_related('allocated_students').annotate(allocated_students_count=Count('allocated_students', distinct=True)).annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank')).order_by('number')
+        qs = models.Project.objects
+        if hasattr(super(), 'get_queryset'):
+            qs = super().get_queryset()
+        return qs.filter(unit=self.kwargs['pk_unit']).prefetch_related('unit').prefetch_related('area').prefetch_related('allocated_students').annotate(allocated_students_count=Count('allocated_students', distinct=True)).annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank')).order_by('number')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -814,7 +823,10 @@ class ProjectPageMixin(UnitMixin):
         ] + allocated_info
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('allocated_students').annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank')).prefetch_related('area')
+        qs = models.Project.objects
+        if hasattr(super(), 'get_queryset'):
+            qs = super().get_queryset()
+        return qs.prefetch_related('allocated_students').annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank')).prefetch_related('area')
 
     def get_page_title(self):
         if not hasattr(self, 'page_title'):
@@ -920,7 +932,10 @@ class AreasListMixin(UnitMixin):
         ]
 
     def get_queryset(self):
-        return super().get_queryset().filter(unit=self.kwargs['pk_unit']).prefetch_related('students').prefetch_related('projects').order_by('name')
+        qs = models.Area.objects
+        if hasattr(super(), 'get_queryset'):
+            qs = super().get_queryset()
+        return qs.filter(unit=self.kwargs['pk_unit']).prefetch_related('students').prefetch_related('projects').order_by('name')
 
     def get_page_title_url(self):
         return reverse('manager:unit-areas', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
@@ -998,7 +1013,10 @@ class AreaPageMixin(UnitMixin):
         ]
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('projects').prefetch_related('students')
+        qs = models.Area.objects
+        if hasattr(super(), 'get_queryset'):
+            qs = super().get_queryset()
+        return qs.prefetch_related('projects').prefetch_related('students')
 
     def get_page_title(self):
         if not hasattr(self, 'page_title'):

@@ -1,5 +1,6 @@
 import csv
 from io import StringIO
+import base64
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
@@ -423,6 +424,7 @@ class StudentsUploadListView(StudentsListMixin, FormMixin, TemplateView):
             csv_data = csv.DictReader(
                 StringIO(file.read().decode('utf-8-sig')), delimiter=',')
             student_id_column = form.cleaned_data.get('student_id_column')
+            student_name_column = form.cleaned_data.get('student_name_column')
             area_column = form.cleaned_data.get('area_column')
 
             student_create_list = []
@@ -432,6 +434,7 @@ class StudentsUploadListView(StudentsListMixin, FormMixin, TemplateView):
                 student = models.Student()
                 student.student_id = row[student_id_column]
                 student.unit_id = self.kwargs['pk_unit']
+                student.name = row[student_name_column]
                 # Check if user account exists for student
                 user = models.User.objects.filter(
                     username=row[student_id_column])
@@ -527,6 +530,7 @@ class StudentPageMixin(UnitMixin):
 
         return [
             {'label': 'Student ID', 'content': student.student_id},
+            {'label': 'Student Name', 'content': student.name},
             {'label': 'Registered', 'content': render_exists_badge(
                 student.get_is_registered())},
             {'label': 'Submitted Preferences', 'content': render_exists_badge(
@@ -1187,15 +1191,20 @@ class PreferencesUploadListView(PreferencesMixin, FormMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         form = forms.PreferenceListForm(request.POST, request.FILES)
         if form.is_valid():
+            # Reset file position after checking headers in form.clean()
+            file = request.FILES['file']
+            file.seek(0)
+
+            file_bytes_base64 = base64.b64encode(file.read())
+            file_bytes_base64_str = file_bytes_base64.decode('utf-8')
+
+            print(file_bytes_base64_str)
+
             unit_preferences = models.ProjectPreference.objects.prefetch_related('project').filter(
                 project__unit_id=self.kwargs['pk_unit'])
             if form.cleaned_data.get('list_override'):
                 # Clear previous enrolled projects
                 unit_preferences.delete()
-
-            # Reset file position after checking headers in form.clean()
-            file = request.FILES['file']
-            file.seek(0)
 
             csv_data = csv.DictReader(
                 StringIO(file.read().decode('utf-8-sig')), delimiter=',')

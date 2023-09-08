@@ -182,6 +182,7 @@ class StudentForm(UnitKwargMixin, forms.ModelForm):
     submit_label = 'Add Student to Unit'
     form_layout = Layout(
         FloatingField('student_id'),
+        FloatingField('name'),
         'area',
     )
 
@@ -198,7 +199,7 @@ class StudentForm(UnitKwargMixin, forms.ModelForm):
 
     class Meta:
         model = models.Student
-        fields = ['student_id']
+        fields = ['student_id', 'name']
 
 
 class StudentListForm(UnitKwargMixin, forms.Form):
@@ -210,6 +211,7 @@ class StudentListForm(UnitKwargMixin, forms.Form):
         'file',
         'list_override',
         FloatingField('student_id_column'),
+        FloatingField('student_name_column'),
         FloatingField('area_column'),
     )
 
@@ -218,6 +220,8 @@ class StudentListForm(UnitKwargMixin, forms.Form):
         label='Replace current students', required=False)
     student_id_column = forms.CharField(
         label='Student ID Column Name')
+    student_name_column = forms.CharField(
+        label='Student Name Column Name', help_text='Leave blank if not required.', required=False)
 
     area_column = forms.CharField(
         label='Project Area Column Name', help_text='Leave blank if none. Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
@@ -229,6 +233,10 @@ class StudentListForm(UnitKwargMixin, forms.Form):
         valid_csv_file(self.cleaned_data.get('file'))
         column_exists_in_csv(self.cleaned_data.get('file'), 'student_id_column',
                              self.cleaned_data.get('student_id_column'))
+
+        if self.cleaned_data.get('student_name_column') != '':
+            column_exists_in_csv(self.cleaned_data.get('file'), 'student_name_column',
+                                 self.cleaned_data.get('student_name_column'))
 
         if self.cleaned_data.get('area_column') != '':
             column_exists_in_csv(self.cleaned_data.get('file'), 'area_column',
@@ -247,7 +255,10 @@ class StudentUpdateForm(UnitKwargMixin, forms.ModelForm):
         Form for updating a student in a unit
     """
     submit_label = 'Save Student'
-    form_layout = Layout('area')
+    form_layout = Layout(
+        FloatingField('name'),
+        'area'
+    )
 
     def init_fields(self):
         self.fields['area'] = forms.ModelMultipleChoiceField(
@@ -255,7 +266,7 @@ class StudentUpdateForm(UnitKwargMixin, forms.ModelForm):
 
     class Meta:
         model = models.Student
-        fields = ['area']
+        fields = ['name', 'area']
 
 
 class StudentAllocatedUpdateForm(StudentUpdateForm):
@@ -263,6 +274,7 @@ class StudentAllocatedUpdateForm(StudentUpdateForm):
         Form for updating a student in a unit that has been allocated
     """
     form_layout = Layout(
+        FloatingField('name'),
         FloatingField('allocated_project',
                       css_class='my-3'),
         'area'
@@ -274,7 +286,7 @@ class StudentAllocatedUpdateForm(StudentUpdateForm):
             queryset=self.unit.projects.prefetch_related('allocated_students'), required=False, label='Allocated Project')
 
     class Meta(StudentUpdateForm.Meta):
-        fields = ['allocated_project', 'area']
+        fields = ['name', 'allocated_project', 'area']
 
 
 """

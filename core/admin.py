@@ -201,7 +201,7 @@ class PreferencesFilter(SimpleListFilter):
 @admin.register(models.Student)
 class StudentAdmin(admin.ModelAdmin):
     list_select_related = ['user', 'unit']
-    list_display = ['student_id', 'is_registered',
+    list_display = ['student_id', 'name', 'is_registered',
                     'user_link', 'unit_link', 'submitted_preferences', 'preferences_count', 'allocated_project_link', 'allocated_preference_rank']
     list_filter = [RegisteredFilter, PreferencesFilter]
     search_fields = ['student_id']
@@ -213,14 +213,14 @@ class StudentAdmin(admin.ModelAdmin):
     add_fields = ['unit', 'student_id']
     add_fieldset = (
         ('', {
-            'fields': ('unit', 'student_id')
+            'fields': ('unit', 'student_id', 'name')
         }),
     )
 
     # Change fields/sets
     fieldsets = (
         ('', {
-            'fields': (('user', 'student_id'),)
+            'fields': (('user', 'student_id'), 'name')
         }),
         ('Unit', {
             'description': 'A student object\'s unit cannot be changed. You must create a new student object to add this student to a different unit.',

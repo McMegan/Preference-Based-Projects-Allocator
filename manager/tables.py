@@ -110,7 +110,9 @@ Student tables
 
 class StudentsTable(Table):
     student_id = tables.Column(
-        accessor='student_id', verbose_name='Student ID')
+        accessor='student_id', verbose_name='ID')
+    name = tables.Column(
+        accessor='name', empty_values=(), verbose_name='Name')
     registered = tables.Column(
         accessor='user', empty_values=(), verbose_name='Registered')
     preferences = tables.Column(
@@ -163,7 +165,7 @@ class StudentsAllocatedTable(StudentsTable):
         empty_values=(), verbose_name='Allocated Preference')
 
     class Meta(StudentsTable.Meta):
-        sequence = ('student_id', 'registered', 'area', 'preferences', 'allocated_project',
+        sequence = ('student_id', 'name', 'registered', 'area', 'preferences', 'allocated_project',
                     'allocated_preference_rank')
 
     def render_allocated_project(self, value, record):

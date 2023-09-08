@@ -49,6 +49,8 @@ Student Filters
 class StudentFilter(ExistsMultipleChoiceFilterSet):
     student_id = django_filters.CharFilter(
         lookup_expr='icontains', label='Student ID')
+    name = django_filters.CharFilter(
+        lookup_expr='icontains', label='Student Name')
     registered = ExistsMultipleChoiceFilter(
         field_name='user', exists_label='Registered Students', not_exists_label='Un-Registered Students')
     preferences = ExistsMultipleChoiceFilter(
@@ -72,7 +74,11 @@ class StudentAllocatedFilter(StudentFilter):
 
 student_filter_form_layout_main = Fieldset(
     '',
-    Div(FloatingField('student_id'), css_class='w-100'),
+    Div(
+        Div(FloatingField('student_id'), css_class='flex-grow-1'),
+        Div(FloatingField('name'), css_class='flex-grow-1'),
+        css_class='mb-3 d-flex flex-wrap column-gap-3 align-items-center'
+    ),
     Div(
         InlineRadios('registered'),
         InlineRadios('preferences'),

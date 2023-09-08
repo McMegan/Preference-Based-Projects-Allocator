@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %} 
 {% block title %}{{ block.super }} - {% endblock %}
 
 {% block body_classes %}d-flex align-items-center py-4 bg-body-tertiary{% endblock %}
@@ -13,9 +12,12 @@
         {% block card_body_outer %}
         <div class="card-body p-4">
             {% block card_body_inner %}
+                {% if form %}
+                {% load crispy_forms_tags %} 
                 <form method="post">
                     {% csrf_token %} {% crispy form %}
                 </form>
+                {% endif %}
             {% endblock %}
         </div>
         {% endblock %}

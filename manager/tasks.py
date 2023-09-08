@@ -1,10 +1,15 @@
-from django.core.mail import EmailMessage, EmailMultiAlternatives
+import base64
+import tempfile
+import os
+
+from django.core.mail import EmailMultiAlternatives
 
 from celery import shared_task
 
 from core import models
 from .allocator import Allocator
-from .export import *
+from . import export
+from . import upload
 
 
 @shared_task
@@ -35,10 +40,25 @@ def start_allocation(unit_id, manager_id, results_url):
 
 
 @shared_task
-def email_allocation_results(unit_id, manager_id):
-    return email_allocation_results_csv(unit_id, manager_id)
+def email_allocation_results_csv_task(*args, **kwargs):
+    return export.email_allocation_results_csv(*args, **kwargs)
 
 
 @shared_task
-def email_preferences(unit_id, manager_id):
-    return email_preferences_csv(unit_id, manager_id)
+def email_preferences_csv_task(*args, **kwargs):
+    return export.email_preferences_csv(*args, **kwargs)
+
+
+@shared_task
+def upload_projects_list_task(*args, **kwargs):
+    return upload.upload_projects_list(*args, **kwargs)
+
+
+@shared_task
+def upload_students_list_task(*args, **kwargs):
+    return upload.upload_students_list(*args, **kwargs)
+
+
+@shared_task
+def upload_preferences_list_task(*args, **kwargs):
+    return upload.upload_preferences_list(*args, **kwargs)

@@ -122,7 +122,7 @@ class StudentsTable(Table):
     class Meta(Table.Meta):
         model = models.Student
         fields = ['student_id', 'area']
-        sequence = ('student_id', 'registered', 'preferences', 'area')
+        sequence = ('student_id', 'name', 'registered', 'preferences', 'area')
 
         row_attrs = {'data-student-id': lambda record: record.pk}
 

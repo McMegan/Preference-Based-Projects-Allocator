@@ -9,7 +9,7 @@ from django.db.models.functions import Round
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
-from django.views.generic import TemplateView, DetailView, ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import TemplateView, DetailView, CreateView, UpdateView, DeleteView
 from django.views.generic.edit import FormMixin
 
 from django_filters.views import FilterView, FilterMixin
@@ -413,66 +413,25 @@ class StudentsUploadListView(StudentsListMixin, FormMixin, TemplateView):
         # form = self.get_form()
         form = forms.StudentListForm(request.POST, request.FILES)
         if form.is_valid():
-            if form.cleaned_data.get('list_override'):
-                # Clear previous enrolled students
-                self.get_unit_object().students.all().delete()
-
             # Reset file position after checking headers in form.clean()
             file = request.FILES['file']
             file.seek(0)
 
-            csv_data = csv.DictReader(
-                StringIO(file.read().decode('utf-8-sig')), delimiter=',')
-            student_id_column = form.cleaned_data.get('student_id_column')
-            student_name_column = form.cleaned_data.get('student_name_column')
-            area_column = form.cleaned_data.get('area_column')
+            file_bytes_base64 = base64.b64encode(file.read())
+            file_bytes_base64_str = file_bytes_base64.decode('utf-8')
 
-            student_create_list = []
-            area_create_list = []
-            student_areas_list = []
-            for row in csv_data:
-                student = models.Student()
-                student.student_id = row[student_id_column]
-                student.unit_id = self.kwargs['pk_unit']
-                student.name = row[student_name_column]
-                # Check if user account exists for student
-                user = models.User.objects.filter(
-                    username=row[student_id_column])
-                if user.exists():
-                    student.user_id = user.first().id
-                if area_column != '' and row[area_column] != '' and row[area_column] != None:
-                    areas = row[area_column].split(';')
-                    for area in areas:
-                        area = area.strip()
-                        area = models.Area(
-                            name=area, unit=self.get_unit_object())
-                        area_create_list.append(area)
-                        student_areas_list.append((student, area))
-                student_create_list.append(student)
+            tasks.upload_students_list_task.delay(
+                unit_id=self.kwargs['pk_unit'],
+                manager_id=self.request.user.id,
+                file_bytes_base64_str=file_bytes_base64_str,
+                override_list=form.cleaned_data.get('list_override'),
 
-            models.Student.objects.bulk_create(
-                student_create_list,
-                unique_fields=['student_id', 'unit_id'],
-                update_conflicts=True,
-                update_fields=['user']
+                student_id_column=form.cleaned_data.get('student_id_column'),
+                student_name_column=form.cleaned_data.get(
+                    'student_name_column'),
+                area_column=form.cleaned_data.get(
+                    'area_column')
             )
-            models.Area.objects.bulk_create(
-                area_create_list, ignore_conflicts=True)
-
-            # Add area
-            student_areas_create = []
-            student_areas_model = models.Student.area.through
-            for student, area in student_areas_list:
-                student = self.get_unit_object().students.filter(student_id=student.student_id)
-                area = self.get_unit_object().areas.filter(name=area.name)
-                if student.exists() and area.exists():
-                    student = student.first()
-                    area = area.first()
-                    student_areas_create.append(student_areas_model(
-                        student_id=student.id, area_id=area.id))
-
-            student_areas_model.objects.bulk_create(
-                student_areas_create, ignore_conflicts=True)
 
             return self.form_valid(form)
         else:
@@ -692,69 +651,26 @@ class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         form = forms.ProjectListForm(request.POST, request.FILES)
         if form.is_valid():
-            if form.cleaned_data.get('list_override'):
-                # Clear previous enrolled projects
-                self.get_unit_object().projects.all().delete()
-
             # Reset file position after checking headers in form.clean()
             file = request.FILES['file']
             file.seek(0)
 
-            csv_data = csv.DictReader(
-                StringIO(file.read().decode('utf-8-sig')), delimiter=',')
-            identifier_column = form.cleaned_data.get('identifier_column')
-            name_column = form.cleaned_data.get('name_column')
-            min_students_column = form.cleaned_data.get('min_students_column')
-            max_students_column = form.cleaned_data.get('max_students_column')
-            description_column = form.cleaned_data.get('description_column')
-            area_column = form.cleaned_data.get('area_column')
+            file_bytes_base64 = base64.b64encode(file.read())
+            file_bytes_base64_str = file_bytes_base64.decode('utf-8')
 
-            project_create_list = []
-            area_create_list = []
-            project_areas_list = []
-            for row in csv_data:
-                project = models.Project()
-                project.identifier = row[identifier_column]
-                project.name = row[name_column]
-                project.min_students = row[min_students_column]
-                project.max_students = row[max_students_column]
-                project.unit_id = self.kwargs['pk_unit']
-                if description_column != '' and row[description_column] != '' and row[description_column] != None:
-                    project.description = row[description_column]
-                if area_column != '' and row[area_column] != '' and row[area_column] != None:
-                    areas = row[area_column].split(';')
-                    for area in areas:
-                        area = area.strip()
-                        area = models.Area(
-                            name=area, unit=self.get_unit_object())
-                        area_create_list.append(area)
-                        project_areas_list.append((project, area))
-                project_create_list.append(project)
-
-            models.Project.objects.bulk_create(
-                project_create_list,
-                unique_fields=['identifier', 'unit_id'],
-                update_conflicts=True,
-                update_fields=['name', 'description',
-                               'min_students', 'max_students'],
+            tasks.upload_projects_list_task.delay(
+                unit_id=self.kwargs['pk_unit'],
+                manager_id=self.request.user.id, file_bytes_base64_str=file_bytes_base64_str,
+                override_list=form.cleaned_data.get('list_override'),
+                identifier_column=form.cleaned_data.get('identifier_column'),
+                name_column=form.cleaned_data.get('name_column'),
+                min_students_column=form.cleaned_data.get(
+                    'min_students_column'),
+                max_students_column=form.cleaned_data.get(
+                    'max_students_column'),
+                description_column=form.cleaned_data.get('description_column'),
+                area_column=form.cleaned_data.get('area_column')
             )
-            models.Area.objects.bulk_create(
-                area_create_list, ignore_conflicts=True)
-
-            # Add area
-            project_areas_create = []
-            project_areas_model = models.Project.area.through
-            for project, area in project_areas_list:
-                project = self.get_unit_object().projects.filter(identifier=project.identifier)
-                area = self.get_unit_object().areas.filter(name=area.name)
-                if project.exists() and area.exists():
-                    project = project.first()
-                    area = area.first()
-                    project_areas_create.append(project_areas_model(
-                        project_id=project.id, area_id=area.id))
-
-            project_areas_model.objects.bulk_create(
-                project_areas_create, ignore_conflicts=True)
 
             return self.form_valid(form)
         else:
@@ -1147,7 +1063,7 @@ class PreferencesView(PreferencesMixin, FilteredTableView):
         email_results = 'email_results' in request.POST
         from . import export
         if email_results:
-            tasks.email_preferences.delay(
+            tasks.email_preferences_csv_task.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
             return HttpResponseRedirect(self.request.path)
         return export.download_preferences_csv(unit_id=self.kwargs['pk_unit'])
@@ -1198,56 +1114,16 @@ class PreferencesUploadListView(PreferencesMixin, FormMixin, TemplateView):
             file_bytes_base64 = base64.b64encode(file.read())
             file_bytes_base64_str = file_bytes_base64.decode('utf-8')
 
-            print(file_bytes_base64_str)
-
-            unit_preferences = models.ProjectPreference.objects.prefetch_related('project').filter(
-                project__unit_id=self.kwargs['pk_unit'])
-            if form.cleaned_data.get('list_override'):
-                # Clear previous enrolled projects
-                unit_preferences.delete()
-
-            csv_data = csv.DictReader(
-                StringIO(file.read().decode('utf-8-sig')), delimiter=',')
-            preference_rank_column = form.cleaned_data.get(
-                'preference_rank_column')
-            student_id_column = form.cleaned_data.get('student_id_column')
-            project_identifier_column = form.cleaned_data.get(
-                'project_identifier_column')
-
-            unit_projects = self.get_unit_object().projects
-            unit_students = self.get_unit_object().students
-
-            preference_create_list = []
-            student_update_list = []
-            for row in csv_data:
-                student_id = row[student_id_column]
-                project_identifier = row[project_identifier_column]
-                student = unit_students.filter(student_id=student_id)
-                project = unit_projects.filter(identifier=project_identifier)
-                rank = row[preference_rank_column]
-                if student.exists() and project.exists():
-                    student = student.first()
-                    project = project.first()
-                    preference = models.ProjectPreference()
-                    preference.rank = rank
-                    preference.student = student
-                    preference.project = project
-                    if student.allocated_project == project:
-                        student.allocated_preference_rank = preference.rank
-                        student_update_list.append(student)
-                    preference_create_list.append(preference)
-
-            models.ProjectPreference.objects.bulk_create(
-                preference_create_list,
-                unique_fields=['student', 'project'],
-                update_conflicts=True,
-                update_fields=['rank'],
+            tasks.upload_preferences_list_task.delay(
+                unit_id=self.kwargs['pk_unit'],
+                manager_id=self.request.user.id, file_bytes_base64_str=file_bytes_base64_str,
+                override_list=form.cleaned_data.get('list_override'),
+                preference_rank_column=form.cleaned_data.get(
+                    'preference_rank_column'),
+                student_id_column=form.cleaned_data.get('student_id_column'),
+                project_identifier_column=form.cleaned_data.get(
+                    'project_identifier_column')
             )
-            models.Student.objects.bulk_update(
-                student_update_list,
-                fields=['allocated_preference_rank']
-            )
-
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -1401,7 +1277,7 @@ class AllocationView(UnitMixin, TemplateView):
             return HttpResponseRedirect(self.request.path)
         from . import export
         if 'email_results' in request.POST:
-            tasks.email_allocation_results.delay(
+            tasks.email_allocation_results_csv_task.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
             return HttpResponseRedirect(self.request.path)
         if 'download_results' in request.POST:

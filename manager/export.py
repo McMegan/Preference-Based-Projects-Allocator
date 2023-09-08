@@ -21,16 +21,16 @@ def generate_allocation_results_csv(unit):
     writer = csv.writer(file_output, delimiter=',', quoting=csv.QUOTE_ALL)
 
     # Add headers to file
-    writer.writerow(['student_id', 'project_id',
-                    'project_name', 'allocated_preference_rank'])
+    writer.writerow(['student_id', 'student_name', 'project_id',
+                    'project_name', 'project', 'allocated_preference_rank'])
     # Write students to file
     for student in unit.students.all():
         if student.allocated_project:
             writer.writerow(
-                [student.student_id, student.allocated_project.identifier, student.allocated_project.name, student.allocated_preference_rank])
+                [student.student_id, student.name, student.allocated_project.identifier, student.allocated_project.name, f'{student.allocated_project.identifier}_{student.allocated_project.name}', student.allocated_preference_rank])
         else:
             writer.writerow(
-                [student.student_id, '', ''])
+                [student.student_id, student.name, '', '', ''])
 
     file_output.seek(0)
     return file_output
@@ -88,11 +88,11 @@ def generate_preferences_csv(preferences):
     writer = csv.writer(file_output, delimiter=',', quoting=csv.QUOTE_ALL)
 
     # Add headers to file
-    writer.writerow(['preference_rank', 'student_id',
+    writer.writerow(['student_id', 'student_name', 'preference_rank',
                     'project_id', 'project_name'])
     # Write preferences to file
     for preference in preferences.all():
-        writer.writerow([preference.rank, preference.student.student_id,
+        writer.writerow([preference.student.student_id, preference.student.name, preference.rank,
                         preference.project.identifier, preference.project.name])
 
     file_output.seek(0)

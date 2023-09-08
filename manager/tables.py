@@ -21,6 +21,7 @@ Project tables
 
 
 class ProjectsTable(Table):
+    identifier = tables.Column(verbose_name='ID')
     name = tables.Column(attrs={'td': {'style': 'width: 99%;'}})
     min_students = tables.Column(verbose_name='Min. Group Size')
     max_students = tables.Column(verbose_name='Max. Group Size')
@@ -28,11 +29,11 @@ class ProjectsTable(Table):
 
     class Meta(Table.Meta):
         model = models.Project
-        fields = ['number', 'name', 'min_students', 'max_students', 'area']
+        fields = ['identifier', 'name', 'min_students', 'max_students', 'area']
         row_attrs = {'data-project-id': lambda record: record.pk}
 
-    def render_number(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.number}</a>""")
+    def render_identifier(self, value, record):
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}</a>""")
 
     def render_actions(self, value, record):
         return format_html(f"""<div class="d-flex gap-2 justify-content-end">
@@ -59,7 +60,7 @@ class ProjectsAllocatedTable(ProjectsTable):
     # allocated_students = tables.Column(empty_values=(), orderable=False, verbose_name='Allocated Students')
 
     class Meta(ProjectsTable.Meta):
-        sequence = ('number', 'name', 'min_students', 'max_students', 'area',
+        sequence = ('identifier', 'name', 'min_students', 'max_students', 'area',
                     'allocated_students_count', 'avg_allocated_pref')
 
     def render_avg_allocated_pref(self, value, record):
@@ -167,7 +168,7 @@ class StudentsAllocatedTable(StudentsTable):
 
     def render_allocated_project(self, value, record):
         if record.allocated_project:
-            return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.allocated_project.id})}">{record.allocated_project.number}: {record.allocated_project.name}</a>""")
+            return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.allocated_project.id})}">{record.allocated_project.identifier}: {record.allocated_project.name}</a>""")
         else:
             return 'n/a'
 
@@ -184,7 +185,7 @@ class StudentPreferencesTable(Table):
         fields = ['rank', 'project']
 
     def render_project(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.project.unit_id, 'pk': record.project.id})}">{record.project.number}: {record.project.name}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.project.unit_id, 'pk': record.project.id})}">{record.project.identifier}: {record.project.name}</a>""")
 
 
 """
@@ -196,29 +197,29 @@ Preference tables
 
 class PreferencesTable(Table):
     student__student_id = tables.Column(verbose_name='Student')
-    project__number = tables.Column(verbose_name='Project')
+    project__identifier = tables.Column(verbose_name='Project')
 
     class Meta(Table.Meta):
         model = models.ProjectPreference
         fields = ['rank']
 
-    def render_project__number(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.project.unit_id, 'pk': record.project.id})}">{record.project.number}: {record.project.name}</a>""")
+    def render_project__identifier(self, value, record):
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.project.unit_id, 'pk': record.project.id})}">{record.project.identifier}: {record.project.name}</a>""")
 
     def render_student__student_id(self, value, record):
         return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-student-detail', kwargs={'pk_unit': record.student.unit_id, 'pk': record.student.id})}">{record.student.student_id}</a>""")
 
 
 class PreferencesDistributionTable(Table):
-    number = tables.Column(verbose_name='Project')
+    identifier = tables.Column(verbose_name='Project')
     popularity = tables.Column(verbose_name='Project Popularity')
 
     class Meta(Table.Meta):
         model = models.Project
-        fields = ['number']
+        fields = ['identifier']
 
-    def render_number(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.number}: {record.name}</a>""")
+    def render_identifier(self, value, record):
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}: {record.name}</a>""")
 
 
 """
@@ -265,7 +266,7 @@ class AreaProjectsTable(Table):
         fields = ['name']
 
     def render_name(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.number}: {record.name}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}: {record.name}</a>""")
 
 
 class AreaStudentsTable(Table):

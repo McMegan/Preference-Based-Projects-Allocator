@@ -262,8 +262,8 @@ class UnitPageMixin(UnitMixin):
 
             ]
         return [
-            {'label': 'Code', 'content': unit.code},
-            {'label': 'Name', 'content': unit.name},
+            {'label': 'Unit Code', 'content': unit.code},
+            {'label': 'Unit Name', 'content': unit.name},
             {'label': 'Year', 'content': unit.year},
             {'label': 'Semester', 'content': unit.semester},
             {'label': 'Is Active/Current?', 'content': render_exists_badge(
@@ -518,7 +518,7 @@ class StudentPageMixin(UnitMixin):
             allocated_info = [
                 {'label': 'Allocated Project',
                     'content': format_html(f"""
-                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail',kwargs={'pk_unit':student.unit_id,'pk':student.allocated_project_id})}">{student.allocated_project.number}: {student.allocated_project.name}</a>""") if student.allocated_project else 'n/a'},
+                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail',kwargs={'pk_unit':student.unit_id,'pk':student.allocated_project_id})}">{student.allocated_project.identifier}: {student.allocated_project.name}</a>""") if student.allocated_project else 'n/a'},
                 {'label': 'Area', 'content': student.allocated_preference_rank if student.allocated_preference_rank else 'n/a'},
             ]
 
@@ -626,7 +626,7 @@ class ProjectsListMixin(UnitMixin):
         qs = models.Project.objects
         if hasattr(super(), 'get_queryset'):
             qs = super().get_queryset()
-        return qs.filter(unit=self.kwargs['pk_unit']).prefetch_related('unit').prefetch_related('area').prefetch_related('allocated_students').annotate(allocated_students_count=Count('allocated_students', distinct=True)).annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank')).order_by('number')
+        return qs.filter(unit=self.kwargs['pk_unit']).prefetch_related('unit').prefetch_related('area').prefetch_related('allocated_students').annotate(allocated_students_count=Count('allocated_students', distinct=True)).annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank')).order_by('identifier')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -695,7 +695,7 @@ class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
 
             csv_data = csv.DictReader(
                 StringIO(file.read().decode('utf-8-sig')), delimiter=',')
-            number_column = form.cleaned_data.get('number_column')
+            identifier_column = form.cleaned_data.get('identifier_column')
             name_column = form.cleaned_data.get('name_column')
             min_students_column = form.cleaned_data.get('min_students_column')
             max_students_column = form.cleaned_data.get('max_students_column')
@@ -707,7 +707,7 @@ class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
             project_areas_list = []
             for row in csv_data:
                 project = models.Project()
-                project.number = row[number_column]
+                project.identifier = row[identifier_column]
                 project.name = row[name_column]
                 project.min_students = row[min_students_column]
                 project.max_students = row[max_students_column]
@@ -726,7 +726,7 @@ class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
 
             models.Project.objects.bulk_create(
                 project_create_list,
-                unique_fields=['number', 'unit_id'],
+                unique_fields=['identifier', 'unit_id'],
                 update_conflicts=True,
                 update_fields=['name', 'description',
                                'min_students', 'max_students'],
@@ -738,7 +738,7 @@ class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
             project_areas_create = []
             project_areas_model = models.Project.area.through
             for project, area in project_areas_list:
-                project = self.get_unit_object().projects.filter(number=project.number)
+                project = self.get_unit_object().projects.filter(identifier=project.identifier)
                 area = self.get_unit_object().areas.filter(name=area.name)
                 if project.exists() and area.exists():
                     project = project.first()
@@ -813,7 +813,7 @@ class ProjectPageMixin(UnitMixin):
             ]
 
         return [
-            {'label': 'Number', 'content': project.number},
+            {'label': 'ID', 'content': project.identifier},
             {'label': 'Name', 'content': project.name},
             {'label': 'Group Size',
                 'content': f'{ project.min_students } - { project.max_students }'}
@@ -831,7 +831,7 @@ class ProjectPageMixin(UnitMixin):
     def get_page_title(self):
         if not hasattr(self, 'page_title'):
             project = self.get_object()
-            self.page_title = f'Project: {project.number} - {project.name}'
+            self.page_title = f'Project: {project.identifier} - {project.name}'
         return self.page_title
 
     def get_page_title_url(self):
@@ -1160,7 +1160,7 @@ class PreferencesDistributionView(PreferencesMixin):
                 'student_preferences')
             total_projects = project_queryset.count()
             self.queryset = project_queryset.annotate(popularity=Sum(
-                total_projects - F('student_preferences__rank'))).order_by('number', 'name')
+                total_projects - F('student_preferences__rank'))).order_by('identifier', 'name')
         return self.queryset
 
 

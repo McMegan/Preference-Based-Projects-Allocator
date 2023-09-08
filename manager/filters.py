@@ -123,8 +123,8 @@ Project Filters
 
 
 class ProjectFilter(django_filters.FilterSet):
-    number = django_filters.NumberFilter(
-        lookup_expr='contains', label='Number')
+    identifier = django_filters.NumberFilter(
+        lookup_expr='contains', label='ID')
     name = django_filters.CharFilter(lookup_expr='icontains', label='Name')
     min_students = django_filters.NumberFilter(label='Min. Group Size')
     max_students = django_filters.NumberFilter(label='Max. Group Size')
@@ -134,7 +134,7 @@ class ProjectFilter(django_filters.FilterSet):
 
     class Meta:
         model = models.Project
-        fields = ['number', 'name', 'min_students', 'max_students', 'area']
+        fields = ['identifier', 'name', 'min_students', 'max_students', 'area']
 
 
 class ProjectAllocatedFilter(ExistsMultipleChoiceFilterSet, ProjectFilter):
@@ -150,7 +150,7 @@ class ProjectAllocatedFilter(ExistsMultipleChoiceFilterSet, ProjectFilter):
 
 project_filter_form_layout_main = Fieldset(
     '',
-    FloatingField('number'),
+    FloatingField('identifier'),
     FloatingField('name'),
     FloatingField('min_students'),
     FloatingField('max_students'),
@@ -198,8 +198,8 @@ Preference filters
 class PreferenceFilter(django_filters.FilterSet):
     rank = django_filters.NumberFilter(lookup_expr='exact')
 
-    project__number = django_filters.CharFilter(
-        lookup_expr='icontains', label='Project Number')
+    project__identifier = django_filters.CharFilter(
+        lookup_expr='icontains', label='Project ID')
     project__name = django_filters.CharFilter(
         lookup_expr='icontains', label='Project Name')
     project = django_filters.ModelMultipleChoiceFilter(queryset=unit_projects)
@@ -229,7 +229,7 @@ class PreferenceFilterFormHelper(FormHelper):
             Fieldset(
                 'Projects',
                 Div(
-                    Div(FloatingField('project__number'),
+                    Div(FloatingField('project__identifier'),
                         css_class='flex-grow-1'),
                     Div(FloatingField('project__name'),
                         css_class='flex-grow-1'),
@@ -250,14 +250,14 @@ class PreferenceFilterFormHelper(FormHelper):
 
 
 class PreferenceDistributionFilter(django_filters.FilterSet):
-    number = django_filters.CharFilter(
-        lookup_expr='icontains', label='Project Number')
+    identifier = django_filters.CharFilter(
+        lookup_expr='icontains', label='Project ID')
     name = django_filters.CharFilter(lookup_expr='icontains', label='Name')
     project = django_filters.ModelMultipleChoiceFilter(queryset=unit_projects)
 
     class Meta:
         model = models.Project
-        fields = ['number', 'name', 'min_students', 'max_students']
+        fields = ['identifier', 'name', 'min_students', 'max_students']
 
 
 class PreferenceDistributionFilterFormHelper(FormHelper):
@@ -265,7 +265,7 @@ class PreferenceDistributionFilterFormHelper(FormHelper):
     layout = Layout(
         Fieldset(
             '',
-            FloatingField('number'),
+            FloatingField('identifier'),
             Div(FloatingField('name'),
                 css_class='flex-grow-1'),
             css_class='d-flex flex-wrap column-gap-3 align-items-center'

@@ -203,7 +203,11 @@ project_min_lte_max_constraint = models.CheckConstraint(check=Q(min_students__is
 
 
 class Project(models.Model):
-    number = models.PositiveSmallIntegerField()
+    # named number rather than ID as ID is reserved for PK
+    identifier = models.CharField(max_length=20)
+    # models.PositiveSmallIntegerField()
+    # models.CharField(max_length=20)
+
     name = models.CharField(max_length=150)
     description = models.TextField(null=True, blank=True)
     min_students = models.IntegerField()
@@ -215,7 +219,7 @@ class Project(models.Model):
         Unit, on_delete=models.CASCADE, related_name='projects')
 
     def __str__(self):
-        return f'{self.number}: {self.name}'
+        return f'{self.identifier}: {self.name}'
 
     def get_preference_counts(self):
         if not hasattr(self, 'preference_counts'):
@@ -229,10 +233,10 @@ class Project(models.Model):
         return self.allocated
 
     class Meta:
-        ordering = ['unit', 'number']
+        ordering = ['unit', 'identifier']
         constraints = [
             models.UniqueConstraint(
-                fields=['unit', 'number'], name='%(app_label)s_%(class)s_rank_unique', violation_error_message='Each project in a unit must have a unique number. A project with that number is already included in this unit.'),
+                fields=['unit', 'identifier'], name='%(app_label)s_%(class)s_id_unique', violation_error_message='Each project in a unit must have a unique ID. A project with that ID is already included in this unit.'),
             project_min_lte_max_constraint
         ]
 
@@ -301,7 +305,7 @@ class ProjectPreference(models.Model):
     rank = models.PositiveIntegerField()
 
     def __str__(self):
-        return f'Student_{self.student}-Unit_{self.student.unit.code}-Rank_{self.rank}-Project_{self.project.number}'
+        return f'Student_{self.student}-Unit_{self.student.unit.code}-Rank_{self.rank}-Project_{self.project.identifier}'
 
     class Meta:
         ordering = ['student__student_id', 'rank', 'project_id',]

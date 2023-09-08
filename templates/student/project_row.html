@@ -10,7 +10,7 @@
     {% endif %}
 
     <td><div class="d-flex align-items-center justify-content-between">
-        <span><span class="project_number fw-bold">{{ project.number }}</span>: <span class="project_name">{{ project.name }}</span></span>
+        <span><span class="project_identifier fw-bold">{{ project.identifier }}</span>: <span class="project_name">{{ project.name }}</span></span>
         {% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}
     </div></td>
 

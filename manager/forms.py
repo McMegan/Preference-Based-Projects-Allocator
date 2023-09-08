@@ -130,6 +130,9 @@ class UnitCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.fields['code'].label = 'Unit Code'
+        self.fields['name'].label = 'Unit Name'
+
         self.helper = FormHelper()
         self.helper.layout = Layout(
             unit_form_layout_main,
@@ -184,7 +187,7 @@ class StudentForm(UnitKwargMixin, forms.ModelForm):
 
     def init_fields(self):
         self.fields['area'] = forms.ModelMultipleChoiceField(
-            queryset=self.unit.areas, required=False)
+            queryset=self.unit.areas, required=False, help_text='You must add an area to the unit before you can select it for a student. To deselect an area cmd/ctrl + click on the area you wish to deselect.')
 
     def clean(self):
         student_id = self.cleaned_data.get('student_id')
@@ -248,7 +251,7 @@ class StudentUpdateForm(UnitKwargMixin, forms.ModelForm):
 
     def init_fields(self):
         self.fields['area'] = forms.ModelMultipleChoiceField(
-            queryset=self.unit.areas, required=False)
+            queryset=self.unit.areas, required=False, help_text='You must add an area to the unit before you can select it for a student. To deselect an area cmd/ctrl + click on the area you wish to deselect.')
 
     class Meta:
         model = models.Student
@@ -282,7 +285,7 @@ Project forms
 project_form_layout_main = Layout(
     Fieldset(
         '',
-        FloatingField('number'),
+        FloatingField('identifier'),
         FloatingField('name'),
         FloatingField('min_students'),
         FloatingField('max_students'),
@@ -300,19 +303,20 @@ class ProjectForm(UnitKwargMixin, forms.ModelForm):
     form_layout = Layout(project_form_layout_main)
 
     def init_fields(self):
+        self.fields['identifier'].label = 'ID'
         self.fields['area'] = forms.ModelMultipleChoiceField(
-            queryset=self.unit.areas, required=False, help_text='Select from areas that have already been added to the unit.')
+            queryset=self.unit.areas, required=False, help_text='You must add an area to the unit before you can select it for a project. To deselect an area cmd/ctrl + click on the area you wish to deselect.')
 
     def clean(self):
-        number = self.cleaned_data.get('number')
-        if self.unit.projects.filter(number=number).exists():
+        identifier = self.cleaned_data.get('identifier')
+        if self.unit.projects.filter(identifier=identifier).exists():
             raise forms.ValidationError(
-                {'number': 'A project with that number is already included in this unit.'})
+                {'identifier': 'A project with that ID is already included in this unit.'})
         return super().clean()
 
     class Meta:
         model = models.Project
-        fields = ['number', 'name', 'description',
+        fields = ['identifier', 'name', 'description',
                   'min_students', 'max_students', 'area']
 
 
@@ -326,7 +330,7 @@ class ProjectUpdateForm(ProjectForm):
     def init_fields(self):
         super().init_fields()
         self.fields['area'] = forms.ModelMultipleChoiceField(
-            queryset=self.instance.unit.areas, required=False)
+            queryset=self.instance.unit.areas, required=False, help_text='You must add an area to the unit before you can select it for a project. To deselect an area cmd/ctrl + click on the area you wish to deselect.')
 
     def clean(self):
         return super(forms.ModelForm, self).clean()
@@ -374,7 +378,7 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
     form_layout = Layout(
         'file',
         'list_override',
-        FloatingField('number_column'),
+        FloatingField('identifier_column'),
         FloatingField('name_column'),
         FloatingField('min_students_column'),
         FloatingField('max_students_column'),
@@ -383,7 +387,7 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
     )
 
     def init_fields(self):
-        self.initial['number_column'] = 'number'
+        self.initial['identifier_column'] = 'id'
         self.initial['name_column'] = 'name'
         self.initial['min_students_column'] = 'min_students'
         self.initial['max_students_column'] = 'max_students'
@@ -391,8 +395,8 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
     file = forms.FileField(label='')
     list_override = forms.BooleanField(
         label='Replace current projects', required=False)
-    number_column = forms.CharField(
-        label='Project Number Column Name')
+    identifier_column = forms.CharField(
+        label='Project ID Column Name')
     name_column = forms.CharField(
         label='Project Name Column Name')
     min_students_column = forms.CharField(
@@ -408,8 +412,8 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
 
     def clean(self):
         valid_csv_file(self.cleaned_data.get('file'))
-        column_exists_in_csv(self.cleaned_data.get('file'), 'number_column',
-                             self.cleaned_data.get('number_column'))
+        column_exists_in_csv(self.cleaned_data.get('file'), 'identifier_column',
+                             self.cleaned_data.get('identifier_column'))
         column_exists_in_csv(self.cleaned_data.get('file'), 'name_column',
                              self.cleaned_data.get('name_column'))
         column_exists_in_csv(self.cleaned_data.get('file'), 'min_students_column',

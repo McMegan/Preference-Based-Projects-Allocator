@@ -347,10 +347,10 @@ class ProjectStudentInlineModelAdmin(admin.TabularInline):
 
 @admin.register(models.Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['number', 'name', 'unit_link']
-    search_fields = ['name', 'number']
+    list_display = ['identifier', 'name', 'unit_link']
+    search_fields = ['name', 'identifier']
 
-    fields = ('unit', 'number', 'name', 'description',
+    fields = ('unit', 'identifier', 'name', 'description',
               'area', 'min_students', 'max_students')
 
     def get_inlines(self, request, obj=None):
@@ -381,7 +381,8 @@ Preferences admin
 class ProjectPreferenceAdmin(admin.ModelAdmin):
     list_select_related = ['student', 'project', 'student__unit']
     list_display = ['unit_link',  'student_link', 'rank', 'project_link']
-    search_fields = ['student__student_id', 'project__number', 'project__name']
+    search_fields = ['student__student_id',
+                     'project__identifier', 'project__name']
 
     ordering = ['student__unit', 'student', 'rank']
 
@@ -415,7 +416,7 @@ class ProjectPreferenceAdmin(admin.ModelAdmin):
             + urlencode({
                 'id': str(projectpreference.id)
             }))
-        return format_html('<a href="{}">{}: {}</a>', url, projectpreference.project.number, projectpreference.project.name)
+        return format_html('<a href="{}">{}: {}</a>', url, projectpreference.project.identifier, projectpreference.project.name)
     project_link.short_description = 'project'
 
     def has_add_permission(self, request):

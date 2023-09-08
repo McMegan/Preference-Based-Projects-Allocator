@@ -1,14 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
 
-# DELETE
-import os
-if 'WEBSITE_HOSTNAME' not in os.environ:
-    from data_management.load_preferences import export_data
-    export_data()
-# DELETE
-
-
 admin.site.site_header = 'Capstone Projects Allocator - Admin'
 admin.site.site_title = 'Capstone Projects Allocator - Admin'
 admin.site.index_title = 'Site Administration'

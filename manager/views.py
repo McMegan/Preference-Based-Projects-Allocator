@@ -116,6 +116,8 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
              'label': 'Preferences'},
             {'url': reverse('manager:unit-preferences-distribution', kwargs={'pk_unit': unit.pk}),
              'label': 'Project Popularity', 'classes': 'ms-3'},
+            {'url': reverse('manager:unit-preferences-new-list', kwargs={'pk_unit': unit.pk}),
+             'label': 'Upload Preference List', 'classes': 'ms-3'},
 
             {'url': reverse('manager:unit-allocation', kwargs={'pk_unit': unit.pk}),
              'label': 'Allocation'}
@@ -519,7 +521,8 @@ class StudentPageMixin(UnitMixin):
                 {'label': 'Allocated Project',
                     'content': format_html(f"""
                         <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail',kwargs={'pk_unit':student.unit_id,'pk':student.allocated_project_id})}">{student.allocated_project.identifier}: {student.allocated_project.name}</a>""") if student.allocated_project else 'n/a'},
-                {'label': 'Area', 'content': student.allocated_preference_rank if student.allocated_preference_rank else 'n/a'},
+                {'label': 'Allocated Preference Rank',
+                    'content': student.allocated_preference_rank if student.allocated_preference_rank else 'n/a'},
             ]
 
         return [
@@ -1084,8 +1087,14 @@ Preference Views
 """
 
 
-class PreferencesMixin(UnitMixin, FilteredTableView):
+class PreferencesMixin(UnitMixin):
     page_title = 'Preferences'
+
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit-preferences-new-list',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Preference List'},
+        ]
 
     def get_page_info(self):
         unit = self.get_unit_object()
@@ -1111,8 +1120,11 @@ class PreferencesMixin(UnitMixin, FilteredTableView):
     def get_page_title_url(self):
         return reverse('manager:unit-preferences', kwargs={'pk_unit': self.get_unit_object().pk})
 
+    def get_success_url(self):
+        return reverse('manager:unit-preferences', kwargs={'pk_unit': self.get_unit_object().pk})
 
-class PreferencesView(PreferencesMixin):
+
+class PreferencesView(PreferencesMixin, FilteredTableView):
     """
         Show a list of all submitted preferences by students for projects in a unit
     """
@@ -1137,7 +1149,7 @@ class PreferencesView(PreferencesMixin):
         return export.download_preferences_csv(unit_id=self.kwargs['pk_unit'])
 
 
-class PreferencesDistributionView(PreferencesMixin):
+class PreferencesDistributionView(PreferencesMixin, FilteredTableView):
     """
         Show the distribution of preferences for projects in unit
     """
@@ -1162,6 +1174,74 @@ class PreferencesDistributionView(PreferencesMixin):
             self.queryset = project_queryset.annotate(popularity=Sum(
                 total_projects - F('student_preferences__rank'))).order_by('identifier', 'name')
         return self.queryset
+
+
+class PreferencesUploadListView(PreferencesMixin, FormMixin, TemplateView):
+    """
+        Upload a list of preferences
+    """
+    model = models.ProjectPreference
+    form_class = forms.PreferenceListForm
+    page_subtitle = 'Upload Preference List'
+
+    def post(self, request, *args, **kwargs):
+        form = forms.PreferenceListForm(request.POST, request.FILES)
+        if form.is_valid():
+            unit_preferences = models.ProjectPreference.objects.prefetch_related('project').filter(
+                project__unit_id=self.kwargs['pk_unit'])
+            if form.cleaned_data.get('list_override'):
+                # Clear previous enrolled projects
+                unit_preferences.delete()
+
+            # Reset file position after checking headers in form.clean()
+            file = request.FILES['file']
+            file.seek(0)
+
+            csv_data = csv.DictReader(
+                StringIO(file.read().decode('utf-8-sig')), delimiter=',')
+            preference_rank_column = form.cleaned_data.get(
+                'preference_rank_column')
+            student_id_column = form.cleaned_data.get('student_id_column')
+            project_identifier_column = form.cleaned_data.get(
+                'project_identifier_column')
+
+            unit_projects = self.get_unit_object().projects
+            unit_students = self.get_unit_object().students
+
+            preference_create_list = []
+            student_update_list = []
+            for row in csv_data:
+                student_id = row[student_id_column]
+                project_identifier = row[project_identifier_column]
+                student = unit_students.filter(student_id=student_id)
+                project = unit_projects.filter(identifier=project_identifier)
+                rank = row[preference_rank_column]
+                if student.exists() and project.exists():
+                    student = student.first()
+                    project = project.first()
+                    preference = models.ProjectPreference()
+                    preference.rank = rank
+                    preference.student = student
+                    preference.project = project
+                    if student.allocated_project == project:
+                        student.allocated_preference_rank = preference.rank
+                        student_update_list.append(student)
+                    preference_create_list.append(preference)
+
+            models.ProjectPreference.objects.bulk_create(
+                preference_create_list,
+                unique_fields=['student', 'project'],
+                update_conflicts=True,
+                update_fields=['rank'],
+            )
+            models.Student.objects.bulk_update(
+                student_update_list,
+                fields=['allocated_preference_rank']
+            )
+
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
 
 """

@@ -255,6 +255,9 @@ class Student(models.Model):
 
     area = models.ManyToManyField(to=Area, related_name='students', blank=True)
 
+    # first_name = models.CharField(_("first name"), max_length=150, blank=True)
+    # last_name = models.CharField(_("last name"), max_length=150, blank=True)
+
     def __str__(self):
         return self.student_id
 

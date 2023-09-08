@@ -502,6 +502,55 @@ class AreaUpdateForm(AreaForm):
 
 """
 
+Preferences form
+
+"""
+
+
+class PreferenceListForm(UnitKwargMixin, forms.Form):
+    """
+        Form for uploading a list of preferences
+    """
+    submit_label = 'Upload List of Preferences to Unit'
+    form_layout = Layout(
+        'file',
+        'list_override',
+        FloatingField('preference_rank_column'),
+        FloatingField('student_id_column'),
+        FloatingField('project_identifier_column'),
+        HTML('<div class="alert alert-secondary">If a preference uses a project or student ID that cannot be found within the list of projects or students, then that preference will not be saved.</div>'),
+        HTML('<div class="alert alert-secondary">The validity of preference ranks, including whether they are consecutive, start from one, and whether each student is assigned to the minimum number of preferences and less than the maximum number of preferences, will not be checked when uploading preferences from a file.</div>'),
+        HTML('<div class="alert alert-danger">Uploading a list of preferences may override the current preferences.</div>')
+    )
+
+    def init_fields(self):
+        self.initial['preference_rank_column'] = 'preference_rank'
+        self.initial['student_id_column'] = 'student_id'
+        self.initial['project_identifier_column'] = 'project_id'
+
+    file = forms.FileField(label='')
+    list_override = forms.BooleanField(
+        label='Replace current preferences', required=False)
+    preference_rank_column = forms.CharField(
+        label='Preference Rank Column Name')
+    student_id_column = forms.CharField(
+        label='Student ID Column Name')
+    project_identifier_column = forms.CharField(
+        label='Project ID Column Name')
+
+    def clean(self):
+        valid_csv_file(self.cleaned_data.get('file'))
+        column_exists_in_csv(self.cleaned_data.get('file'), 'preference_rank_column',
+                             self.cleaned_data.get('preference_rank_column'))
+        column_exists_in_csv(self.cleaned_data.get('file'), 'student_id_column',
+                             self.cleaned_data.get('student_id_column'))
+        column_exists_in_csv(self.cleaned_data.get('file'), 'project_identifier_column',
+                             self.cleaned_data.get('project_identifier_column'))
+        return super().clean()
+
+
+"""
+
 Allocation Forms
 
 """

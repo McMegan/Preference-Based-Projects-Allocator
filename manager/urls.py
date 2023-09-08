@@ -62,6 +62,8 @@ urlpatterns = [
             views.PreferencesView.as_view(), name='unit-preferences'),
     re_path(r'^units/(?P<pk_unit>[0-9]+)/preferences-distribution$',
             views.PreferencesDistributionView.as_view(), name='unit-preferences-distribution'),
+    re_path(r'^units/(?P<pk_unit>[0-9]+)/preferences/upload$',
+            views.PreferencesUploadListView.as_view(), name='unit-preferences-new-list'),
     # Allocation Views
     re_path(r'^units/(?P<pk_unit>[0-9]+)/allocation$',
             views.AllocationView.as_view(), name='unit-allocation')

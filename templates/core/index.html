@@ -4,7 +4,7 @@
     {% url 'student:index' as student_index_url %}
 
     {% if user.is_student %}
-        <p class="my-4">If you don't see your unit here, please contact your unit convenor.</p>
+        <p class="my-4">If you don't see your unit here, please contact your unit coordinator.</p>
     {% endif %}
     {% if user.is_manager and request.path == manager_index_url %}
         <div class="d-flex justify-content-center my-4">

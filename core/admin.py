@@ -122,7 +122,7 @@ class UnitAdmin(admin.ModelAdmin):
             'fields': (('preference_submission_start', 'preference_submission_end'), ('minimum_preference_limit', 'maximum_preference_limit'), ('is_active', 'limit_by_major'), ('is_allocating', 'allocation_status')),
         }),
     )
-    readonly_fields = ('is_allocating', 'allocation_status')
+    readonly_fields = ('allocation_status',)
 
     @admin.display(ordering='manager_id')
     def manager_link(self, unit):

@@ -6,29 +6,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-INSTALLED_APPS = [
+INSTALLED_APPS = INSTALLED_APPS + [
     'whitenoise.runserver_nostatic',
-
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
-    'core',
-    'manager',
-    'student',
-
-    'crispy_forms',
-    'crispy_bootstrap5',
-
-    'django_tables2',
-    'django_filters',
-    'django_bootstrap5',
-
-    'celery',
-
     'django_browser_reload',
     'debug_toolbar'
 ]
@@ -64,5 +43,5 @@ DATABASES = {
 }
 
 # Celery
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
-
+REDIS_URL = 'redis://127.0.0.1:6379/0'
+CELERY_BROKER_URL = REDIS_URL

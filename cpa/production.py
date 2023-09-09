@@ -13,29 +13,6 @@ CSRF_TRUSTED_ORIGINS = ['https://' + os.environ['WEBSITE_HOSTNAME']
 DEBUG = False
 DEBUG = True
 
-# Installed apps
-
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
-    'core',
-    'manager',
-    'student',
-
-    'crispy_forms',
-    'crispy_bootstrap5',
-
-    'django_tables2',
-    'django_filters',
-    'django_bootstrap5',
-
-    'celery'
-]
 
 # WhiteNoise configuration
 MIDDLEWARE = [
@@ -67,7 +44,8 @@ DATABASES = {
 }
 
 # Celery
-CELERY_BROKER_URL = os.environ['AZURE_REDIS_CONNECTIONSTRING']
+REDIS_URL = os.environ['AZURE_REDIS_CONNECTIONSTRING']
+CELERY_BROKER_URL = REDIS_URL
 
 # EMAIL BACKEND
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

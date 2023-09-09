@@ -36,6 +36,38 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'cpa.wsgi.application'
 
+# INSTALLED APPS
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+
+    'core',
+    'manager',
+    'student',
+
+    'crispy_forms',
+    'crispy_bootstrap5',
+
+    'django_tables2',
+    'django_filters',
+    'django_bootstrap5',
+
+    # 'celery',
+
+    'health_check',
+    'health_check.db',                          # stock Django health checkers
+    # 'health_check.cache',
+    # 'health_check.storage',
+    'health_check.contrib.migrations',
+    # 'health_check.contrib.celery',              # requires celery
+    # 'health_check.contrib.celery_ping',         # requires celery
+    # 'health_check.contrib.redis',               # requires Redis broker
+]
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

@@ -1,4 +1,5 @@
 import os
+import ssl
 
 from celery import Celery
 
@@ -6,7 +7,16 @@ from celery import Celery
 settings_module = 'cpa.production' if 'WEBSITE_HOSTNAME' in os.environ else 'cpa.test'
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_module)
 
-celery_app = Celery('cpa')
+celery_app = Celery(
+    'cpa',
+    broker_use_ssl={
+        'ssl_cert_reqs': ssl.CERT_NONE
+    },
+    redis_backend_use_ssl={
+        'ssl_cert_reqs': ssl.CERT_NONE
+    }
+)
+
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.

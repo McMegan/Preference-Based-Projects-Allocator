@@ -16,7 +16,7 @@ urlpatterns = [
     path('student/', include('student.urls', namespace='student'),
          name='student'),
 
-    re_path(r'^health_check/', include('health_check.urls')),
+    re_path(r'^health/', include('health_check.urls')),
 ]
 
 

@@ -15,8 +15,7 @@ celery_app = Celery(
     redis_backend_use_ssl={
         'ssl_cert_reqs': ssl.CERT_NONE
     }
-)
-
+) if 'WEBSITE_HOSTNAME' in os.environ else Celery('cpa')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.

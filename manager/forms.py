@@ -202,49 +202,6 @@ class StudentForm(UnitKwargMixin, forms.ModelForm):
         fields = ['student_id', 'name']
 
 
-class StudentListForm(UnitKwargMixin, forms.Form):
-    """
-        Form for uploading a list of students
-    """
-    submit_label = 'Upload List of Students to Unit'
-    form_layout = Layout(
-        'file',
-        'list_override',
-        FloatingField('student_id_column'),
-        FloatingField('student_name_column'),
-        FloatingField('area_column'),
-    )
-
-    file = forms.FileField(label='')
-    list_override = forms.BooleanField(
-        label='Replace current students', required=False)
-    student_id_column = forms.CharField(
-        label='Student ID Column Name')
-    student_name_column = forms.CharField(
-        label='Student Name Column Name', help_text='Leave blank if not required.', required=False)
-
-    area_column = forms.CharField(
-        label='Project Area Column Name', help_text='Leave blank if none. Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
-
-    def init_fields(self):
-        self.fields['student_id_column'].initial = 'user_id'
-
-    def clean(self):
-        valid_csv_file(self.cleaned_data.get('file'))
-        column_exists_in_csv(self.cleaned_data.get('file'), 'student_id_column',
-                             self.cleaned_data.get('student_id_column'))
-
-        if self.cleaned_data.get('student_name_column') != '':
-            column_exists_in_csv(self.cleaned_data.get('file'), 'student_name_column',
-                                 self.cleaned_data.get('student_name_column'))
-
-        if self.cleaned_data.get('area_column') != '':
-            column_exists_in_csv(self.cleaned_data.get('file'), 'area_column',
-                                 self.cleaned_data.get('area_column'))
-
-        return super().clean()
-
-
 class AllocatedProjectChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return f'{str(obj)}    (Current Group Size = {obj.allocated_students.count()})'
@@ -287,6 +244,96 @@ class StudentAllocatedUpdateForm(StudentUpdateForm):
 
     class Meta(StudentUpdateForm.Meta):
         fields = ['name', 'allocated_project', 'area']
+
+
+class StudentListForm(UnitKwargMixin, forms.Form):
+    """
+        Form for uploading a list of students
+    """
+    submit_label = 'Upload List of Students to Unit'
+    form_layout = Layout(
+        'file',
+        'list_override',
+        FloatingField('student_id_column'),
+        FloatingField('student_name_column'),
+        FloatingField('area_column'),
+        HTML("""<p>Please note: It may take a few moments for the students in the uploaded file to show up in the students list.</p>""")
+    )
+
+    file = forms.FileField(label='')
+    list_override = forms.BooleanField(
+        label='Replace current students', required=False)
+    student_id_column = forms.CharField(
+        label='Student ID Column Name')
+    student_name_column = forms.CharField(
+        label='Student Name Column Name', help_text='Leave blank if not required.', required=False)
+
+    area_column = forms.CharField(
+        label='Project Area Column Name', help_text='Leave blank if none. Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
+
+    def init_fields(self):
+        self.fields['student_id_column'].initial = 'user_id'
+
+    def clean(self):
+        valid_csv_file(self.cleaned_data.get('file'))
+        column_exists_in_csv(self.cleaned_data.get('file'), 'student_id_column',
+                             self.cleaned_data.get('student_id_column'))
+
+        if self.cleaned_data.get('student_name_column') != '':
+            column_exists_in_csv(self.cleaned_data.get('file'), 'student_name_column',
+                                 self.cleaned_data.get('student_name_column'))
+
+        if self.cleaned_data.get('area_column') != '':
+            column_exists_in_csv(self.cleaned_data.get('file'), 'area_column',
+                                 self.cleaned_data.get('area_column'))
+
+        file = self.cleaned_data.get(
+            'file')
+        file.seek(0)
+        csv_data = csv.DictReader(
+            StringIO(file.read().decode('utf-8-sig')), delimiter=',')
+        student_id_column = self.cleaned_data.get('student_id_column')
+        student_name_column = self.cleaned_data.get('student_name_column')
+        area_column = self.cleaned_data.get('area_column')
+
+        errors = []
+
+        for row in csv_data:
+            if not all(row[field] == '' for field in row):
+                student = models.Student()
+                student.student_id = row[student_id_column].strip()
+                student.unit = self.unit
+                if student_name_column != '' and row[student_name_column].strip():
+                    student.name = row[student_name_column].strip()
+                if area_column != '' and row[area_column] and row[area_column].strip() != '':
+                    areas = row[area_column].split(';')
+                    for area in areas:
+                        area = area.strip()
+                        area = models.Area(name=area, unit=self.unit)
+                        try:
+                            area.full_clean(validate_unique=False,
+                                            validate_constraints=False)
+                        except forms.ValidationError as e:
+                            for error in e:
+                                for message in error[1]:
+                                    errors.append(forms.ValidationError(
+                                        f'The value for the "area" column in the row with the ID "{student.student_id}" produced the following error: {message}' if student.student_id != '' else f'The value for the "area" column in a row without an ID produced the following error: {message}'))
+                try:
+                    student.full_clean(validate_unique=False,
+                                       validate_constraints=False)
+                except forms.ValidationError as e:
+                    for error in e:
+                        for message in error[1]:
+                            if error[0] == '__all__':
+                                errors.append(forms.ValidationError(
+                                    f'The row with the ID "{student.student_id}" in the inputted file produced the following error: {message}' if student.student_id != '' else f'A row without an ID in the inputted file produced the following error: {message}'))
+                            else:
+                                errors.append(forms.ValidationError(
+                                    f'The value for the "{error[0]}" column in the row with the ID "{student.student_id}" produced the following error: {message}' if student.student_id != '' else f'The value for the "{error[0]}" column in a row without an ID produced the following error: {message}'))
+
+        if errors != []:
+            raise forms.ValidationError(errors)
+        return super().clean()
 
 
 """
@@ -396,6 +443,7 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
         FloatingField('max_students_column'),
         FloatingField('description_column'),
         FloatingField('area_column'),
+        HTML("""<p>Please note: It may take a few moments for the projects in the uploaded file to show up in the projects list.</p>""")
     )
 
     def init_fields(self):
@@ -446,16 +494,54 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
         file.seek(0)
         csv_data = csv.DictReader(
             StringIO(file.read().decode('utf-8-sig')), delimiter=',')
+        identifier_column = self.cleaned_data.get('identifier_column')
+        name_column = self.cleaned_data.get('name_column')
         min_students_column = self.cleaned_data.get('min_students_column')
         max_students_column = self.cleaned_data.get('max_students_column')
+        description_column = self.cleaned_data.get('description_column')
+        area_column = self.cleaned_data.get('area_column')
 
+        errors = []
         for row in csv_data:
-            project = models.Project()
-            project.min_students = row[min_students_column]
-            project.max_students = row[max_students_column]
-            models.project_min_lte_max_constraint.validate(
-                models.Project, project)
+            if not all(row[field] == '' for field in row):
+                project = models.Project()
+                project.identifier = row[identifier_column].strip()
+                project.name = row[name_column].strip()
+                project.min_students = row[min_students_column].strip()
+                project.max_students = row[max_students_column].strip()
+                project.unit = self.unit
+                if description_column != '' and row[description_column] != '' and row[description_column] != None:
+                    project.description = row[description_column].strip()
+                if area_column != '' and row[area_column] != None and row[area_column].strip() != '':
+                    areas = row[area_column].split(';')
+                    for area_name in areas:
+                        area_name = area_name.strip()
+                        area = models.Area(name=area_name, unit=self.unit)
+                        try:
+                            area.full_clean(validate_unique=False,
+                                            validate_constraints=False)
+                        except forms.ValidationError as e:
+                            for error in e:
+                                for message in error[1]:
+                                    errors.append(forms.ValidationError(
+                                        f'The value for the "area" column in the row with the ID "{project.identifier}" produced the following error: {message}' if project.identifier != '' else f'The value for the "area" column in a row without an ID produced the following error: {message}'))
+                try:
+                    project.full_clean(validate_unique=False,
+                                       validate_constraints=False)
+                    models.project_min_lte_max_constraint.validate(
+                        models.Project, project)
+                except forms.ValidationError as e:
+                    for error in e:
+                        for message in error[1]:
+                            if error[0] == '__all__':
+                                errors.append(forms.ValidationError(
+                                    f'The row with the Project ID "{project.identifier}" in the uploaded file produced the following error: {message}' if project.identifier != '' else f'A row without an ID in the uploaded file produced the following error: {message}'))
+                            else:
+                                errors.append(forms.ValidationError(
+                                    f'The value for the "{error[0]}" column in the row with the Project ID "{project.identifier}" produced the following error: {message}' if project.identifier != '' else f'The value for the "{error[0]}" column in a row without an ID produced the following error: {message}'))
 
+        if errors != []:
+            raise forms.ValidationError(errors)
         return super().clean()
 
 
@@ -526,16 +612,18 @@ class PreferenceListForm(UnitKwargMixin, forms.Form):
     submit_label = 'Upload List of Preferences to Unit'
     form_layout = Layout(
         'file',
-        'list_override',
         FloatingField('preference_rank_column'),
         FloatingField('student_id_column'),
         FloatingField('project_identifier_column'),
-        HTML("""<p>Please note:</p><ul class="list">
-             <li>If a preference uses a project or student ID that cannot be found within the list of projects or students, then that preference will not be saved.</li>
-             <li>The validity of preference ranks, including whether they are consecutive, start from one, and whether each student is assigned to the minimum number of preferences and less than the maximum number of preferences, will not be checked when uploading preferences from a file.</li>
-             <li class="text-danger">Uploading a list of preferences may change preferences in the current preference list.</li>
-             <li>It may take a few moments for the file to be uploaded.</li>
-        </ul>""")
+        HTML("""
+             <p>Please note:</p><ul class="list">
+                <li>If a preference references a project ID or student ID that cannot be found within the list of projects or students, then that preference will not be saved.</li>
+                <li>The validity of preference ranks, including whether they are consecutive, start from one, and whether each student has submitted at least the minimum number of preferences and at most the maximum number of preferences, will not be checked when uploading preferences from a file.</li>
+                <li>If a student has multiple preferences with the same rank, only the first instance will be retained.</li>
+                <li>It may take a few moments for the preferences in the uploaded file to show up in the preferences list.</li>
+            </ul>
+            <div class="alert alert-danger">Uploading a list of preferences will override all of the current preferences.</div>
+        """)
     )
 
     def init_fields(self):
@@ -544,8 +632,6 @@ class PreferenceListForm(UnitKwargMixin, forms.Form):
         self.initial['project_identifier_column'] = 'project_id'
 
     file = forms.FileField(label='')
-    list_override = forms.BooleanField(
-        label='Replace current preferences', required=False)
     preference_rank_column = forms.CharField(
         label='Preference Rank Column Name')
     student_id_column = forms.CharField(

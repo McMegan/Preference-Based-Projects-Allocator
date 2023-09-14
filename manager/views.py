@@ -21,6 +21,7 @@ from . import filters
 from . import forms
 from . import tables
 from . import tasks
+from . import upload
 
 
 def render_exists_badge(value: bool):
@@ -410,8 +411,8 @@ class StudentsUploadListView(StudentsListMixin, FormMixin, TemplateView):
     page_subtitle = 'Upload Student List'
 
     def post(self, request, *args, **kwargs):
-        # form = self.get_form()
-        form = forms.StudentListForm(request.POST, request.FILES)
+        form = forms.StudentListForm(
+            request.POST, request.FILES, unit=self.get_unit_object())
         if form.is_valid():
             # Reset file position after checking headers in form.clean()
             file = request.FILES['file']
@@ -649,7 +650,8 @@ class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
     page_subtitle = 'Upload Project List'
 
     def post(self, request, *args, **kwargs):
-        form = forms.ProjectListForm(request.POST, request.FILES)
+        form = forms.ProjectListForm(
+            request.POST, request.FILES, unit=self.get_unit_object())
         if form.is_valid():
             # Reset file position after checking headers in form.clean()
             file = request.FILES['file']
@@ -1105,7 +1107,8 @@ class PreferencesUploadListView(PreferencesMixin, FormMixin, TemplateView):
     page_subtitle = 'Upload Preference List'
 
     def post(self, request, *args, **kwargs):
-        form = forms.PreferenceListForm(request.POST, request.FILES)
+        form = forms.PreferenceListForm(
+            request.POST, request.FILES, unit=self.get_unit_object())
         if form.is_valid():
             # Reset file position after checking headers in form.clean()
             file = request.FILES['file']
@@ -1117,7 +1120,6 @@ class PreferencesUploadListView(PreferencesMixin, FormMixin, TemplateView):
             tasks.upload_preferences_list_task.delay(
                 unit_id=self.kwargs['pk_unit'],
                 manager_id=self.request.user.id, file_bytes_base64_str=file_bytes_base64_str,
-                override_list=form.cleaned_data.get('list_override'),
                 preference_rank_column=form.cleaned_data.get(
                     'preference_rank_column'),
                 student_id_column=form.cleaned_data.get('student_id_column'),

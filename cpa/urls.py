@@ -3,6 +3,8 @@ import os
 from django.contrib import admin
 from django.urls import path, include, re_path
 
+from .healthcheck import HealthCheckView
+
 admin.site.site_header = 'Capstone Projects Allocator - Admin'
 admin.site.site_title = 'Capstone Projects Allocator - Admin'
 admin.site.index_title = 'Site Administration'
@@ -16,7 +18,7 @@ urlpatterns = [
     path('student/', include('student.urls', namespace='student'),
          name='student'),
 
-    re_path(r'^health/', include('health_check.urls')),
+    path('health/', HealthCheckView.as_view(), name='health_check_home'),
 ]
 
 

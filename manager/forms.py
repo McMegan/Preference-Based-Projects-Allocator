@@ -323,13 +323,17 @@ class StudentListForm(UnitKwargMixin, forms.Form):
                                        validate_constraints=False)
                 except forms.ValidationError as e:
                     for error in e:
-                        for message in error[1]:
-                            if error[0] == '__all__':
-                                errors.append(forms.ValidationError(
-                                    f'The row with the ID "{student.student_id}" in the inputted file produced the following error: {message}' if student.student_id != '' else f'A row without an ID in the inputted file produced the following error: {message}'))
-                            else:
-                                errors.append(forms.ValidationError(
-                                    f'The value for the "{error[0]}" column in the row with the ID "{student.student_id}" produced the following error: {message}' if student.student_id != '' else f'The value for the "{error[0]}" column in a row without an ID produced the following error: {message}'))
+                        if type(error) == tuple:
+                            for message in error[1]:
+                                if error[0] == '__all__':
+                                    errors.append(forms.ValidationError(
+                                        f'The row with the ID "{student.student_id}" in the inputted file produced the following error: {message}' if student.student_id != '' else f'A row without an ID in the inputted file produced the following error: {message}'))
+                                else:
+                                    errors.append(forms.ValidationError(
+                                        f'The value for the "{error[0]}" column in the row with the ID "{student.student_id}" produced the following error: {message}' if student.student_id != '' else f'The value for the "{error[0]}" column in a row without an ID produced the following error: {message}'))
+                        else:
+                            errors.append(forms.ValidationError(
+                                f'The row with the ID "{student.student_id}" in the inputted file produced the following error: {error}' if student.student_id != '' else f'A row without an ID in the inputted file produced the following error: {error}'))
 
         if errors != []:
             raise forms.ValidationError(errors)
@@ -532,14 +536,17 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
                         models.Project, project)
                 except forms.ValidationError as e:
                     for error in e:
-                        for message in error[1]:
-                            if error[0] == '__all__':
-                                errors.append(forms.ValidationError(
-                                    f'The row with the Project ID "{project.identifier}" in the uploaded file produced the following error: {message}' if project.identifier != '' else f'A row without an ID in the uploaded file produced the following error: {message}'))
-                            else:
-                                errors.append(forms.ValidationError(
-                                    f'The value for the "{error[0]}" column in the row with the Project ID "{project.identifier}" produced the following error: {message}' if project.identifier != '' else f'The value for the "{error[0]}" column in a row without an ID produced the following error: {message}'))
-
+                        if type(error) == tuple:
+                            for message in error[1]:
+                                if error[0] == '__all__':
+                                    errors.append(forms.ValidationError(
+                                        f'The row with the Project ID "{project.identifier}" in the uploaded file produced the following error: {message}' if project.identifier != '' else f'A row without an ID in the uploaded file produced the following error: {message}'))
+                                else:
+                                    errors.append(forms.ValidationError(
+                                        f'The value for the "{error[0]}" column in the row with the Project ID "{project.identifier}" produced the following error: {message}' if project.identifier != '' else f'The value for the "{error[0]}" column in a row without an ID produced the following error: {message}'))
+                        else:
+                            errors.append(forms.ValidationError(
+                                f'The row with the Project ID "{project.identifier}" in the uploaded file produced the following error: {error}' if project.identifier != '' else f'A row without an ID in the uploaded file produced the following error: {error}'))
         if errors != []:
             raise forms.ValidationError(errors)
         return super().clean()

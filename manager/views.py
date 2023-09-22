@@ -167,10 +167,10 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                 <li>manually add the unallocated student{'s' if unit.get_unallocated_student_count() > 1 else ''} to a project.</li>
             </ul>
         """)})
-        if unit.projects_count == 0 and unit.preference_submission_started():
+        if unit.projects_count == 0 and unit.preference_submission_started() and not unit.preference_submission_ended():
             self.warnings.append(
                 {'type': 'danger', 'content': 'The preference submission timeframe has started but there are currently no projects in the unit.'})
-        if unit.students_count == 0 and unit.preference_submission_started():
+        if unit.students_count == 0 and unit.preference_submission_started() and not unit.preference_submission_ended():
             self.warnings.append(
                 {'type': 'danger', 'content': 'The preference submission timeframe has started but there are currently no students in the unit.'})
         return self.warnings if self.warnings != [] else None

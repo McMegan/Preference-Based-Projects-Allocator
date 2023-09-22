@@ -58,9 +58,18 @@ class Allocator:
                     student.id, project.id))
 
     def make_student_constraints(self):
-        # Each student must be assigned to a project
-        self.solver.Add(self.solver.Sum([self.student_vars[student.id, project.id]
-                        for project in self.projects for student in self.students]) == 1)
+        for student in self.students:
+            allocation = []
+            allocation_preference = []
+            for project in self.projects:
+                allocation.append(
+                    self.student_vars[student.id, project.id])
+                allocation_preference.append(
+                    self.student_vars[student.id, project.id] * self.get_preference_rank(student, project))
+            # Each student must be assigned to a project
+            self.solver.Add(self.solver.Sum(allocation) == 1)
+            # Student must have selected the project
+            self.solver.Add(self.solver.Sum(allocation_preference) >= 1)
 
     def make_project_constraints(self):
         for project in self.projects:

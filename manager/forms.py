@@ -160,8 +160,27 @@ class UnitUpdateForm(UnitKwargMixin, UnitCreateForm):
     preference_submission_start = SplitDateTimeField(required=False)
     preference_submission_end = SplitDateTimeField(required=False)
 
+    minimum_preference_limit = forms.IntegerField(
+        required=False, help_text='Leave blank or set to 0 to have no minimum limit on the number of preferences students can submit.')
+    maximum_preference_limit = forms.IntegerField(
+        required=False, help_text='Leave blank or set to 0 to have no maximum limit on the number of preferences students can submit.')
+
     limit_by_major = forms.BooleanField(
         label='Limit project preference selection by major/area', required=False, help_text='This will limit each students project preference options to those which match the students area. If a student has no area, all projects will be displayed. If a project has no area, it will be displayed to all students.')
+
+    def clean(self):
+        num_projects = self.unit.projects.count()
+        minimum_preference_limit = self.cleaned_data.get(
+            'minimum_preference_limit')
+        maximum_preference_limit = self.cleaned_data.get(
+            'maximum_preference_limit')
+        if minimum_preference_limit and minimum_preference_limit > num_projects:
+            raise forms.ValidationError(
+                {'minimum_preference_limit': 'The minimum preference limit must be less than or equal to the total number of projects in the unit.'})
+        if maximum_preference_limit and maximum_preference_limit > num_projects:
+            raise forms.ValidationError(
+                {'maximum_preference_limit': 'The maximum preference limit must be less than or equal to the total number of projects in the unit.'})
+        return super().clean()
 
     class Meta(UnitCreateForm.Meta):
         fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',

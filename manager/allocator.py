@@ -58,25 +58,15 @@ class Allocator:
                     student.id, project.id))
 
     def make_student_constraints(self):
-        for student in self.students:
-            allocation = []
-            allocation_preference = []
-            for project in self.projects:
-                allocation.append(self.student_vars[student.id, project.id])
-                allocation_preference.append(
-                    self.student_vars[student.id, project.id] * self.get_preference_rank(student, project))
-            # Each student must be assigned to a project
-            self.solver.Add(self.solver.Sum(allocation) == 1)
-            # Student must have selected the project
-            # self.solver.Add(self.solver.Sum(allocation_preference) >= 1)
+        # Each student must be assigned to a project
+        self.solver.Add(self.solver.Sum([self.student_vars[student.id, project.id]
+                        for project in self.projects for student in self.students]) == 1)
 
     def make_project_constraints(self):
         for project in self.projects:
             # Make a list of the student variables for this project
             projects_student_vars = [self.student_vars[student.id, project.id]
                                      for student in self.students]
-            self.solver.Add(self.project_vars[project.id] == 1)
-            #  and self.solver.Sum([self.project_vars[project.id] * 9999]) >= self.solver.Sum(projects_student_vars)
             # Each project must be allocated to a permissable number of students
             self.solver.Add(self.solver.Sum(projects_student_vars)
                             <= project.max_students)
@@ -90,6 +80,21 @@ class Allocator:
                 allocated_preferences.append(
                     self.student_vars[student.id, project.id] * self.get_preference_rank(student, project))
         self.solver.Minimize(self.solver.Sum(allocated_preferences))
+
+    def get_preference_rank(self, student, project):
+        """
+            Get the value for the preference for this student and this project
+        """
+        student_preferences = student.project_preferences.filter(
+            student_id=student.id)
+        if student_preferences.exists():
+            preference = student_preferences.filter(project_id=project.id)
+            if preference.exists():
+                return preference.first().rank
+            else:
+                return self.projects.count() * 10
+        else:
+            return self.projects.count() + 1
 
     def save_allocation(self):
         student_allocated = []
@@ -113,18 +118,3 @@ class Allocator:
 
         models.Student.objects.bulk_update(
             student_allocated, fields=['allocated_project', 'allocated_preference_rank'])
-
-    def get_preference_rank(self, student, project):
-        """
-            Get the value for the preference for this student and this project
-        """
-        student_preferences = student.project_preferences.filter(
-            student_id=student.id)
-        if student_preferences.exists():
-            preference = student_preferences.filter(project_id=project.id)
-            if preference.exists():
-                return preference.first().rank
-            else:
-                return self.projects.count() * 2
-        else:
-            return self.projects.count() + 1

@@ -1,4 +1,4 @@
-from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, UserCreationForm, UserChangeForm, SetPasswordForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, UserCreationForm, SetPasswordForm
 from django import forms
 
 from crispy_forms.bootstrap import FormActions
@@ -93,6 +93,15 @@ class UserPasswordChangeForm(PasswordChangeForm):
                 Submit('submit', 'Save', css_class='btn btn-primary'),
             )
         )
+
+    def clean(self):
+        super().clean()
+        old_password = self.cleaned_data.get('old_password')
+        new_password = self.cleaned_data.get('new_password1')
+        if old_password and new_password and self.cleaned_data.get('new_password2') and old_password == new_password:
+            raise forms.ValidationError({'new_password2':
+                                         'Your new password must not be the same as your old password.'})
+        return self.cleaned_data
 
 
 class UserPasswordResetForm(PasswordResetForm):

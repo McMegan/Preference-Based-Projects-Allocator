@@ -155,6 +155,9 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
         if unit.is_allocating:
             self.warnings.append(
                 {'type': 'danger', 'content': 'This unit is currently being allocated. You can not make changes to the unit while it is allocating.'})
+        if unit.minimum_preference_limit > unit.projects_count:
+            self.warnings.append(
+                {'type': 'danger', 'content': 'The minimum preference limit is greater than the total number of projects in the unit. Please change this or else students will not be able to submit any preferences.'})
         if unit.completed_allocation() and unit.get_unallocated_student_count() > 0:
             self.warnings.append({'type': 'warning', 'content': format_html(f"""
             <p>There {'are' if unit.get_unallocated_student_count() > 1 else 'is'} {unit.get_unallocated_student_count()} student{'s' if unit.get_unallocated_student_count() > 1 else ''} who {'are' if unit.get_unallocated_student_count() > 1 else 'is'} not allocated to a project.</p>

@@ -41,7 +41,7 @@ class Unit(models.Model):
     limit_by_major = models.BooleanField(default=False)
 
     manager = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, related_name='managed_units', limit_choices_to={'is_manager': True})
+        User, on_delete=models.CASCADE, null=True, related_name='managed_units', limit_choices_to={'is_manager': True})
 
     OPTIMAL = 'OP'
     FEASIBLE = 'FS'
@@ -173,7 +173,7 @@ class Unit(models.Model):
         ordering = ['code', 'name']
         constraints = [
             models.UniqueConstraint(
-                fields=['code', 'year', 'semester'], name='%(app_label)s_%(class)s_unique'),
+                fields=['manager', 'code', 'year', 'semester'], name='%(app_label)s_%(class)s_unique'),
             models.CheckConstraint(check=Q(preference_submission_start__isnull=True) | Q(preference_submission_end__isnull=True) | Q(
                 preference_submission_start__lt=F('preference_submission_end')), name='preference_submission_start_lt_end', violation_error_message='The preference submission end must be after the preference submission start.'),
             models.CheckConstraint(check=Q(minimum_preference_limit__isnull=True) | Q(maximum_preference_limit__isnull=True) | Q(

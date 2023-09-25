@@ -493,7 +493,7 @@ class StudentPageMixin(UnitMixin):
 
         return [
             {'label': 'Student ID', 'content': student.student_id},
-            {'label': 'Student Name', 'content': student.name},
+            {'label': 'Student Name', 'content': student.name if student.name else '-'},
             {'label': 'Registered', 'content': render_exists_badge(
                 student.get_is_registered())},
             {'label': 'Submitted Preferences', 'content': render_exists_badge(

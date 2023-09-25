@@ -145,7 +145,7 @@ class Unit(models.Model):
             self.too_few_students = min(min_spaces) > students_count
             self.min_project_spaces = min(min_spaces)
             self.too_many_students = sum(max_spaces) < students_count
-            self.max_project_spaces = min(max_spaces)
+            self.max_project_spaces = sum(max_spaces)
             return True
         return False
 

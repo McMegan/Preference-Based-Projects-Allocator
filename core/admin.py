@@ -92,6 +92,7 @@ class UserAdmin(BaseUserAdmin):
                 use_https=request.is_secure(),
                 subject_template_name='registration/account_creation_subject.txt',
                 email_template_name='registration/account_creation_email.html',
+                html_email_template_name='registration/account_creation_email_html.html',
             )
         else:
             super().save_model(request, obj, form, change)

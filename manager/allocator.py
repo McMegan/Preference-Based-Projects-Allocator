@@ -1,7 +1,34 @@
+from django.core.mail import EmailMultiAlternatives
+
 from ortools.linear_solver import pywraplp
 
-
 from core import models
+
+
+def start_allocation(unit_id, manager_id, results_url):
+    unit = models.Unit.objects.filter(pk=unit_id).prefetch_related('projects').prefetch_related(
+        'students').prefetch_related('students__project_preferences').first()
+
+    Allocator(unit=unit)
+
+    # Email with result...??
+    manager = models.User.objects.filter(pk=manager_id).first()
+    if manager.email != None:
+        email_message = f'The allocation of students to projects for {unit.name} was successful.'
+        email_message_html = f'The allocation of students to projects for {unit.name} was successful. <a href="{results_url}">View the results of the allocation</a>.'
+        if not unit.allocation_status:
+            email_message = f'The allocation of students to projects for {unit.name} failed.'
+            email_message_html = f'The allocation of students to projects for {unit.name} failed.'
+        email = EmailMultiAlternatives(
+            subject=f'{unit.name}: Project Allocation Finished',
+            body=email_message,
+            to=[manager.email],
+        )
+        email.attach_alternative(email_message_html, 'text/html')
+        result = email.send(fail_silently=False)
+        return 'Email successful' if result else 'Email failed', unit.get_allocation_descriptive()
+
+    return 'No email specified', unit.get_allocation_descriptive()
 
 
 class Allocator:
@@ -29,6 +56,7 @@ class Allocator:
 
         # Solve
         status = self.solver.Solve()
+
         result = {
             pywraplp.Solver.OPTIMAL: models.Unit.OPTIMAL,
             pywraplp.Solver.FEASIBLE: models.Unit.FEASIBLE,
@@ -51,11 +79,11 @@ class Allocator:
         self.project_vars = {}
         self.student_vars = {}
         for project in self.projects:
-            self.project_vars[project.id] = self.solver.BoolVar(
-                'Pr_{}'.format(project.id))
+            self.project_vars[project.id] = self.solver.IntVar(
+                0, 1, 'Pr_{}'.format(project.id))
             for student in self.students:
-                self.student_vars[student.id, project.id] = self.solver.BoolVar('St_{}_{}'.format(
-                    student.id, project.id))
+                self.student_vars[student.id, project.id] = self.solver.IntVar(
+                    0, 1, 'St_{}_{}'.format(student.id, project.id))
 
     def make_student_constraints(self):
         for student in self.students:
@@ -76,11 +104,13 @@ class Allocator:
             # Make a list of the student variables for this project
             projects_student_vars = [self.student_vars[student.id, project.id]
                                      for student in self.students]
+            self.solver.Add(self.project_vars[project.id] == 1 and self.solver.Sum(
+                [self.project_vars[project.id] * 99999]) >= self.solver.Sum(projects_student_vars))
             # Each project must be allocated to a permissable number of students
             self.solver.Add(self.solver.Sum(projects_student_vars)
                             <= project.max_students)
             self.solver.Add(self.solver.Sum(projects_student_vars) >=
-                            project.min_students * self.project_vars[project.id])
+                            (project.min_students * self.project_vars[project.id]))
 
     def make_objective(self):
         allocated_preferences = []
@@ -104,6 +134,9 @@ class Allocator:
                 return self.projects.count() * 10
         else:
             return self.projects.count() + 1
+
+    def get_bool_var_value(self, variable):
+        return 1 if variable > 0.5 else 0
 
     def save_allocation(self):
         student_allocated = []

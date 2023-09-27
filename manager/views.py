@@ -1,5 +1,3 @@
-import csv
-from io import StringIO
 import base64
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -87,7 +85,13 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
     def get_unit_object(self):
         if not hasattr(self, 'unit'):
             self.unit = self.get_unit_queryset().first()
+
         return self.unit
+
+    def save_task_to_unit(self, task, task_name):
+        self.get_unit_object().task_id = task.id
+        self.get_unit_object().task_name = task_name
+        self.get_unit_object().save()
 
     def get_context_for_sidebar(self):
         unit = self.get_unit_object()
@@ -149,12 +153,25 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
         if not hasattr(self, 'warnings'):
             self.warnings = []
 
+        if not self.unit.task_ready():
+            warning_message = ''
+            if self.unit.task_name == models.Unit.START_ALLOCATION_TASK:
+                warning_message = 'This unit is currently being allocated. You can not make changes to the unit while it is allocating.'
+            elif self.unit.task_name == models.Unit.EMAIL_ALLOCATION_RESULTS_TASK:
+                warning_message = 'The allocation results for this unit are currently being emailed. You can not make changes to the unit while this is happening.'
+            elif self.unit.task_name == models.Unit.EMAIL_PREFERENCES_TASK:
+                warning_message = 'The preference list for this unit is currently being emailed. You can not make changes to the unit while this is happening.'
+            elif self.unit.task_name == models.Unit.UPLOAD_PROJECTS_TASK:
+                warning_message = 'The project list is currently being uploaded to this unit. You can not make changes to the unit while this is happening.'
+            elif self.unit.task_name == models.Unit.UPLOAD_STUDENTS_TASK:
+                warning_message = 'The student list is currently being uploaded to this unit. You can not make changes to the unit while this is happening.'
+            elif self.unit.task_name == models.Unit.UPLOAD_PREFERENCES_TASK:
+                warning_message = 'The preference list is currently being uploaded to this unit. You can not make changes to the unit while this is happening.'
+            self.warnings.append(
+                {'type': 'danger', 'content': warning_message})
         if not unit.is_active:
             self.warnings.append(
                 {'type': 'secondary', 'content': 'This unit is inactive.', 'classes': 'text-center'})
-        if unit.is_allocating:
-            self.warnings.append(
-                {'type': 'danger', 'content': 'This unit is currently being allocated. You can not make changes to the unit while it is allocating.'})
         if unit.minimum_preference_limit and unit.minimum_preference_limit > unit.projects_count:
             self.warnings.append(
                 {'type': 'danger', 'content': 'The minimum preference limit is greater than the total number of projects in the unit. Please change this or else students will not be able to submit any preferences.'})
@@ -424,7 +441,7 @@ class StudentsUploadListView(StudentsListMixin, FormMixin, TemplateView):
             file_bytes_base64 = base64.b64encode(file.read())
             file_bytes_base64_str = file_bytes_base64.decode('utf-8')
 
-            tasks.upload_students_list_task.delay(
+            task = tasks.upload_students_list_task.delay(
                 unit_id=self.kwargs['pk_unit'],
                 manager_id=self.request.user.id,
                 file_bytes_base64_str=file_bytes_base64_str,
@@ -436,6 +453,8 @@ class StudentsUploadListView(StudentsListMixin, FormMixin, TemplateView):
                 area_column=form.cleaned_data.get(
                     'area_column')
             )
+            self.save_task_to_unit(
+                task=task, task_name=models.Unit.UPLOAD_STUDENTS_TASK)
 
             return self.form_valid(form)
         else:
@@ -663,7 +682,7 @@ class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
             file_bytes_base64 = base64.b64encode(file.read())
             file_bytes_base64_str = file_bytes_base64.decode('utf-8')
 
-            tasks.upload_projects_list_task.delay(
+            task = tasks.upload_projects_list_task.delay(
                 unit_id=self.kwargs['pk_unit'],
                 manager_id=self.request.user.id, file_bytes_base64_str=file_bytes_base64_str,
                 override_list=form.cleaned_data.get('list_override'),
@@ -676,6 +695,8 @@ class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
                 description_column=form.cleaned_data.get('description_column'),
                 area_column=form.cleaned_data.get('area_column')
             )
+            self.save_task_to_unit(
+                task=task, task_name=models.Unit.UPLOAD_PROJECTS_TASK)
 
             return self.form_valid(form)
         else:
@@ -1068,8 +1089,10 @@ class PreferencesView(PreferencesMixin, FilteredTableView):
         email_results = 'email_results' in request.POST
         from . import export
         if email_results:
-            tasks.email_preferences_csv_task.delay(
+            task = tasks.email_preferences_csv_task.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
+            self.save_task_to_unit(
+                task=task, task_name=models.Unit.EMAIL_PREFERENCES_TASK)
             return HttpResponseRedirect(self.request.path)
         return export.download_preferences_csv(unit_id=self.kwargs['pk_unit'])
 
@@ -1120,7 +1143,7 @@ class PreferencesUploadListView(PreferencesMixin, FormMixin, TemplateView):
             file_bytes_base64 = base64.b64encode(file.read())
             file_bytes_base64_str = file_bytes_base64.decode('utf-8')
 
-            tasks.upload_preferences_list_task.delay(
+            task = tasks.upload_preferences_list_task.delay(
                 unit_id=self.kwargs['pk_unit'],
                 manager_id=self.request.user.id, file_bytes_base64_str=file_bytes_base64_str,
                 preference_rank_column=form.cleaned_data.get(
@@ -1129,6 +1152,8 @@ class PreferencesUploadListView(PreferencesMixin, FormMixin, TemplateView):
                 project_identifier_column=form.cleaned_data.get(
                     'project_identifier_column')
             )
+            self.save_task_to_unit(
+                task=task, task_name=models.Unit.UPLOAD_PREFERENCES_TASK)
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -1151,10 +1176,10 @@ class AllocationView(UnitMixin, TemplateView):
     def check_can_start_allocation(self):
         unit = self.get_unit_object()
         can_start_allocation = True
-        if unit.is_allocating:
+        if unit.is_allocating():
             self.allocation_warnings.append(
                 {'type': 'secondary', 'content': format_html("""<p>The unit is currently allocating students to projects. Feel free to refresh or leave the page.</p><p class="mb-0">You should recieve an email once the allocation is completed.</p>""")})
-            return False
+            can_start_allocation = False
         if unit.projects_count == 0:
             can_start_allocation = False
             self.allocation_warnings.append(
@@ -1198,12 +1223,11 @@ class AllocationView(UnitMixin, TemplateView):
                         <li>add projects to the project list, or</li>
                         <li>remove students from the student list.</li>
                     </ul>""")})
-
         return can_start_allocation
 
     def get_context_data(self, **kwargs):
         self.allocation_warnings = []
-        return {**super().get_context_data(**kwargs), 'can_start_allocation': self.check_can_start_allocation(), 'allocation_warnings': self.allocation_warnings}
+        return {**super().get_context_data(**kwargs),  'can_start_allocation': self.check_can_start_allocation(), 'allocation_warnings': self.allocation_warnings}
 
     page_info_column = True
 
@@ -1273,17 +1297,17 @@ class AllocationView(UnitMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         if 'start_allocation' in request.POST:
-            unit = self.get_unit_object()
-            unit.is_allocating = True
-            unit.save()
-
-            tasks.start_allocation.delay(
+            task = tasks.start_allocation_task.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit-allocation', kwargs={'pk_unit': self.kwargs['pk_unit']})))
+            self.save_task_to_unit(
+                task=task, task_name=models.Unit.START_ALLOCATION_TASK)
             return HttpResponseRedirect(self.request.path)
         from . import export
         if 'email_results' in request.POST:
-            tasks.email_allocation_results_csv_task.delay(
+            task = tasks.email_allocation_results_csv_task.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
+            self.save_task_to_unit(
+                task=task, task_name=models.Unit.EMAIL_ALLOCATION_RESULTS_TASK)
             return HttpResponseRedirect(self.request.path)
         if 'download_results' in request.POST:
             return export.download_allocation_results_csv(unit_id=self.kwargs['pk_unit'])

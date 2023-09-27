@@ -10,6 +10,8 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
 
+from celery.result import AsyncResult
+
 from core import models
 
 
@@ -48,8 +50,11 @@ class UnitKwargMixin:
         self.unit = kwargs.pop('unit', None)
         self.disabled = kwargs.pop('disabled', None)
 
-        if not self.disabled:
-            self.disabled = self.unit.is_allocating if self.unit else self.disabled
+        if self.unit and not self.disabled:
+            self.disabled = False
+            if self.unit.task:
+                task_result = AsyncResult(self.unit.task.task_id)
+                self.disabled = not task_result.ready()
 
         super().__init__(*args, **kwargs)
 

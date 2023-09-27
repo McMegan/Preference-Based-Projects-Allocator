@@ -7,6 +7,8 @@ from django.utils import timezone
 
 from django.utils.translation import gettext_lazy as _
 
+from celery.result import AsyncResult
+
 
 class User(AbstractUser):
     email = models.EmailField(_("email address"), unique=True)
@@ -68,13 +70,57 @@ class Unit(models.Model):
         (MODEL_INVALID, ALLOCATION_STATUS[MODEL_INVALID]),
         (NOT_SOLVED, ALLOCATION_STATUS[NOT_SOLVED]),
     ]
-    is_allocating = models.BooleanField(default=False)
     allocation_status = models.CharField(
         max_length=2,
         choices=ALLOCATION_STATUS_CHOICES,
         null=True,
         blank=True
     )
+
+    START_ALLOCATION_TASK = 'ALLOC'
+    START_ALLOCATION_TASK_NAME = 'Start Allocation'
+    EMAIL_ALLOCATION_RESULTS_TASK = 'EMALL'
+    EMAIL_ALLOCATION_RESULTS_TASK_NAME = 'Email Allocation Results'
+    EMAIL_PREFERENCES_TASK = 'EPREF'
+    EMAIL_PREFERENCES_TASK_NAME = 'Email Preferences List'
+    UPLOAD_PROJECTS_TASK = 'UPROJ'
+    UPLOAD_PROJECTS_TASK_NAME = 'Upload Projects List'
+    UPLOAD_STUDENTS_TASK = 'USTUD'
+    UPLOAD_STUDENTS_TASK_NAME = 'Upload Students List'
+    UPLOAD_PREFERENCES_TASK = 'UPREF'
+    UPLOAD_PREFERENCES_TASK_NAME = 'Upload Preferences List'
+    TASK_NAME = {
+        START_ALLOCATION_TASK: START_ALLOCATION_TASK_NAME,
+        EMAIL_ALLOCATION_RESULTS_TASK: EMAIL_ALLOCATION_RESULTS_TASK_NAME,
+        EMAIL_PREFERENCES_TASK: EMAIL_PREFERENCES_TASK_NAME,
+        UPLOAD_PROJECTS_TASK: UPLOAD_PROJECTS_TASK_NAME,
+        UPLOAD_STUDENTS_TASK: UPLOAD_STUDENTS_TASK_NAME,
+        UPLOAD_PREFERENCES_TASK: UPLOAD_PREFERENCES_TASK_NAME,
+    }
+    TASK_CHOICES = [
+        (START_ALLOCATION_TASK, TASK_NAME[START_ALLOCATION_TASK]),
+        (EMAIL_ALLOCATION_RESULTS_TASK,
+         TASK_NAME[EMAIL_ALLOCATION_RESULTS_TASK]),
+        (EMAIL_PREFERENCES_TASK, TASK_NAME[EMAIL_PREFERENCES_TASK]),
+        (UPLOAD_PROJECTS_TASK, TASK_NAME[UPLOAD_PROJECTS_TASK]),
+        (UPLOAD_STUDENTS_TASK, TASK_NAME[UPLOAD_STUDENTS_TASK]),
+        (UPLOAD_PREFERENCES_TASK, TASK_NAME[UPLOAD_PREFERENCES_TASK]),
+    ]
+    task_name = models.CharField(
+        max_length=5,
+        choices=TASK_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name='Task Name',
+        help_text='Name of the Task which was run'
+    )
+    task_id = models.CharField(
+        unique=True,
+        null=True,
+        blank=True,
+        max_length=255,
+        verbose_name='Task ID',
+        help_text='Celery ID for the Task that was run')
 
     def __str__(self):
         return f'{self.code}: {self.name}'
@@ -87,6 +133,16 @@ class Unit(models.Model):
         if errors != {}:
             raise ValidationError(errors)
         return super().clean()
+
+    def get_celery_task(self):
+        if not hasattr(self, 'celery_task'):
+            self.celery_task = AsyncResult(self.task_id)
+        return self.celery_task
+
+    def task_ready(self):
+        if self.task_id and self.get_celery_task():
+            return self.get_celery_task().ready()
+        return True
 
     def preference_submission_set(self) -> bool:
         return self.preference_submission_start != None and self.preference_submission_end != None
@@ -106,11 +162,18 @@ class Unit(models.Model):
     def get_preference_submission_end(self):
         return self.preference_submission_end.strftime('%a %d %b %Y, %I:%M%p')
 
+    def is_allocating(self):
+        if not hasattr(self, 'allocating'):
+            self.allocating = False
+        if self.task_id and self.task_name and self.task_name == Unit.START_ALLOCATION_TASK:
+            self.allocating = not self.task_ready()
+        return self.allocating
+
     def is_allocated(self) -> bool:
         return self.completed_allocation() and self.successfully_allocated()
 
     def completed_allocation(self) -> bool:
-        return not self.is_allocating and self.allocation_status is not None
+        return not self.is_allocating() and self.allocation_status is not None
 
     def successfully_allocated(self) -> bool:
         return self.allocation_status in {self.OPTIMAL, self.FEASIBLE}

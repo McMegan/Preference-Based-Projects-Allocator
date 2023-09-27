@@ -110,7 +110,7 @@ class UnitAdmin(admin.ModelAdmin):
     autocomplete_fields = ['manager']
     list_select_related = ['manager']
     list_display = ['code', 'name', 'year', 'semester', 'manager_link', 'students_count', 'projects_count', 'preference_submission_start',
-                    'preference_submission_end', 'minimum_preference_limit', 'maximum_preference_limit', 'is_active', 'limit_by_major', 'is_allocating', 'allocation_status']
+                    'preference_submission_end', 'minimum_preference_limit', 'maximum_preference_limit', 'is_active', 'limit_by_major', 'allocation_status']
     list_filter = ['is_active', 'year', 'semester', 'preference_submission_start',
                    'preference_submission_end', 'allocation_status']
     search_fields = ['code', 'name']
@@ -120,10 +120,13 @@ class UnitAdmin(admin.ModelAdmin):
             'fields': (('code', 'name'), ('year', 'semester'), ('manager'))
         }),
         ('Unit Settings', {
-            'fields': (('preference_submission_start', 'preference_submission_end'), ('minimum_preference_limit', 'maximum_preference_limit'), ('is_active', 'limit_by_major'), ('is_allocating', 'allocation_status')),
+            'fields': (('preference_submission_start', 'preference_submission_end'), ('minimum_preference_limit', 'maximum_preference_limit'), ('is_active', 'limit_by_major'), ('allocation_status')),
+        }),
+        ('Unit Task', {
+            'fields': (('task_id', 'task_name')),
         }),
     )
-    readonly_fields = ('allocation_status',)
+    readonly_fields = ('allocation_status', 'task_id', 'task_name')
 
     @admin.display(ordering='manager_id')
     def manager_link(self, unit):
@@ -157,8 +160,6 @@ class UnitAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        if request.user.is_manager:
-            queryset = queryset.filter(manager_id=request.user.id)
         return queryset.annotate(
             students_count=Count('students', distinct=True), projects_count=Count('projects', distinct=True)
         )

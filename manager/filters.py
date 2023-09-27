@@ -96,7 +96,7 @@ class StudentFilterFormHelper(FormHelper):
         FormActions(
             Submit('submit', 'Filter'),
             HTML(
-                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit-students' unit.id %}">Clear Filters</a>{% endif %}""")
+                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit_students' unit.id %}">Clear Filters</a>{% endif %}""")
         )
     )
 
@@ -116,7 +116,7 @@ class StudentAllocatedFilterFormHelper(StudentFilterFormHelper):
         FormActions(
             Submit('submit', 'Filter'),
             HTML(
-                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit-students' unit.id %}">Clear Filters</a>{% endif %}""")
+                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit_students' unit.id %}">Clear Filters</a>{% endif %}""")
         )
     )
 
@@ -172,7 +172,7 @@ class ProjectFilterFormHelper(FormHelper):
         FormActions(
             Submit('submit', 'Filter'),
             HTML(
-                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit-projects' unit.id %}">Clear Filters</a>{% endif %}""")
+                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit_projects' unit.id %}">Clear Filters</a>{% endif %}""")
         )
     )
 
@@ -189,7 +189,7 @@ class ProjectAllocatedFilterFormHelper(ProjectFilterFormHelper):
         FormActions(
             Submit('submit', 'Filter'),
             HTML(
-                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit-projects' unit.id %}">Clear Filters</a>{% endif %}""")
+                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit_projects' unit.id %}">Clear Filters</a>{% endif %}""")
         )
     )
 
@@ -250,7 +250,7 @@ class PreferenceFilterFormHelper(FormHelper):
         FormActions(
             Submit('submit', 'Filter'),
             HTML(
-                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit-preferences' unit.id %}">Clear Filters</a>{% endif %}""")
+                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit_preferences' unit.id %}">Clear Filters</a>{% endif %}""")
         )
     )
 
@@ -280,7 +280,7 @@ class PreferenceDistributionFilterFormHelper(FormHelper):
         FormActions(
             Submit('submit', 'Filter'),
             HTML(
-                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit-preferences-distribution' unit.id %}">Clear Filters</a>{% endif %}""")
+                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit_preferences_distribution' unit.id %}">Clear Filters</a>{% endif %}""")
         )
     )
 
@@ -317,6 +317,6 @@ class AreaFilterFormHelper(FormHelper):
         FormActions(
             Submit('submit', 'Filter'),
             HTML(
-                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit-areas' unit.id %}">Clear Filters</a>{% endif %}""")
+                """{% if has_filter %}<a class="btn" href="{%  url 'manager:unit_areas' unit.id %}">Clear Filters</a>{% endif %}""")
         )
     )

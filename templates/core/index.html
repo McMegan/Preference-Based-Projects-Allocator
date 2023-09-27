@@ -8,7 +8,7 @@
     {% endif %}
     {% if user.is_manager and request.path == manager_index_url %}
         <div class="d-flex justify-content-center my-4">
-            <a class="btn btn-primary" href="{% url 'manager:unit-new' %}">Add unit</a>
+            <a class="btn btn-primary" href="{% url 'manager:unit_create' %}">Add unit</a>
         </div>
     {% endif %}
     {% if filter %}
@@ -57,7 +57,7 @@
                     </ul>
                     {% if user.is_manager and request.path == manager_index_url %}
                         <div class="card-footer">
-                            <a href="{% url 'manager:unit-delete' unit.id %}" class="btn btn-danger btn-sm">Delete</a>
+                            <a href="{% url 'manager:unit_delete' unit.id %}" class="btn btn-danger btn-sm">Delete</a>
                         </div>
                     {% endif %}
                 </div>

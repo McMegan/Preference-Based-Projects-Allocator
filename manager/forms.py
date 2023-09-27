@@ -48,13 +48,13 @@ class SplitDateTimeField(forms.SplitDateTimeField):
 class UnitKwargMixin:
     def __init__(self, *args, **kwargs):
         self.unit = kwargs.pop('unit', None)
+        self.cancel_url = kwargs.pop('cancel_url', None)
         self.disabled = kwargs.pop('disabled', None)
 
         if self.unit and not self.disabled:
             self.disabled = False
-            if self.unit.task:
-                task_result = AsyncResult(self.unit.task.task_id)
-                self.disabled = not task_result.ready()
+            if self.unit.task_id:
+                self.disabled = not self.unit.task_ready()
 
         super().__init__(*args, **kwargs)
 
@@ -68,7 +68,9 @@ class UnitKwargMixin:
         self.helper = FormHelper()
         self.submit_button = Submit('submit', self.submit_label if hasattr(
             self, 'submit_label') else 'Submit', css_class='btn ' + self.submit_button_variant if hasattr(self, 'submit_button_variant') else 'btn-primary', disabled=self.disabled)
-        self.form_actions = FormActions(self.submit_button)
+        self.cancel_button = HTML(
+            f"""<a class="btn btn-secondary" href="{self.cancel_url}">Cancel</a>""")
+        self.form_actions = FormActions(self.submit_button, self.cancel_button)
 
         self.helper.layout = Layout(self.form_layout, self.form_actions) if hasattr(
             self, 'form_layout') and self.form_layout else Layout(self.form_actions)

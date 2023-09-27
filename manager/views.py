@@ -5,9 +5,9 @@ from django.db import models
 from django.db.models import Count, Sum, F, Avg, Min, Max
 from django.db.models.functions import Round
 from django.http import HttpResponseRedirect
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy, Resolver404, resolve
 from django.utils.html import format_html
-from django.views.generic import TemplateView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import TemplateView, DetailView, CreateView, DeleteView, UpdateView
 from django.views.generic.edit import FormMixin
 
 from django_filters.views import FilterView, FilterMixin
@@ -19,7 +19,6 @@ from . import filters
 from . import forms
 from . import tables
 from . import tasks
-from . import upload
 
 
 def render_exists_badge(value: bool):
@@ -31,7 +30,7 @@ def render_area_list(areas):
     first = True
     for area in areas.all():
         areas_html = areas_html + ('; ' if not first else '') + \
-            f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-area-detail',kwargs={'pk_unit':area.unit_id,'pk':area.id})}">{area.name}</a>"""
+            f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_area_detail',kwargs={'pk_unit':area.unit_id,'pk':area.id})}">{area.name}</a>"""
         if first:
             first = False
     return format_html(f"""{areas_html}""")
@@ -85,7 +84,6 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
     def get_unit_object(self):
         if not hasattr(self, 'unit'):
             self.unit = self.get_unit_queryset().first()
-
         return self.unit
 
     def save_task_to_unit(self, task, task_name):
@@ -99,33 +97,33 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
             {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
                 'classes': f'fs-6'},
 
-            {'url': reverse('manager:unit-projects', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_projects', kwargs={'pk_unit': unit.pk}),
              'label': f'Projects ({unit.projects_count})'},
-            {'url': reverse('manager:unit-projects-new-list', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_projects_new_list', kwargs={'pk_unit': unit.pk}),
              'label': 'Upload Project List', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-projects-new', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_projects_new', kwargs={'pk_unit': unit.pk}),
              'label': 'Add a Project', 'classes': 'ms-3'},
 
-            {'url': reverse('manager:unit-students', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_students', kwargs={'pk_unit': unit.pk}),
              'label': f'Students ({unit.students_count})'},
-            {'url': reverse('manager:unit-students-new-list', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_students_new_list', kwargs={'pk_unit': unit.pk}),
              'label': 'Upload Student List', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-students-new', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_students_new', kwargs={'pk_unit': unit.pk}),
              'label': 'Add a Student', 'classes': 'ms-3'},
 
-            {'url': reverse('manager:unit-areas', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_areas', kwargs={'pk_unit': unit.pk}),
              'label': f'Areas ({unit.areas_count})'},
-            {'url': reverse('manager:unit-areas-new', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_areas_new', kwargs={'pk_unit': unit.pk}),
              'label': 'Add an Area', 'classes': 'ms-3'},
 
-            {'url': reverse('manager:unit-preferences', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_preferences', kwargs={'pk_unit': unit.pk}),
              'label': 'Preferences'},
-            {'url': reverse('manager:unit-preferences-distribution', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_preferences_distribution', kwargs={'pk_unit': unit.pk}),
              'label': 'Project Popularity', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit-preferences-new-list', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_preferences_new_list', kwargs={'pk_unit': unit.pk}),
              'label': 'Upload Preference List', 'classes': 'ms-3'},
 
-            {'url': reverse('manager:unit-allocation', kwargs={'pk_unit': unit.pk}),
+            {'url': reverse('manager:unit_allocation', kwargs={'pk_unit': unit.pk}),
              'label': 'Allocation'}
         ]
         return {'nav_items': nav_items}
@@ -199,7 +197,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **
-                self.get_context_for_sidebar(), 'unit': self.get_unit_object(), 'page_title': self.get_page_title(), 'page_subtitle': self.get_page_subtitle(), 'page_title_url': self.get_page_title_url(), 'page_info': self.get_page_info(), 'page_info_column': self.page_info_column if hasattr(self, 'page_info_column') else False, 'page_warnings': self.get_page_warnings(), 'page_actions': self.get_page_actions()}
+                self.get_context_for_sidebar(), 'unit': self.get_unit_object(), 'page_title': self.get_page_title(), 'page_subtitle': self.get_page_subtitle(), 'page_title_url': self.get_page_title_url(), 'page_info': self.get_page_info(), 'page_info_column': self.page_info_column if hasattr(self, 'page_info_column') else False, 'page_warnings': self.get_page_warnings(), 'page_actions': self.get_page_actions(), 'breadcrumbs': self.make_breadcrumbs()}
 
     def unit_managed_by_user(self):
         unit = self.get_unit_object()
@@ -214,7 +212,53 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
         return self.object
 
     def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
+        return {**super().get_form_kwargs(), 'unit': self.get_unit_object(), 'cancel_url': self.get_success_url()}
+
+    def make_breadcrumbs(self):
+        breadcrumbs = []
+        path_split = self.request.path[:-1].split('/')
+        path = ''
+        for segment in path_split:
+            path = path + segment + '/'
+            if path != '/' and path != '/manager/units/':
+                try:
+                    resolved = resolve(path)
+                    match resolved.url_name:
+                        case 'index':
+                            label = 'Unit List'
+                        case 'unit':
+                            label = self.get_unit_object()
+                        case 'unit_projects':
+                            label = 'Projects'
+                        case'unit_students':
+                            label = 'Students'
+                        case 'unit_areas':
+                            label = 'Areas'
+                        case 'unit_preferences':
+                            label = 'Preferences'
+                        case 'unit_allocation':
+                            label = 'Allocation'
+                        case 'unit_preferences_distribution':
+                            label = 'Project Popularity'
+                        case 'unit_project_detail':
+                            label = self.get_unit_object().projects.get(pk=resolved.kwargs.get('pk'))
+                        case 'unit_student_detail':
+                            label = self.get_unit_object().students.get(pk=resolved.kwargs.get('pk'))
+                        case 'unit_area_detail':
+                            label = self.get_unit_object().areas.get(pk=resolved.kwargs.get('pk'))
+                        case _:
+                            if 'update' in resolved.url_name or 'delete' in resolved.url_name or 'new' in resolved.url_name:
+                                label = self.get_page_subtitle()
+                            else:
+                                label = ''
+                    if label != '':
+                        breadcrumbs = breadcrumbs + [{'url': reverse(
+                            f'{resolved.app_name}:{resolved.url_name}' if resolved.app_name else resolved.url_name, kwargs=resolved.kwargs), 'label': label}]
+                    else:
+                        print(resolved.url_name)
+                except Resolver404:
+                    """Skip segment of path"""
+        return breadcrumbs
 
 
 """
@@ -267,9 +311,9 @@ class UnitPageMixin(UnitMixin):
 
     def get_page_actions(self):
         return [
-            {'url': reverse('manager:unit-update',
+            {'url': reverse('manager:unit_update',
                             kwargs={'pk': self.kwargs['pk']}), 'label': 'Edit'},
-            {'url': reverse('manager:unit-delete', kwargs={'pk': self.kwargs['pk']}),
+            {'url': reverse('manager:unit_delete', kwargs={'pk': self.kwargs['pk']}),
              'label': 'Delete', 'classes': 'btn-danger'},
         ]
 
@@ -309,6 +353,7 @@ class UnitDetailView(UnitPageMixin, DetailView):
 
 class UnitUpdateView(UnitPageMixin, UpdateView):
     form_class = forms.UnitUpdateForm
+    page_subtitle = 'Edit Unit'
 
     def get_page_info(self):
         return None
@@ -319,9 +364,13 @@ class UnitUpdateView(UnitPageMixin, UpdateView):
 
 class UnitDeleteView(UnitPageMixin, DeleteView):
     success_url = reverse_lazy('index')
+    page_subtitle = 'Delete Unit'
 
     def get_form(self):
         return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Delete Unit', form_message='<p>Are you sure you want to delete this unit?</p>')
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'cancel_url': self.get_page_title_url()}
 
 
 """
@@ -337,11 +386,11 @@ class StudentsListMixin(UnitMixin):
 
     def get_page_actions(self):
         return [
-            {'url': reverse('manager:unit-students-new-list',
+            {'url': reverse('manager:unit_students_new_list',
                             kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Student List'},
-            {'url': reverse('manager:unit-students-new',
+            {'url': reverse('manager:unit_students_new',
                             kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Student'},
-            {'url': reverse('manager:unit-students-clear',
+            {'url': reverse('manager:unit_students_delete_all',
                             kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Students', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().students.exists()},
         ]
 
@@ -376,10 +425,10 @@ class StudentsListMixin(UnitMixin):
         return context
 
     def get_page_title_url(self):
-        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
+        return reverse('manager:unit_students', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
 
     def get_success_url(self):
-        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit_students', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
 
 class StudentsListView(StudentsListMixin, FilteredTableView):
@@ -466,7 +515,7 @@ class StudentsClearView(StudentsListMixin, FormMixin, TemplateView):
         Clear the student list of a unit
     """
     model = models.Student
-    page_subtitle = 'Remove all Students'
+    page_subtitle = 'Remove All Students'
 
     def get_form(self):
         return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove All Students from Unit', form_message='<p>Are you sure you want to remove all students from this unit?</p>')
@@ -492,10 +541,10 @@ class StudentPageMixin(UnitMixin):
 
     def get_page_actions(self):
         return [
-            {'url': reverse('manager:unit-student-update', kwargs={'pk': self.kwargs.get(
+            {'url': reverse('manager:unit_student_update', kwargs={'pk': self.kwargs.get(
                 'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
-            {'url': reverse('manager:unit-student-remove', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
-             'label': 'Delete', 'classes': 'btn-danger'},
+            {'url': reverse('manager:unit_student_delete', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
+             'label': 'Remove', 'classes': 'btn-danger'},
         ]
 
     def get_page_info(self):
@@ -505,7 +554,7 @@ class StudentPageMixin(UnitMixin):
             allocated_info = [
                 {'label': 'Allocated Project',
                     'content': format_html(f"""
-                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail',kwargs={'pk_unit':student.unit_id,'pk':student.allocated_project_id})}">{student.allocated_project.identifier}: {student.allocated_project.name}</a>""") if student.allocated_project else 'n/a'},
+                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_project_detail',kwargs={'pk_unit':student.unit_id,'pk':student.allocated_project_id})}">{student.allocated_project.identifier}: {student.allocated_project.name}</a>""") if student.allocated_project else 'n/a'},
                 {'label': 'Allocated Preference Rank',
                     'content': student.allocated_preference_rank if student.allocated_preference_rank else 'n/a'},
             ]
@@ -534,7 +583,7 @@ class StudentPageMixin(UnitMixin):
         return super().get_page_title()
 
     def get_page_title_url(self):
-        return reverse('manager:unit-student-detail', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')})
+        return reverse('manager:unit_student_detail', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')})
 
 
 class StudentDetailView(StudentPageMixin, SingleTableMixin, DetailView):
@@ -556,13 +605,13 @@ class StudentUpdateView(StudentPageMixin, UpdateView):
     """
         Update a single student in a unit
     """
-    page_subtitle = 'Update Student'
+    page_subtitle = 'Edit Student'
 
     def get_form_class(self):
         return forms.StudentAllocatedUpdateForm if self.get_unit_object().successfully_allocated() else forms.StudentUpdateForm
 
     def get_success_url(self):
-        return reverse('manager:unit-student-detail', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')})
+        return reverse('manager:unit_student_detail', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')})
 
 
 class StudentDeleteView(StudentPageMixin, DeleteView):
@@ -575,7 +624,10 @@ class StudentDeleteView(StudentPageMixin, DeleteView):
         return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Student from Unit', form_message='<p>Are you sure you want to remove this student?</p>')
 
     def get_success_url(self):
-        return reverse('manager:unit-students', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit_students', kwargs={'pk_unit': self.kwargs['pk_unit']})
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'cancel_url': self.get_page_title_url()}
 
 
 """
@@ -591,11 +643,11 @@ class ProjectsListMixin(UnitMixin):
 
     def get_page_actions(self):
         return [
-            {'url': reverse('manager:unit-projects-new-list',
+            {'url': reverse('manager:unit_projects_new_list',
                             kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Project List'},
-            {'url': reverse('manager:unit-projects-new',
+            {'url': reverse('manager:unit_projects_new',
                             kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Project'},
-            {'url': reverse('manager:unit-projects-clear',
+            {'url': reverse('manager:unit_projects_delete_all',
                             kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Projects', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().projects.exists()},
         ]
 
@@ -628,10 +680,10 @@ class ProjectsListMixin(UnitMixin):
         return context
 
     def get_page_title_url(self):
-        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
+        return reverse('manager:unit_projects', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
 
     def get_success_url(self):
-        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit_projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
 
 class ProjectsListView(ProjectsListMixin, FilteredTableView):
@@ -707,7 +759,7 @@ class ProjectsClearView(ProjectsListMixin, FormMixin, TemplateView):
     """
         Clear the project list of a unit
     """
-    page_subtitle = 'Delete all Projects for this Unit?'
+    page_subtitle = 'Remove All Projects'
 
     def get_form(self):
         return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove All Projects from Unit', form_message=f'<p>Are you sure you want to remove all projects from this unit?</p>' + ('<div class="alert alert-danger">The preference submission timeframe is open, removing all projects now will remove all submitted preferences as well.</div>' if self.get_unit_object().preference_submission_open() else ''))
@@ -733,11 +785,13 @@ class ProjectPageMixin(UnitMixin):
 
     def get_page_actions(self):
         return [
-            {'url': reverse('manager:unit-project-update', kwargs={'pk': self.kwargs.get(
+            {'url': reverse('manager:unit_project_update', kwargs={'pk': self.kwargs.get(
                 'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
-            {'url': reverse('manager:unit-project-remove', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
-             'label': 'Delete', 'classes': 'btn-danger'},
+            {'url': reverse('manager:unit_project_delete', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
+             'label': 'Remove', 'classes': 'btn-danger'},
         ]
+
+    page_info_column = True
 
     def get_page_info(self):
         project = self.get_object()
@@ -784,7 +838,7 @@ class ProjectPageMixin(UnitMixin):
         return self.page_title
 
     def get_page_title_url(self):
-        return reverse('manager:unit-project-detail', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')})
+        return reverse('manager:unit_project_detail', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')})
 
 
 class ProjectDetailView(ProjectPageMixin, MultiTableMixin, DetailView):
@@ -818,13 +872,16 @@ class ProjectUpdateView(ProjectPageMixin, UpdateView):
     """
         Update a project in a unit
     """
-    page_subtitle = 'Update Project'
+    page_subtitle = 'Edit Project'
 
     def get_form_class(self):
         return forms.ProjectAllocatedUpdateForm if self.get_unit_object().successfully_allocated() else forms.ProjectUpdateForm
 
     def get_success_url(self):
-        return reverse('manager:unit-project-detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit_project_detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
+
+    def get_page_info(self):
+        return []
 
 
 class ProjectDeleteView(ProjectPageMixin, DeleteView):
@@ -837,7 +894,7 @@ class ProjectDeleteView(ProjectPageMixin, DeleteView):
         return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Project from Unit', form_message='<p>Are you sure you want to remove this project?</p>' + ('<div class="alert alert-danger">The preference submission timeframe is open, removing a project now will remove the project from the preferences of students who preferred this project. This may result in students having fewer preferences than the minimum preference limit, if it was set.</div>' if self.get_unit_object().preference_submission_open() else ''))
 
     def get_success_url(self):
-        return reverse('manager:unit-projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit_projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
     def form_valid(self, form):
         success_url = self.get_success_url()
@@ -853,6 +910,9 @@ class ProjectDeleteView(ProjectPageMixin, DeleteView):
             update_prefs, fields=['rank'])
         return HttpResponseRedirect(success_url)
 
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'cancel_url': self.get_page_title_url()}
+
 
 """
 
@@ -867,9 +927,9 @@ class AreasListMixin(UnitMixin):
 
     def get_page_actions(self):
         return [
-            {'url': reverse('manager:unit-areas-new',
+            {'url': reverse('manager:unit_areas_new',
                             kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Area'},
-            {'url': reverse('manager:unit-areas-clear', kwargs={'pk_unit': self.kwargs['pk_unit']}),
+            {'url': reverse('manager:unit_areas_delete_all', kwargs={'pk_unit': self.kwargs['pk_unit']}),
              'label': 'Remove All Areas', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().areas.exists()},
         ]
 
@@ -887,10 +947,10 @@ class AreasListMixin(UnitMixin):
         return qs.filter(unit=self.kwargs['pk_unit']).prefetch_related('students').prefetch_related('projects').order_by('name')
 
     def get_page_title_url(self):
-        return reverse('manager:unit-areas', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
+        return reverse('manager:unit_areas', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
 
     def get_success_url(self):
-        return reverse('manager:unit-areas', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit_areas', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
 
 class AreasListView(AreasListMixin, FilteredTableView):
@@ -948,10 +1008,10 @@ class AreaPageMixin(UnitMixin):
 
     def get_page_actions(self):
         return [
-            {'url': reverse('manager:unit-area-update', kwargs={'pk': self.kwargs.get(
+            {'url': reverse('manager:unit_area_update', kwargs={'pk': self.kwargs.get(
                 'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
-            {'url': reverse('manager:unit-area-remove', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
-             'label': 'Delete', 'classes': 'btn-danger'},
+            {'url': reverse('manager:unit_area_delete', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
+             'label': 'Remove', 'classes': 'btn-danger'},
         ]
 
     def get_page_info(self):
@@ -974,7 +1034,7 @@ class AreaPageMixin(UnitMixin):
         return self.page_title
 
     def get_page_title_url(self):
-        return reverse('manager:unit-area-detail', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')})
+        return reverse('manager:unit_area_detail', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')})
 
 
 class AreaDetailView(AreaPageMixin, MultiTableMixin, DetailView):
@@ -1005,25 +1065,28 @@ class AreaUpdateView(AreaPageMixin, UpdateView):
     """
         Update a area in a unit
     """
-    page_subtitle = 'Update Area'
+    page_subtitle = 'Edit Area'
 
     form_class = forms.AreaUpdateForm
 
     def get_success_url(self):
-        return reverse('manager:unit-area-detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit_area_detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
 
 
 class AreaDeleteView(AreaPageMixin, DeleteView):
     """
         Remove a single area from a unit
     """
-    page_subtitle = 'Delete Area'
+    page_subtitle = 'Remove Area'
 
     def get_form(self):
         return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Area from Unit', form_message='<p>Are you sure you want to remove this project?</p><p>Any projects and students with this area will be retained.</p>')
 
     def get_success_url(self):
-        return reverse('manager:unit-areas', kwargs={'pk_unit': self.kwargs['pk_unit']})
+        return reverse('manager:unit_areas', kwargs={'pk_unit': self.kwargs['pk_unit']})
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'cancel_url': self.get_page_title_url()}
 
 
 """
@@ -1038,7 +1101,7 @@ class PreferencesMixin(UnitMixin):
 
     def get_page_actions(self):
         return [
-            {'url': reverse('manager:unit-preferences-new-list',
+            {'url': reverse('manager:unit_preferences_new_list',
                             kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Preference List'},
         ]
 
@@ -1064,10 +1127,10 @@ class PreferencesMixin(UnitMixin):
         ] + students_exist_info
 
     def get_page_title_url(self):
-        return reverse('manager:unit-preferences', kwargs={'pk_unit': self.get_unit_object().pk})
+        return reverse('manager:unit_preferences', kwargs={'pk_unit': self.get_unit_object().pk})
 
     def get_success_url(self):
-        return reverse('manager:unit-preferences', kwargs={'pk_unit': self.get_unit_object().pk})
+        return reverse('manager:unit_preferences', kwargs={'pk_unit': self.get_unit_object().pk})
 
 
 class PreferencesView(PreferencesMixin, FilteredTableView):
@@ -1298,7 +1361,7 @@ class AllocationView(UnitMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         if 'start_allocation' in request.POST:
             task = tasks.start_allocation_task.delay(
-                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit-allocation', kwargs={'pk_unit': self.kwargs['pk_unit']})))
+                unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit_allocation', kwargs={'pk_unit': self.kwargs['pk_unit']})))
             self.save_task_to_unit(
                 task=task, task_name=models.Unit.START_ALLOCATION_TASK)
             return HttpResponseRedirect(self.request.path)

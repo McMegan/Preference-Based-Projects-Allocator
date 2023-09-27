@@ -7,7 +7,7 @@
         {% endfor %}
     {% endif %}
     {% if unit.successfully_allocated %}
-        <div class="my-4">View the allocation by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-students' unit.id %}">student</a> or by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit-projects' unit.id %}">project</a>.</div>
+        <div class="my-4">View the allocation by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit_students' unit.id %}">student</a> or by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit_projects' unit.id %}">project</a>.</div>
     {% endif %}
     <form class="my-4" method="post" enctype="multipart/form-data">{% csrf_token %}
         {% if unit.successfully_allocated %}

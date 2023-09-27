@@ -1,6 +1,20 @@
 {% extends 'core/base.html' %}
 
 {% block main %}
+
+{% if breadcrumbs %}
+<div class="my-3">
+    <nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='%236c757d'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% for breadcrumb in breadcrumbs %}
+                {% if breadcrumb.url %}
+                    <li class="breadcrumb-item {% if request.path == breadcrumb.current %}active{% endif %}" {% if request.path == breadcrumb.url %}aria-current="page"{% endif %}><a href="{{ breadcrumb.url }}">{{ breadcrumb.label }}</a></li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+</div>
+{% endif %}
 <div class="row g-5">
     <div class="col-sm-12 col-md-4 col-lg-3" id="sidebar_container">
         <div class="sticky-top z-1 py-3" style="top: 70px;">
@@ -38,7 +52,7 @@
                     <div class="d-flex gap-2 align-items-start flex-wrap">
                     {% for page_action in page_actions %}
                         {% if page_action.url %}
-                            <a class="btn btn-primary {{ page_action.classes }} {% if page_action.disabled %}disabled{% endif %}" {% if page_action.disabled %}aria-disabled="true"{% endif %} {% if request.path == page_action.url %}aria-current="page"{% endif %} href="{{ page_action.url }}">{{ page_action.label }}</a>
+                            <a class="btn btn-primary {{ page_action.classes }} {% if page_action.disabled or request.path == page_action.url %}disabled{% endif %}" {% if page_action.disabled or request.path == page_action.url %}aria-disabled="true"{% endif %} {% if request.path == page_action.url %}aria-current="page"{% endif %} href="{{ page_action.url }}">{{ page_action.label }}</a>
                         {% endif %}
                     {% endfor %}
                     </div>

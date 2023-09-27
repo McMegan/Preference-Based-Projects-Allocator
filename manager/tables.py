@@ -33,12 +33,12 @@ class ProjectsTable(Table):
         row_attrs = {'data-project-id': lambda record: record.pk}
 
     def render_identifier(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_project_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}</a>""")
 
     def render_actions(self, value, record):
         return format_html(f"""<div class="d-flex gap-2 justify-content-end">
-                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit-project-update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
-                                <a class="btn btn-danger btn-sm" href="{reverse('manager:unit-project-remove', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
+                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit_project_update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
+                                <a class="btn btn-danger btn-sm" href="{reverse('manager:unit_project_delete', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
                             </div>
                             """)
 
@@ -47,7 +47,7 @@ class ProjectsTable(Table):
         first = True
         for area in record.area.all():
             areas_html = areas_html + ('; ' if not first else '') + \
-                f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-area-detail',kwargs={'pk_unit':area.unit_id,'pk':area.id})}">{area.name}</a>"""
+                f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_area_detail',kwargs={'pk_unit':area.unit_id,'pk':area.id})}">{area.name}</a>"""
             if first:
                 first = False
         return format_html(f"""{areas_html}""")
@@ -75,7 +75,7 @@ class ProjectsAllocatedTable(ProjectsTable):
         students = ''
         for student in value.all():
             students = students + \
-                f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-student-detail', kwargs={'pk_unit': record.unit_id, 'pk': student.id})}">{student.student_id}</a>"""
+                f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_student_detail', kwargs={'pk_unit': record.unit_id, 'pk': student.id})}">{student.student_id}</a>"""
 
         return format_html(f"""<div class="d-grid gap-1">{students}</div>""")
 
@@ -98,7 +98,7 @@ class ProjectAllocatedStudentsTable(Table):
         fields = ['student_id', 'allocated_preference_rank']
 
     def render_student_id(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-student-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.student_id}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_student_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.student_id}</a>""")
 
 
 """
@@ -127,7 +127,7 @@ class StudentsTable(Table):
         row_attrs = {'data-student-id': lambda record: record.pk}
 
     def render_student_id(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-student-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.student_id}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_student_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.student_id}</a>""")
 
     def render_registered(self, value, record):
         bg_colour = 'success' if record.user_id else 'danger'
@@ -145,15 +145,15 @@ class StudentsTable(Table):
         first = True
         for area in record.area.all():
             areas_html = areas_html + ('; ' if not first else '') + \
-                f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-area-detail',kwargs={'pk_unit':area.unit_id,'pk':area.id})}">{area.name}</a>"""
+                f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_area_detail',kwargs={'pk_unit':area.unit_id,'pk':area.id})}">{area.name}</a>"""
             if first:
                 first = False
         return format_html(f"""{areas_html}""")
 
     def render_actions(self, value, record):
         return format_html(f"""<div class="d-flex flex-wrap gap-2 justify-content-end">
-                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit-student-update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
-                                <a class="btn btn-danger btn-sm" href="{reverse('manager:unit-student-remove', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
+                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit_student_update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
+                                <a class="btn btn-danger btn-sm" href="{reverse('manager:unit_student_delete', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
                             </div>
                             """)
 
@@ -170,7 +170,7 @@ class StudentsAllocatedTable(StudentsTable):
 
     def render_allocated_project(self, value, record):
         if record.allocated_project:
-            return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.allocated_project.id})}">{record.allocated_project.identifier}: {record.allocated_project.name}</a>""")
+            return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_project_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.allocated_project.id})}">{record.allocated_project.identifier}: {record.allocated_project.name}</a>""")
         else:
             return 'n/a'
 
@@ -187,7 +187,7 @@ class StudentPreferencesTable(Table):
         fields = ['rank', 'project']
 
     def render_project(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.project.unit_id, 'pk': record.project.id})}">{record.project.identifier}: {record.project.name}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_project_detail', kwargs={'pk_unit': record.project.unit_id, 'pk': record.project.id})}">{record.project.identifier}: {record.project.name}</a>""")
 
 
 """
@@ -206,10 +206,10 @@ class PreferencesTable(Table):
         fields = ['rank']
 
     def render_project__identifier(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.project.unit_id, 'pk': record.project.id})}">{record.project.identifier}: {record.project.name}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_project_detail', kwargs={'pk_unit': record.project.unit_id, 'pk': record.project.id})}">{record.project.identifier}: {record.project.name}</a>""")
 
     def render_student__student_id(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-student-detail', kwargs={'pk_unit': record.student.unit_id, 'pk': record.student.id})}">{record.student.student_id}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_student_detail', kwargs={'pk_unit': record.student.unit_id, 'pk': record.student.id})}">{record.student.student_id}</a>""")
 
 
 class PreferencesDistributionTable(Table):
@@ -221,7 +221,7 @@ class PreferencesDistributionTable(Table):
         fields = ['identifier']
 
     def render_identifier(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}: {record.name}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_project_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}: {record.name}</a>""")
 
 
 """
@@ -241,12 +241,12 @@ class AreasTable(Table):
         fields = ['name', 'projects', 'students']
 
     def render_name(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-area-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.name}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_area_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.name}</a>""")
 
     def render_actions(self, value, record):
         return format_html(f"""<div class="d-flex gap-2 justify-content-end">
-                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit-area-update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
-                                <a class="btn btn-danger btn-sm" href="{reverse('manager:unit-area-remove', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
+                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit_area_update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
+                                <a class="btn btn-danger btn-sm" href="{reverse('manager:unit_area_delete', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
                             </div>
                             """)
 
@@ -268,7 +268,7 @@ class AreaProjectsTable(Table):
         fields = ['name']
 
     def render_name(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-project-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}: {record.name}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_project_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}: {record.name}</a>""")
 
 
 class AreaStudentsTable(Table):
@@ -279,4 +279,4 @@ class AreaStudentsTable(Table):
         fields = ['student_id']
 
     def render_student_id(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit-student-detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.student_id}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_student_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.student_id}</a>""")

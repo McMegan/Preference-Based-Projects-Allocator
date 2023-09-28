@@ -68,6 +68,13 @@ class FilteredTableView(FilteredTableBase, FilterView):
     pass
 
 
+"""
+
+Unit pages mixin
+
+"""
+
+
 class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
     unit_id_arg = 'pk_unit'
     template_name = 'manager/base.html'
@@ -91,42 +98,89 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
         self.get_unit_object().task_name = task_name
         self.get_unit_object().save()
 
-    def get_context_for_sidebar(self):
+    def make_sidebar_nav(self):
         unit = self.get_unit_object()
-        nav_items = [
-            {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
-                'classes': f'fs-6'},
+        return {
+            'nav_items': [
+                {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
+                 'classes': f'fs-6'},
+                {
+                    'url': reverse('manager:unit_projects', kwargs={'pk_unit': unit.pk}),
+                    'label': f'Projects ({unit.projects_count})',
+                    'nested_items': [
+                        {'url': reverse('manager:unit_projects_new_list', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Upload Project List'},
+                        {'url': reverse('manager:unit_projects_new', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Add a Project'},
+                    ]
+                },
+                {
+                    'url': reverse('manager:unit_students', kwargs={'pk_unit': unit.pk}),
+                    'label': f'Students ({unit.students_count})', 'classes': 'text-body-emphasis',
+                    'nested_items': [
+                        {'url': reverse('manager:unit_students_new_list', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Upload Student List'},
+                        {'url': reverse('manager:unit_students_new', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Add a Student'},
+                    ]
+                },
+                {
+                    'url': reverse('manager:unit_areas', kwargs={'pk_unit': unit.pk}),
+                    'label': f'Areas ({unit.areas_count})',
+                    'nested_items': [
+                        {'url': reverse('manager:unit_areas_new', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Add an Area'},
+                    ]
+                },
+                {
+                    'url': reverse('manager:unit_preferences', kwargs={'pk_unit': unit.pk}),
+                    'label': 'Preferences',
+                    'nested_items': [
+                        {'url': reverse('manager:unit_preferences_distribution', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Project Popularity'},
+                        {'url': reverse('manager:unit_preferences_new_list', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Upload Preference List'},
+                    ]
+                },
+                {'url': reverse('manager:unit_allocation', kwargs={'pk_unit': unit.pk}),
+                 'label': 'Allocation'}
+            ]
+        }
+        return {
+            'nav_items': [
+                {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
+                 'classes': f'fs-6'},
 
-            {'url': reverse('manager:unit_projects', kwargs={'pk_unit': unit.pk}),
-             'label': f'Projects ({unit.projects_count})'},
-            {'url': reverse('manager:unit_projects_new_list', kwargs={'pk_unit': unit.pk}),
-             'label': 'Upload Project List', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit_projects_new', kwargs={'pk_unit': unit.pk}),
-             'label': 'Add a Project', 'classes': 'ms-3'},
+                {'url': reverse('manager:unit_projects', kwargs={'pk_unit': unit.pk}),
+                 'label': f'Projects ({unit.projects_count})'},
+                {'url': reverse('manager:unit_projects_new_list', kwargs={'pk_unit': unit.pk}),
+                 'label': 'Upload Project List'},
+                {'url': reverse('manager:unit_projects_new', kwargs={'pk_unit': unit.pk}),
+                 'label': 'Add a Project'},
 
-            {'url': reverse('manager:unit_students', kwargs={'pk_unit': unit.pk}),
-             'label': f'Students ({unit.students_count})'},
-            {'url': reverse('manager:unit_students_new_list', kwargs={'pk_unit': unit.pk}),
-             'label': 'Upload Student List', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit_students_new', kwargs={'pk_unit': unit.pk}),
-             'label': 'Add a Student', 'classes': 'ms-3'},
+                {'url': reverse('manager:unit_students', kwargs={'pk_unit': unit.pk}),
+                 'label': f'Students ({unit.students_count})', 'classes': 'text-body-emphasis'},
+                {'url': reverse('manager:unit_students_new_list', kwargs={'pk_unit': unit.pk}),
+                 'label': 'Upload Student List'},
+                {'url': reverse('manager:unit_students_new', kwargs={'pk_unit': unit.pk}),
+                 'label': 'Add a Student'},
 
-            {'url': reverse('manager:unit_areas', kwargs={'pk_unit': unit.pk}),
-             'label': f'Areas ({unit.areas_count})'},
-            {'url': reverse('manager:unit_areas_new', kwargs={'pk_unit': unit.pk}),
-             'label': 'Add an Area', 'classes': 'ms-3'},
+                {'url': reverse('manager:unit_areas', kwargs={'pk_unit': unit.pk}),
+                 'label': f'Areas ({unit.areas_count})'},
+                {'url': reverse('manager:unit_areas_new', kwargs={'pk_unit': unit.pk}),
+                 'label': 'Add an Area'},
 
-            {'url': reverse('manager:unit_preferences', kwargs={'pk_unit': unit.pk}),
-             'label': 'Preferences'},
-            {'url': reverse('manager:unit_preferences_distribution', kwargs={'pk_unit': unit.pk}),
-             'label': 'Project Popularity', 'classes': 'ms-3'},
-            {'url': reverse('manager:unit_preferences_new_list', kwargs={'pk_unit': unit.pk}),
-             'label': 'Upload Preference List', 'classes': 'ms-3'},
+                {'url': reverse('manager:unit_preferences', kwargs={'pk_unit': unit.pk}),
+                 'label': 'Preferences'},
+                {'url': reverse('manager:unit_preferences_distribution', kwargs={'pk_unit': unit.pk}),
+                 'label': 'Project Popularity'},
+                {'url': reverse('manager:unit_preferences_new_list', kwargs={'pk_unit': unit.pk}),
+                 'label': 'Upload Preference List'},
 
-            {'url': reverse('manager:unit_allocation', kwargs={'pk_unit': unit.pk}),
-             'label': 'Allocation'}
-        ]
-        return {'nav_items': nav_items}
+                {'url': reverse('manager:unit_allocation', kwargs={'pk_unit': unit.pk}),
+                 'label': 'Allocation'}
+            ]
+        }
 
     def get_page_title(self):
         if not hasattr(self, 'page_title'):
@@ -197,7 +251,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), **
-                self.get_context_for_sidebar(), 'unit': self.get_unit_object(), 'page_title': self.get_page_title(), 'page_subtitle': self.get_page_subtitle(), 'page_title_url': self.get_page_title_url(), 'page_info': self.get_page_info(), 'page_info_column': self.page_info_column if hasattr(self, 'page_info_column') else False, 'page_warnings': self.get_page_warnings(), 'page_actions': self.get_page_actions(), 'breadcrumbs': self.make_breadcrumbs()}
+                self.make_sidebar_nav(), 'unit': self.get_unit_object(), 'page_title': self.get_page_title(), 'page_subtitle': self.get_page_subtitle(), 'page_title_url': self.get_page_title_url(), 'page_info': self.get_page_info(), 'page_info_column': self.page_info_column if hasattr(self, 'page_info_column') else False, 'page_warnings': self.get_page_warnings(), 'page_actions': self.get_page_actions(), 'breadcrumbs': self.make_breadcrumbs()}
 
     def unit_managed_by_user(self):
         unit = self.get_unit_object()
@@ -225,7 +279,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                     resolved = resolve(path)
                     match resolved.url_name:
                         case 'index':
-                            label = 'Unit List'
+                            label = 'Units'
                         case 'unit':
                             label = self.get_unit_object()
                         case 'unit_projects':
@@ -241,11 +295,17 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                         case 'unit_preferences_distribution':
                             label = 'Project Popularity'
                         case 'unit_project_detail':
-                            label = self.get_unit_object().projects.get(pk=resolved.kwargs.get('pk'))
+                            project = self.get_unit_object().projects.filter(pk=resolved.kwargs.get('pk'))
+                            if project.exists():
+                                label = f'Project {project.first().identifier}'
                         case 'unit_student_detail':
-                            label = self.get_unit_object().students.get(pk=resolved.kwargs.get('pk'))
+                            student = self.get_unit_object().students.filter(pk=resolved.kwargs.get('pk'))
+                            if student.exists():
+                                label = student.first()
                         case 'unit_area_detail':
-                            label = self.get_unit_object().areas.get(pk=resolved.kwargs.get('pk'))
+                            area = self.get_unit_object().areas.filter(pk=resolved.kwargs.get('pk'))
+                            if area.exists():
+                                label = area.first()
                         case _:
                             if 'update' in resolved.url_name or 'delete' in resolved.url_name or 'new' in resolved.url_name:
                                 label = self.get_page_subtitle()
@@ -1234,86 +1294,52 @@ class AllocationView(UnitMixin, TemplateView):
     template_name = 'manager/allocation.html'
     page_title = 'Allocation'
 
-    def check_can_start_allocation(self):
+    def get_context_data(self, **kwargs):
         unit = self.get_unit_object()
+        allocation_warnings = []
         can_start_allocation = True
-        if unit.is_allocating():
-            self.allocation_warnings.append(
-                {'type': 'secondary', 'content': format_html("""<p>The unit is currently allocating students to projects. Feel free to refresh or leave the page.</p><p class="mb-0">You should recieve an email once the allocation is completed.</p>""")})
-            can_start_allocation = False
         if unit.projects_count == 0:
             can_start_allocation = False
-            self.allocation_warnings.append(
-                {'type': 'danger', 'content': 'You must add projects to the unit before it can be allocated.'})
+            allocation_warnings.append(
+                'You must add projects to the unit before it can be allocated.')
         if unit.students_count == 0:
             can_start_allocation = False
-            self.allocation_warnings.append(
-                {'type': 'danger', 'content': 'You must add students to the unit before it can be allocated.'})
+            allocation_warnings.append(
+                'You must add students to the unit before it can be allocated.')
         if not unit.preference_submission_set():
             can_start_allocation = False
-            self.allocation_warnings.append(
-                {'type': 'danger', 'content': 'You must set a preference timeframe for the unit before it can be allocated.'})
+            allocation_warnings.append(
+                'You must set a preference timeframe for the unit before it can be allocated.')
         elif not unit.preference_submission_ended():
             can_start_allocation = False
-            self.allocation_warnings.append(
-                {'type': 'danger', 'content': 'The preference submission timeframe must end before the unit can be allocated.'})
+            allocation_warnings.append(
+                'The preference submission timeframe must end before the unit can be allocated.')
         if unit.get_too_few_students():
             can_start_allocation = False
-            self.allocation_warnings.append(
-                {'type': 'danger', 'content': format_html(f"""<p>There are too few students enrolled in the unit compared to the minimum project spaces.</p>
+            allocation_warnings.append(format_html(f"""<p>There are too few students enrolled in the unit compared to the minimum project spaces.</p>
                     <p>
-                        <div><span class="fw-semibold">Students:</span> { unit.students_count }</div>
-                        <div><span class="fw-semibold">Minimum Spaces:</span> { unit.get_min_project_spaces() }</div>
+                        <span class="fw-semibold">Students:</span> { unit.students_count }, <span class="fw-semibold">Minimum Spaces:</span> { unit.get_min_project_spaces() }
                     </p>
                     <p class="mb-0">To fix this:</p>
                     <ul class="my-0">
                         <li>change the minimum group size for a project, or</li>
                         <li>add students to the student list.</li>
-                    </ul>""")})
+                    </ul>"""))
         if unit.get_too_many_students():
             can_start_allocation = False
-            self.allocation_warnings.append(
-                {'type': 'danger', 'content': format_html(f"""<p>There are too many students enrolled in the unit compared to the maximum project spaces.</p>
+            allocation_warnings.append(format_html(f"""<p>There are too many students enrolled in the unit compared to the maximum project spaces.</p>
                     <p>
-                        <div><span class="fw-semibold">Students:</span> {unit.students_count}</div>
-                        <div><span class="fw-semibold">Maximum Spaces:</span> {unit.get_max_project_spaces()}</div>
+                        <span class="fw-semibold">Students:</span> {unit.students_count}, <span class="fw-semibold">Maximum Spaces:</span> {unit.get_max_project_spaces()}
                     </p>
                     <p class="mb-0">To fix this:</p>
                     <ul class="my-0">
                         <li>change the maximum group size for a project, or</li>
                         <li>add projects to the project list, or</li>
                         <li>remove students from the student list.</li>
-                    </ul>""")})
-        return can_start_allocation
-
-    def get_context_data(self, **kwargs):
-        self.allocation_warnings = []
-        return {**super().get_context_data(**kwargs),  'can_start_allocation': self.check_can_start_allocation(), 'allocation_warnings': self.allocation_warnings}
+                    </ul>"""))
+        return {**super().get_context_data(**kwargs),  'can_start_allocation': can_start_allocation, 'allocation_warnings': allocation_warnings}
 
     page_info_column = True
-
-    def get_page_info(self):
-        unit = self.get_unit_object()
-
-        students_list = models.Student.objects.filter(
-            unit=self.kwargs['pk_unit'])
-        students_count = students_list.count()
-
-        if students_count == 0:
-            return [
-                {'label': 'Total No. Students', 'content': unit.students_count},
-            ]
-
-        submitted_prefs_count = students_list.annotate(project_preference_count=Count(
-            'project_preferences')).filter(project_preference_count__gt=0).count()
-        submitted_prefs_perc = round(
-            (submitted_prefs_count/students_count)*100, 1)
-
-        return [
-            {'label': 'Total No. Students', 'content': unit.students_count},
-            {'label': 'Percentage of Students who have Submitted Preferences',
-                'content': f'{ submitted_prefs_perc }% ({ submitted_prefs_count } Students)'},
-        ]
 
     def get_page_info(self):
         unit = self.get_unit_object()

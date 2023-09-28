@@ -655,7 +655,7 @@ class PreferenceListForm(UnitKwargMixin, forms.Form):
                 <li>If a student has multiple preferences with the same rank, only the first instance will be retained.</li>
                 <li>It may take a few moments for the preferences in the uploaded file to show up in the preferences list.</li>
             </ul>
-            <div class="alert alert-danger">Uploading a list of preferences will override all of the current preferences.</div>
+            <div class="alert alert-danger">Uploading a list of preferences will override all of the preferences for the current unit.</div>
         """)
     )
 

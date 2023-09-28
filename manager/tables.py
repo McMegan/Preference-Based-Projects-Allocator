@@ -9,8 +9,13 @@ from core import models
 
 class Table(tables.Table):
     class Meta:
-        attrs = {'class': 'table table-striped align-middle'}
-        empty_text = 'No Results'
+        attrs = {
+            'class': 'table table-striped align-middle',
+            'thead': {
+                'style': 'font-size: 0.85em;'
+            }
+        }
+        empty_text = '—'
 
 
 """
@@ -25,6 +30,8 @@ class ProjectsTable(Table):
     name = tables.Column(attrs={'td': {'style': 'width: 99%;'}})
     min_students = tables.Column(verbose_name='Min. Group Size')
     max_students = tables.Column(verbose_name='Max. Group Size')
+    area = tables.Column(verbose_name='Area', orderable=False, attrs={
+                         'td': {'style': 'font-size: 0.8em;'}})
     actions = tables.Column(empty_values=(), orderable=False, verbose_name='')
 
     class Meta(Table.Meta):
@@ -35,14 +42,9 @@ class ProjectsTable(Table):
     def render_identifier(self, value, record):
         return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_project_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}</a>""")
 
-    def render_actions(self, value, record):
-        return format_html(f"""<div class="d-flex gap-2 justify-content-end">
-                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit_project_update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
-                                <a class="btn btn-danger btn-sm" href="{reverse('manager:unit_project_delete', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
-                            </div>
-                            """)
-
     def render_area(self, value, record):
+        if not record.area.exists():
+            return '—'
         areas_html = ''
         first = True
         for area in record.area.all():
@@ -52,12 +54,19 @@ class ProjectsTable(Table):
                 first = False
         return format_html(f"""{areas_html}""")
 
+    def render_actions(self, value, record):
+        return format_html(f"""<div class="d-flex flex-wrap gap-2 justify-content-end">
+                                <a class="btn btn-primary btn-sm" href="{reverse('manager:unit_project_update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
+                                <a class="btn btn-danger btn-sm" href="{reverse('manager:unit_project_delete', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
+                            </div>
+                            """)
+
 
 class ProjectsAllocatedTable(ProjectsTable):
     allocated_students_count = tables.Column(
         empty_values=(), verbose_name='Allocated Group Size')
-    avg_allocated_pref = tables.Column()
-    # allocated_students = tables.Column(empty_values=(), orderable=False, verbose_name='Allocated Students')
+    avg_allocated_pref = tables.Column(
+        verbose_name='Avg. Allocated Preference')
 
     class Meta(ProjectsTable.Meta):
         sequence = ('identifier', 'name', 'min_students', 'max_students', 'area',
@@ -112,11 +121,14 @@ class StudentsTable(Table):
     student_id = tables.Column(
         accessor='student_id', verbose_name='ID')
     name = tables.Column(
-        accessor='name', empty_values=(), verbose_name='Name')
+        accessor='name', empty_values=(), verbose_name='Name', attrs={
+            'td': {'style': 'font-size: 0.8em;'}})
     registered = tables.Column(
         accessor='user', empty_values=(), verbose_name='Registered')
     preferences = tables.Column(
         accessor='project_preferences', empty_values=(), verbose_name='Submitted Preferences')
+    area = tables.Column(verbose_name='Area', orderable=False, attrs={
+                         'td': {'style': 'font-size: 0.8em;'}})
     actions = tables.Column(empty_values=(), orderable=False, verbose_name='')
 
     class Meta(Table.Meta):
@@ -128,6 +140,9 @@ class StudentsTable(Table):
 
     def render_student_id(self, value, record):
         return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_student_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.student_id}</a>""")
+
+    def render_name(self, value, record):
+        return value if value else '—'
 
     def render_registered(self, value, record):
         bg_colour = 'success' if record.user_id else 'danger'
@@ -141,6 +156,8 @@ class StudentsTable(Table):
         return format_html(f"""<span class ="badge rounded-pill text-bg-{bg_colour}"><i class="bi bi-{icon_name}-lg"></i></span>""")
 
     def render_area(self, value, record):
+        if not record.area.exists():
+            return '—'
         areas_html = ''
         first = True
         for area in record.area.all():
@@ -244,7 +261,7 @@ class AreasTable(Table):
         return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_area_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.name}</a>""")
 
     def render_actions(self, value, record):
-        return format_html(f"""<div class="d-flex gap-2 justify-content-end">
+        return format_html(f"""<div class="d-flex flex-wrap gap-2 justify-content-end">
                                 <a class="btn btn-primary btn-sm" href="{reverse('manager:unit_area_update', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Edit</a>
                                 <a class="btn btn-danger btn-sm" href="{reverse('manager:unit_area_delete', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">Remove</a>
                             </div>

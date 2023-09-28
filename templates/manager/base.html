@@ -8,7 +8,9 @@
         <ol class="breadcrumb">
             {% for breadcrumb in breadcrumbs %}
                 {% if breadcrumb.url %}
-                    <li class="breadcrumb-item {% if request.path == breadcrumb.current %}active{% endif %}" {% if request.path == breadcrumb.url %}aria-current="page"{% endif %}><a href="{{ breadcrumb.url }}">{{ breadcrumb.label }}</a></li>
+                    <li class="breadcrumb-item {% if request.path == breadcrumb.current %}active{% endif %}" {% if request.path == breadcrumb.url %}aria-current="page"{% endif %}>
+                        <a class="link-offset-4 link-offset-4-hover link-underline link-secondary link-underline-opacity-0 link-underline-opacity-75-hover" href="{{ breadcrumb.url }}">{{ breadcrumb.label }}</a>
+                    </li>
                 {% endif %}
             {% endfor %}
         </ol>
@@ -16,6 +18,7 @@
 </div>
 {% endif %}
 <div class="row g-5">
+    {% if nav_items %}
     <div class="col-sm-12 col-md-4 col-lg-3" id="sidebar_container">
         <div class="sticky-top z-1 py-3" style="top: 70px;">
             <div class="d-grid bg-body-tertiary border rounded">
@@ -30,6 +33,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
     <div class="col">
         <div class="container-fluid px-0 py-3">
             {% if page_warnings %}

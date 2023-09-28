@@ -1,13 +1,5 @@
 <ul class="navbar-nav">
-    {% if nav_items %}
     {% for nav_item in nav_items %}
-    <li class="nav-item">
-        {% if nav_item.url %}
-            <a href="{{ nav_item.url }}" class="nav-link {{ nav_item.classes }} {% if request.path == nav_item.url %}active fw-bold{% endif %} {% if nav_item.disabled %}disabled opacity-50{% endif %}" {% if nav_item.disabled %}aria-disabled="true"{% endif %} {% if request.path == nav_item.url %}aria-current="page"{% endif %}>{{ nav_item.label }}</a>
-        {% else %}
-            <span class="nav-link {{ nav_item.classes }}">{{ nav_item.label }}</span>
-        {% endif %}
-    </li>
+        {% include 'manager/base_sidebar_nav_item.html' %}
     {% endfor %}
-    {% endif %}
 </ul>

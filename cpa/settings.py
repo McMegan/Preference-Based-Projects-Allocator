@@ -158,6 +158,5 @@ BROKER_CONNECTION_RETRY = True
 # Tables
 DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5-responsive.html'
 
-
 # EMAIL BACKEND
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

@@ -254,8 +254,6 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                     if label != '':
                         breadcrumbs = breadcrumbs + [{'url': reverse(
                             f'{resolved.app_name}:{resolved.url_name}' if resolved.app_name else resolved.url_name, kwargs=resolved.kwargs), 'label': label}]
-                    else:
-                        print(resolved.url_name)
                 except Resolver404:
                     """Skip segment of path"""
         return breadcrumbs

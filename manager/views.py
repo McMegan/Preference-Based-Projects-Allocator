@@ -208,17 +208,17 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
         if not self.unit.task_ready():
             warning_message = ''
             if self.unit.task_name == models.Unit.START_ALLOCATION_TASK:
-                warning_message = 'This unit is currently being allocated. You can not make changes to the unit while it is allocating.'
+                warning_message = 'This unit is currently being allocated. You can not make changes to the unit while it is allocating. Please refresh the page to check if the allocation has been completed.'
             elif self.unit.task_name == models.Unit.EMAIL_ALLOCATION_RESULTS_TASK:
-                warning_message = 'The allocation results for this unit are currently being emailed. You can not make changes to the unit while this is happening.'
+                warning_message = 'The allocation results for this unit are currently being emailed. You can not make changes to the unit while this is happening. Please refresh the page to check if the email of the allocation results has been completed.'
             elif self.unit.task_name == models.Unit.EMAIL_PREFERENCES_TASK:
-                warning_message = 'The preference list for this unit is currently being emailed. You can not make changes to the unit while this is happening.'
+                warning_message = 'The preference list for this unit is currently being emailed. You can not make changes to the unit while this is happening.  Please refresh the page to check if the email of the preference list has been completed.'
             elif self.unit.task_name == models.Unit.UPLOAD_PROJECTS_TASK:
-                warning_message = 'The project list is currently being uploaded to this unit. You can not make changes to the unit while this is happening.'
+                warning_message = 'The project list is currently being uploaded to this unit. You can not make changes to the unit while this is happening. Please refresh the page to check if the project list upload has been completed.'
             elif self.unit.task_name == models.Unit.UPLOAD_STUDENTS_TASK:
-                warning_message = 'The student list is currently being uploaded to this unit. You can not make changes to the unit while this is happening.'
+                warning_message = 'The student list is currently being uploaded to this unit. You can not make changes to the unit while this is happening. Please refresh the page to check if the student list upload has been completed.'
             elif self.unit.task_name == models.Unit.UPLOAD_PREFERENCES_TASK:
-                warning_message = 'The preference list is currently being uploaded to this unit. You can not make changes to the unit while this is happening.'
+                warning_message = 'The preference list is currently being uploaded to this unit. You can not make changes to the unit while this is happening. Please refresh the page to check if the preference list upload has been completed.'
             self.warnings.append(
                 {'type': 'danger', 'content': warning_message})
         if not unit.is_active:
@@ -1306,11 +1306,7 @@ class AllocationView(UnitMixin, TemplateView):
             can_start_allocation = False
             allocation_warnings.append(
                 'You must add students to the unit before it can be allocated.')
-        if not unit.preference_submission_set():
-            can_start_allocation = False
-            allocation_warnings.append(
-                'You must set a preference timeframe for the unit before it can be allocated.')
-        elif not unit.preference_submission_ended():
+        elif unit.preference_submission_set() and not unit.preference_submission_ended():
             can_start_allocation = False
             allocation_warnings.append(
                 'The preference submission timeframe must end before the unit can be allocated.')

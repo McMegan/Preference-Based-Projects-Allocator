@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import path, re_path
 
 from . import views
@@ -67,4 +69,4 @@ urlpatterns = [
     # Allocation Views
     re_path(r'^units/(?P<pk_unit>[0-9]+)/allocation/$',
             views.AllocationView.as_view(), name='unit_allocation')
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

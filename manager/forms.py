@@ -4,13 +4,13 @@ import os
 
 from django import forms
 from django.db.models import Q, ExpressionWrapper, BooleanField
+from django.templatetags.static import static
+
 
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
-
-from celery.result import AsyncResult
 
 from core import models
 
@@ -279,6 +279,11 @@ class StudentListForm(UnitKwargMixin, forms.Form):
     submit_label = 'Upload List of Students to Unit'
     form_layout = Layout(
         'file',
+        Div(
+            HTML(
+                f'<a style="font-size: 0.8em;" class="d-flex gap-2 link-offset-4 link-offset-4-hover link-underline link-secondary link-underline-opacity-0 link-underline-opacity-75-hover" href="{static("templates/CPA-Student-List-Template.csv")}"><i class="bi bi-download"></i><span>Student List Template (name and area columns are optional)</span></a>'),
+            css_class='m-3'
+        ),
         'list_override',
         FloatingField('student_id_column'),
         FloatingField('student_name_column'),
@@ -466,6 +471,11 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
     submit_label = 'Upload List of Projects to Unit'
     form_layout = Layout(
         'file',
+        Div(
+            HTML(
+                f'<a style="font-size: 0.8em;" class="d-flex gap-2 link-offset-4 link-offset-4-hover link-underline link-secondary link-underline-opacity-0 link-underline-opacity-75-hover" href="{static("templates/CPA-Project-List-Template.csv")}"><i class="bi bi-download"></i><span>Project List Template (description and area columns are optional)</span></a>'),
+            css_class='m-3'
+        ),
         'list_override',
         FloatingField('identifier_column'),
         FloatingField('name_column'),
@@ -645,6 +655,11 @@ class PreferenceListForm(UnitKwargMixin, forms.Form):
     submit_label = 'Upload List of Preferences to Unit'
     form_layout = Layout(
         'file',
+        Div(
+            HTML(
+                f'<a style="font-size: 0.8em;" class="d-flex gap-2 link-offset-4 link-offset-4-hover link-underline link-secondary link-underline-opacity-0 link-underline-opacity-75-hover" href="{static("templates/CPA-Preference-List-Template.csv")}"><i class="bi bi-download"></i><span>Preference List Template</span></a>'),
+            css_class='m-3'
+        ),
         FloatingField('preference_rank_column'),
         FloatingField('student_id_column'),
         FloatingField('project_identifier_column'),

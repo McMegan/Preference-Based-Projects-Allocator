@@ -146,41 +146,6 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                  'label': 'Allocation'}
             ]
         }
-        return {
-            'nav_items': [
-                {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
-                 'classes': f'fs-6'},
-
-                {'url': reverse('manager:unit_projects', kwargs={'pk_unit': unit.pk}),
-                 'label': f'Projects ({unit.projects_count})'},
-                {'url': reverse('manager:unit_projects_new_list', kwargs={'pk_unit': unit.pk}),
-                 'label': 'Upload Project List'},
-                {'url': reverse('manager:unit_projects_new', kwargs={'pk_unit': unit.pk}),
-                 'label': 'Add a Project'},
-
-                {'url': reverse('manager:unit_students', kwargs={'pk_unit': unit.pk}),
-                 'label': f'Students ({unit.students_count})', 'classes': 'text-body-emphasis'},
-                {'url': reverse('manager:unit_students_new_list', kwargs={'pk_unit': unit.pk}),
-                 'label': 'Upload Student List'},
-                {'url': reverse('manager:unit_students_new', kwargs={'pk_unit': unit.pk}),
-                 'label': 'Add a Student'},
-
-                {'url': reverse('manager:unit_areas', kwargs={'pk_unit': unit.pk}),
-                 'label': f'Areas ({unit.areas_count})'},
-                {'url': reverse('manager:unit_areas_new', kwargs={'pk_unit': unit.pk}),
-                 'label': 'Add an Area'},
-
-                {'url': reverse('manager:unit_preferences', kwargs={'pk_unit': unit.pk}),
-                 'label': 'Preferences'},
-                {'url': reverse('manager:unit_preferences_distribution', kwargs={'pk_unit': unit.pk}),
-                 'label': 'Project Popularity'},
-                {'url': reverse('manager:unit_preferences_new_list', kwargs={'pk_unit': unit.pk}),
-                 'label': 'Upload Preference List'},
-
-                {'url': reverse('manager:unit_allocation', kwargs={'pk_unit': unit.pk}),
-                 'label': 'Allocation'}
-            ]
-        }
 
     def get_page_title(self):
         if not hasattr(self, 'page_title'):

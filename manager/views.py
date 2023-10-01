@@ -106,7 +106,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                  'classes': f'fs-6'},
                 {
                     'url': reverse('manager:unit_projects', kwargs={'pk_unit': unit.pk}),
-                    'label': f'Projects ({unit.projects_count})',
+                    'label': f'Project List ({unit.projects_count})',
                     'nested_items': [
                         {'url': reverse('manager:unit_projects_new_list', kwargs={'pk_unit': unit.pk}),
                          'label': 'Upload Project List'},
@@ -116,7 +116,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                 },
                 {
                     'url': reverse('manager:unit_students', kwargs={'pk_unit': unit.pk}),
-                    'label': f'Students ({unit.students_count})', 'classes': 'text-body-emphasis',
+                    'label': f'Student List ({unit.students_count})', 'classes': 'text-body-emphasis',
                     'nested_items': [
                         {'url': reverse('manager:unit_students_new_list', kwargs={'pk_unit': unit.pk}),
                          'label': 'Upload Student List'},
@@ -126,7 +126,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                 },
                 {
                     'url': reverse('manager:unit_areas', kwargs={'pk_unit': unit.pk}),
-                    'label': f'Areas ({unit.areas_count})',
+                    'label': f'Area List ({unit.areas_count})',
                     'nested_items': [
                         {'url': reverse('manager:unit_areas_new', kwargs={'pk_unit': unit.pk}),
                          'label': 'Add an Area'},
@@ -134,7 +134,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                 },
                 {
                     'url': reverse('manager:unit_preferences', kwargs={'pk_unit': unit.pk}),
-                    'label': 'Preferences',
+                    'label': 'Preference List',
                     'nested_items': [
                         {'url': reverse('manager:unit_preferences_distribution', kwargs={'pk_unit': unit.pk}),
                          'label': 'Project Popularity'},
@@ -385,7 +385,9 @@ class UnitPageMixin(UnitMixin):
         allocated_info = []
         if unit.is_allocated():
             allocated_info = [
-
+                {'label': 'Allocation Info', 'classes': 'fs-5'},
+                {'label': 'Allocation Status',
+                 'content': unit.get_allocation_descriptive(), 'classes': 'align-items-center', 'content_classes': f'rounded bg-{"success" if unit.successfully_allocated() else "danger"}-subtle border border-{"success" if unit.successfully_allocated() else "danger"}-subtle p-1 px-2'}
             ]
         return [
             {'label': 'Unit Code', 'content': unit.code},
@@ -394,6 +396,7 @@ class UnitPageMixin(UnitMixin):
             {'label': 'Semester', 'content': unit.semester},
             {'label': 'Is Active/Current?', 'content': render_exists_badge(
                 unit.is_active)},
+            {'label': 'Preference Submission Settings', 'classes': 'fs-5'},
             {
                 'label': 'Preference Submission Timeframe',
                 'content': f'{ unit.get_preference_submission_start() if unit.preference_submission_start else "—" } - { unit.get_preference_submission_end() if unit.preference_submission_end else "—" }' if unit.preference_submission_start or unit.preference_submission_end else '—'
@@ -404,6 +407,11 @@ class UnitPageMixin(UnitMixin):
                 'content': unit.maximum_preference_limit if unit.maximum_preference_limit else "—"},
             {'label': 'Limiting Preference Selection by Area', 'content': render_exists_badge(
                 unit.limit_by_major)},
+            {'label': 'Unit Status', 'classes': 'fs-5'},
+            {'label': 'Projects Loaded', 'content': render_exists_badge(
+                unit.projects.exists())},
+            {'label': 'Students Loaded', 'content': render_exists_badge(
+                unit.students.exists())},
         ] + allocated_info
 
 

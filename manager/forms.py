@@ -72,8 +72,11 @@ class UnitKwargMixin:
             f"""<a class="btn btn-secondary" href="{self.cancel_url}">Cancel</a>""")
         self.form_actions = FormActions(self.submit_button, self.cancel_button)
 
-        self.helper.layout = Layout(self.form_layout, self.form_actions) if hasattr(
-            self, 'form_layout') and self.form_layout else Layout(self.form_actions)
+        self.helper.layout = Layout(self.get_form_layout(), self.form_actions)
+
+    def get_form_layout(self):
+        return self.form_layout if hasattr(
+            self, 'form_layout') and self.form_layout else None
 
     def init_fields(self):
         pass
@@ -109,25 +112,6 @@ unit_form_layout_main = Layout(
     FloatingField('semester'),
     'is_active',
 )
-unit_form_layout_allocator = Layout(
-    Fieldset(
-        'Allocator Settings',
-        Div(
-            Div('preference_submission_start',
-                css_class='col preference_submission_timeframe'),
-            Div('preference_submission_end',
-                css_class='col preference_submission_timeframe'),
-            css_class='row'
-        ),
-        Div(
-            Div('minimum_preference_limit',
-                css_class='col'),
-            Div('maximum_preference_limit',
-                css_class='col'),
-            css_class='row'
-        ),
-    ),
-)
 
 
 class UnitCreateForm(forms.ModelForm):
@@ -158,22 +142,59 @@ class UnitUpdateForm(UnitKwargMixin, UnitCreateForm):
         Form for updating a unit
     """
     submit_label = 'Save Unit'
-    form_layout = Layout(
-        unit_form_layout_main,
-        unit_form_layout_allocator,
-        'limit_by_major',
-    )
 
-    preference_submission_start = SplitDateTimeField(required=False)
-    preference_submission_end = SplitDateTimeField(required=False)
+    preference_submission_start = SplitDateTimeField(
+        required=False, label='Start')
+    preference_submission_end = SplitDateTimeField(required=False, label='End')
 
     minimum_preference_limit = forms.IntegerField(
-        required=False, help_text='Leave blank or set to 0 to have no minimum limit on the number of preferences students can submit.')
+        required=False, label='Minimum')
     maximum_preference_limit = forms.IntegerField(
-        required=False, help_text='Leave blank or set to 0 to have no maximum limit on the number of preferences students can submit.')
+        required=False, label='Maximum')
 
     limit_by_major = forms.BooleanField(
         label='Limit project preference selection by major/area', required=False, help_text='This will limit each students project preference options to those which match the students area. If a student has no area, all projects will be displayed. If a project has no area, it will be displayed to all students.')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        num_projects = self.unit.projects.count()
+        if num_projects == 0:
+            self.fields.get('minimum_preference_limit').disabled = True
+            self.fields.get('maximum_preference_limit').disabled = True
+
+    def get_form_layout(self):
+        num_projects = self.unit.projects.count()
+        return Layout(
+            unit_form_layout_main,
+            Fieldset(
+                'Preference Submission Timeframe',
+                Div(
+                    Div('preference_submission_start',
+                        css_class='col preference_submission_timeframe'),
+                    Div('preference_submission_end',
+                        css_class='col preference_submission_timeframe'),
+                    css_class='row'
+                ),
+            ),
+            Fieldset(
+                'Preference Limit',
+                HTML(
+                    '<div class="alert alert-warning">You must add projects to the unit before the minimum and maximum preference limits can be set.</div>') if num_projects == 0 else None,
+                Div(
+                    Div('minimum_preference_limit',
+                        css_class='col'),
+                    Div('maximum_preference_limit',
+                        css_class='col'),
+                    css_class='row'
+                ),
+                HTML('<div id="hint_id_preference_limit" class="form-text mt-0 mb-3">Leave blank or set to 0 to have no minimum/maximum limit on the number of preferences students can submit.</div>')
+            ),
+            Fieldset(
+                'Other Preference Submission Settings',
+                'limit_by_major',
+            ),
+        )
 
     def clean(self):
         num_projects = self.unit.projects.count()

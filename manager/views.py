@@ -394,12 +394,14 @@ class UnitPageMixin(UnitMixin):
             {'label': 'Semester', 'content': unit.semester},
             {'label': 'Is Active/Current?', 'content': render_exists_badge(
                 unit.is_active)},
-            {'label': 'Preference Submission Timeframe',
-                'content': f'{ unit.get_preference_submission_start() if unit.preference_submission_start else "Not Set" } - { unit.get_preference_submission_end() if unit.preference_submission_end else "Not Set" }'},
+            {
+                'label': 'Preference Submission Timeframe',
+                'content': f'{ unit.get_preference_submission_start() if unit.preference_submission_start else "—" } - { unit.get_preference_submission_end() if unit.preference_submission_end else "—" }' if unit.preference_submission_start or unit.preference_submission_end else '—'
+            },
             {'label': 'Minimum Preference Limit',
-                'content': unit.minimum_preference_limit if unit.minimum_preference_limit else "Not Set"},
+                'content': unit.minimum_preference_limit if unit.minimum_preference_limit else "—"},
             {'label': 'Maximum Preference Limit',
-                'content': unit.maximum_preference_limit if unit.maximum_preference_limit else "Not Set"},
+                'content': unit.maximum_preference_limit if unit.maximum_preference_limit else "—"},
             {'label': 'Limiting Preference Selection by Area', 'content': render_exists_badge(
                 unit.limit_by_major)},
         ] + allocated_info

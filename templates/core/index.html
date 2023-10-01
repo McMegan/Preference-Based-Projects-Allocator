@@ -57,6 +57,7 @@
                     </ul>
                     {% if user.is_manager and request.path == manager_index_url %}
                         <div class="card-footer">
+                            <a href="{% url 'manager:unit_update' unit.id %}" class="btn btn-primary btn-sm">Edit</a>
                             <a href="{% url 'manager:unit_delete' unit.id %}" class="btn btn-danger btn-sm">Delete</a>
                         </div>
                     {% endif %}

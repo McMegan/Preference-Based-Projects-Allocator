@@ -9,48 +9,45 @@
         <td class="preference_rank text-center">{{ rank }}</td>
     {% endif %}
 
-    <td><div class="d-flex align-items-center justify-content-between">
-        <span><span class="project_identifier fw-bold">{{ project.identifier }}</span>: <span class="project_name">{{ project.name }}</span></span>
-        {% if project.description %}<button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button>{% endif %}
-    </div></td>
-
-    {% if not in_preference_table %}
-    <td class="project_capacity">{{ project.min_students }} - {{ project.max_students }}</td>
-    {% endif %}
+    <th class="project_identifier">{{ project.identifier }}</th>
+    <td class="project_name">{{ project.name }}</td>
+    <td><button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button></td>
 
     <td>
         <div class="d-flex gap-1">
-            <button type="button" onclick="remove_project_from_prefs({{ project.id }})" class="remove_project_from_prefs btn btn-sm p-1 {% if not project in preferred_projects %}disabled d-none{% endif %}" {% if not project in preferred_projects %}aria-disabled="true"{% endif %}><i class="bi bi-x-lg"></i></button>
-            <button type="button" class="add_project_to_prefs border-0 btn btn-sm p-1 {% if project in preferred_projects %}disabled d-none{% endif %}"{% if project in preferred_projects %}aria-disabled="true"{% endif %} title="Add to Preferences" onclick="add_project_to_prefs({{ project.id }})"><i class="bi bi-plus-lg"></i></button>
+            <button type="button" title="Remove from preferences" onclick="remove_project_from_prefs({{ project.id }})" class="remove_project_from_prefs btn btn-sm p-1 {% if not project in preferred_projects %}disabled d-none{% endif %}" {% if not project in preferred_projects %}aria-disabled="true"{% endif %}><i class="bi bi-x-lg"></i></button>
+            <button type="button" title="Add to preferences" class="add_project_to_prefs border-0 btn btn-sm p-1 {% if project in preferred_projects %}disabled d-none{% endif %}"{% if project in preferred_projects %}aria-disabled="true"{% endif %} title="Add to Preferences" onclick="add_project_to_prefs({{ project.id }})"><i class="bi bi-plus-lg"></i></button>
         </div>
     </td>
 </tr>
-{% if project.description %}
-    <tr class="{% if not in_preference_table %}{% if project in preferred_projects %}d-none{% endif %}{% endif %} project_info_container" data-project-id="{{ project.id }}">
-        <td colspan="12" class="p-0">
-            <div class="project_info" data-project-id="{{ project.id }}" style="display: none;">
-                <table class="table m-0">
-                    <tbody>
-                        {% if project.description %}
-                        <tr>
-                            <th>Description</th>
-                        </tr>
-                        <tr>
-                            <td class="project_description">{{ project.description }}</td>
-                        </tr>
-                        {% endif %}
-                        {% if project.area %}
-                        <tr>
-                            <th>Area</th>
-                        </tr>
-                        <tr>
-                            <td class="project_description">{% for area in project.area.all %}{{ area.name }}{% if not forloop.last %}; {% endif %}{% endfor %}</td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </td>
-    </tr>
-{% endif %}
+<tr class="{% if not in_preference_table %}{% if project in preferred_projects %}d-none{% endif %}{% endif %} project_info_container" data-project-id="{{ project.id }}">
+    <td colspan="12" class="p-0">
+        <div class="project_info" data-project-id="{{ project.id }}" style="display: none;">
+            <table class="table m-0">
+                <tbody>
+                    <tr>
+                        <th class="small">Group Size</th>
+                        <td class="project_capacity">{{ project.min_students }} - {{ project.max_students }}</td>
+                    </tr>
+                    {% if project.description %}
+                    <tr>
+                        <th colspan="2" class="small">Description</th>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="project_description">{{ project.description }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if project.area.count != 0 %}
+                    <tr>
+                        <th colspan="2" class="small">Area</th>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="project_description">{% for area in project.area.all %}{{ area.name }}{% if not forloop.last %}; {% endif %}{% endfor %}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </td>
+</tr>
 

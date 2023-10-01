@@ -20,10 +20,12 @@
                     <table id="preference_table" class="table table align-middle m-0">
                         <thead class="table-light">
                             <tr>
-                                <th scope="col"></th>
-                                <th scope="col">Rank</th>
-                                <th scope="col">Project</th>
-                                <th scope="col"></th>
+                                <th scope="col" class="small"></th>
+                                <th scope="col" class="small">Rank</th>
+                                <th scope="col" class="small">Project ID</th>
+                                <th scope="col" class="small w-100">Project Name</th>
+                                <th scope="col" class="small"></th>
+                                <th scope="col" class="small">Remove</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -59,16 +61,12 @@
                 <h4 class="fs-5">Search</h4>
                 <div class="d-flex gap-2 flex-wrap">
                     <div class="form-floating overflow-hidden">
-                        <input class="form-control project-search" data-field="identifier" id="project-identifier-search" type="text" placeholder="Project ID" size="5">
-                        <label for="project-identifier-search">ID</label>
+                        <input class="form-control project-search" data-field="identifier" id="project-identifier-search" type="text" placeholder="Project ID" size="10">
+                        <label for="project-identifier-search">Project ID</label>
                     </div>
                     <div class="form-floating flex-grow-1">
                         <input class="form-control project-search" data-field="name" id="project-name-search" type="text" placeholder="Project Name">
                         <label for="project-name-search">Project Name</label>
-                    </div>
-                    <div class="form-floating">
-                        <input class="form-control project-search" data-field="capacity" id="project-capacity-search" type="text" placeholder="Project Group Size">
-                        <label for="project-capacity-search">Group Size</label>
                     </div>
                 </div>
             </div>
@@ -77,9 +75,10 @@
             <table id="project_table" class="table table-striped align-middle">
                 <thead>
                     <tr>
-                        <th scope="col">Project</th>
-                        <th scope="col">Group Size</th>
-                        <th scope="col"></th>
+                        <th scope="col" class="small">Project ID</th>
+                        <th scope="col" class="small w-100">Project Name</th>
+                        <th scope="col" class="small"></th>
+                        <th scope="col" class="small">Add</th>
                     </tr>
                 </thead>
                 <tbody>

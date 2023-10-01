@@ -16,13 +16,16 @@
         </div>
     {% endif %}
     {% if unit.successfully_allocated %}
-        <div class="my-4">View the allocation by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit_students' unit.id %}">student</a> or by <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{% url 'manager:unit_projects' unit.id %}">project</a>.</div>
+        <div class="mb-3 d-flex flex-wrap gap-2">
+            <a href="{% url 'manager:unit_students' unit.id %}" class="btn btn-secondary">View Allocation Results by Student</a>
+            <a href="{% url 'manager:unit_projects' unit.id %}" class="btn btn-secondary">View Allocation Results by Project</a>
+        </div>
     {% endif %}
     <form class="my-4" method="post" enctype="multipart/form-data">{% csrf_token %}
         {% if unit.successfully_allocated %}
         <div class="mb-3 d-flex flex-wrap gap-2">
-                <button type="submit" name="download_results" class="btn btn-primary" {% if unit.is_allocating %}disabled{% endif %}><i class="bi bi-download"></i><span class="ms-1">Download Allocation Results as CSV</span></button>
-                <button type="submit" name="email_results" class="btn btn-primary" {% if unit.is_allocating %}disabled{% endif %}><i class="bi bi-envelope-at"></i><span class="ms-1">Email Allocation Results as CSV</span></button>
+            <button type="submit" name="download_results" class="btn btn-primary" {% if unit.is_allocating %}disabled{% endif %}><i class="bi bi-download"></i><span class="ms-1">Download Allocation Results as CSV</span></button>
+            <button type="submit" name="email_results" class="btn btn-primary" {% if unit.is_allocating %}disabled{% endif %}><i class="bi bi-envelope-at"></i><span class="ms-1">Email Allocation Results as CSV</span></button>
         </div>
         {% endif %}
         <input type="submit" name="start_allocation" value="{% if unit.is_allocated %}Override Allocation{% else %}Start Allocation{% endif %}" class="btn btn-{% if unit.is_allocated %}danger{% else %}primary{% endif %}" {% if not unit.task_ready or not can_start_allocation %}disabled{% endif %}>

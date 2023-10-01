@@ -65,9 +65,9 @@ class UserLoginForm(AuthenticationForm):
             FloatingField('password'),
             FormActions(
                 Submit('submit', 'Log In', css_class='btn btn-primary'),
-                HTML(
-                    """<a href="{% url 'register' %}" class="btn btn-outline-secondary">Register</a>"""),
-            )
+            ),
+            HTML(
+                """<a href="{% url 'register' %}" class="small text-muted link-underline link-underline-opacity-0 link-underline-opacity-75-hover">Register</a>"""),
         )
 
 

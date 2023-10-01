@@ -308,7 +308,7 @@ class StudentListForm(UnitKwargMixin, forms.Form):
         'file',
         Div(
             HTML(
-                f'<a style="font-size: 0.8em;" class="d-flex gap-2 link-offset-4 link-offset-4-hover link-underline link-secondary link-underline-opacity-0 link-underline-opacity-75-hover" href="{static("templates/CPA-Student-List-Template.csv")}"><i class="bi bi-download"></i><span>Student List Template (name and area columns are optional)</span></a>'),
+                f'<a class="small d-flex gap-2 link-offset-4 link-offset-4-hover link-underline link-secondary link-underline-opacity-0 link-underline-opacity-75-hover" href="{static("templates/CPA-Student-List-Template.csv")}"><i class="bi bi-download"></i><span>Student List Template (name and area columns are optional)</span></a>'),
             css_class='m-3'
         ),
         'list_override',
@@ -500,7 +500,7 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
         'file',
         Div(
             HTML(
-                f'<a style="font-size: 0.8em;" class="d-flex gap-2 link-offset-4 link-offset-4-hover link-underline link-secondary link-underline-opacity-0 link-underline-opacity-75-hover" href="{static("templates/CPA-Project-List-Template.csv")}"><i class="bi bi-download"></i><span>Project List Template (description and area columns are optional)</span></a>'),
+                f'<a class="small d-flex gap-2 link-offset-4 link-offset-4-hover link-underline link-secondary link-underline-opacity-0 link-underline-opacity-75-hover" href="{static("templates/CPA-Project-List-Template.csv")}"><i class="bi bi-download"></i><span>Project List Template (description and area columns are optional)</span></a>'),
             css_class='m-3'
         ),
         'list_override',
@@ -684,7 +684,7 @@ class PreferenceListForm(UnitKwargMixin, forms.Form):
         'file',
         Div(
             HTML(
-                f'<a style="font-size: 0.8em;" class="d-flex gap-2 link-offset-4 link-offset-4-hover link-underline link-secondary link-underline-opacity-0 link-underline-opacity-75-hover" href="{static("templates/CPA-Preference-List-Template.csv")}"><i class="bi bi-download"></i><span>Preference List Template</span></a>'),
+                f'<a class="small d-flex gap-2 link-offset-4 link-offset-4-hover link-underline link-secondary link-underline-opacity-0 link-underline-opacity-75-hover" href="{static("templates/CPA-Preference-List-Template.csv")}"><i class="bi bi-download"></i><span>Preference List Template</span></a>'),
             css_class='m-3'
         ),
         FloatingField('preference_rank_column'),

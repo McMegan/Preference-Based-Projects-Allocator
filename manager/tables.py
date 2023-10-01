@@ -12,7 +12,7 @@ class Table(tables.Table):
         attrs = {
             'class': 'table table-striped align-middle',
             'thead': {
-                'style': 'font-size: 0.85em;'
+                'class': 'small'
             }
         }
         empty_text = '—'
@@ -31,7 +31,7 @@ class ProjectsTable(Table):
     min_students = tables.Column(verbose_name='Min. Group Size')
     max_students = tables.Column(verbose_name='Max. Group Size')
     area = tables.Column(verbose_name='Area', orderable=False, attrs={
-                         'td': {'style': 'font-size: 0.8em;'}})
+                         'td': {'class': 'small'}})
     actions = tables.Column(empty_values=(), orderable=False, verbose_name='')
 
     class Meta(Table.Meta):
@@ -122,13 +122,13 @@ class StudentsTable(Table):
         accessor='student_id', verbose_name='ID')
     name = tables.Column(
         accessor='name', empty_values=(), verbose_name='Name', attrs={
-            'td': {'style': 'font-size: 0.8em;'}})
+            'td': {'class': 'small'}})
     registered = tables.Column(
         accessor='user', empty_values=(), verbose_name='Registered')
     preferences = tables.Column(
         accessor='project_preferences', empty_values=(), verbose_name='Submitted Preferences')
     area = tables.Column(verbose_name='Area', orderable=False, attrs={
-                         'td': {'style': 'font-size: 0.8em;'}})
+                         'td': {'class': 'small'}})
     actions = tables.Column(empty_values=(), orderable=False, verbose_name='')
 
     class Meta(Table.Meta):

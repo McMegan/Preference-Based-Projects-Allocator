@@ -6,7 +6,7 @@
         {% if form %}
             {% load crispy_forms_tags %} 
             <form method="post">
-                {% csrf_token %} {% crispy form %}
+                {% crispy form %}
             </form>
         {% endif %}
     </div>

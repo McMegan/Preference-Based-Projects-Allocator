@@ -1,0 +1,13 @@
+{% extends 'core/base.html' %} 
+{% block title %}{{ block.super }} - Account Settings{% endblock %}
+{% block main %}
+    <div class="my-5">
+        <h1 class="mb-4">Account Settings</h1>
+        {% if form %}
+            {% load crispy_forms_tags %} 
+            <form method="post">
+                {% csrf_token %} {% crispy form %}
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}

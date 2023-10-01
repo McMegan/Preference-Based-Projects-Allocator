@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+from typing import Any
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, UserCreationForm, SetPasswordForm
 from django import forms
 
@@ -5,6 +7,9 @@ from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Submit, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
+from django.core.files.base import File
+from django.db.models.base import Model
+from django.forms.utils import ErrorList
 
 from . import models
 
@@ -91,6 +96,8 @@ class UserPasswordChangeForm(PasswordChangeForm):
             FloatingField('new_password2'),
             FormActions(
                 Submit('submit', 'Save', css_class='btn btn-primary'),
+                HTML(
+                    """<a href="{% url 'account' %}" class="btn btn-secondary">Cancel</a>"""),
             )
         )
 
@@ -118,6 +125,60 @@ class UserPasswordResetForm(PasswordResetForm):
                     """<a href="{% url 'login' %}" class="btn btn-outline-secondary">Log In</a>"""),
             )
         )
+
+
+class AccountUpdateForm(forms.ModelForm):
+    username = forms.CharField(max_length=150, required=True)
+    email = forms.EmailField(required=True)
+    password = forms.CharField(
+        label='Password',
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={"autocomplete": "current-password"}
+        ),
+    )
+
+    def __init__(self, *args, **kwargs) -> None:
+        self.user = kwargs.pop('user', None)
+
+        super().__init__(*args, **kwargs)
+
+        self.instance = self.user
+
+        if self.instance.is_student:
+            self.fields.get('username').disabled = True
+            self.fields.get(
+                'username').help_text = 'You cannot change your username as it is linked to your unit enrolments.'
+        self.fields.get('username').initial = self.instance.username
+        self.fields.get('email').initial = self.instance.email
+
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            FloatingField('username'),
+            FloatingField('email'),
+            FloatingField('password'),
+            HTML(
+                """<a href="{% url 'password_change' %}" class="btn btn-sm btn-outline-primary mb-3">Change Password</a>"""),
+            FormActions(
+                Submit('submit', 'Save',
+                       css_class='btn btn-primary'),
+                HTML(
+                    """<a href="{% url 'index' %}" class="btn btn-secondary">Cancel</a>"""),
+            )
+        )
+
+    def clean(self):
+        # Validate that the password is correct
+        password = self.cleaned_data.get('password')
+        if not self.instance.check_password(password):
+            raise forms.ValidationError(
+                {'password': 'Your password was entered incorrectly. Please enter it again.'}
+            )
+        return super().clean()
+
+    class Meta:
+        model = models.User
+        fields = ['username', 'email']
 
 
 """

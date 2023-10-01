@@ -258,7 +258,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
         return unit.manager_id == self.request.user.id
 
     def test_func(self):
-        return user_is_manager(self.request.user) and self.unit_managed_by_user()
+        return self.get_unit_queryset().exists() and user_is_manager(self.request.user) and self.unit_managed_by_user()
 
     def get_object(self, queryset=None):
         if not hasattr(self, 'object'):

@@ -835,7 +835,7 @@ class ProjectPageMixin(UnitMixin):
                     project.is_allocated())},
                 {'label': 'Allocated Group Size',
                     'content': project.allocated_students.count()},
-                {'label': 'Allocated Group Size',
+                {'label': 'Average Allocated Preference',
                     'content': project.avg_allocated_pref if project.avg_allocated_pref else 'n/a'},
             ]
         description_info = []

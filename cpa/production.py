@@ -11,7 +11,6 @@ ALLOWED_HOSTS = [os.environ['WEBSITE_HOSTNAME']
 CSRF_TRUSTED_ORIGINS = ['https://' + os.environ['WEBSITE_HOSTNAME']
                         ] if 'WEBSITE_HOSTNAME' in os.environ else []
 DEBUG = False
-DEBUG = True
 
 # Configure Postgres database based on connection string of the libpq Keyword/Value form
 # https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING

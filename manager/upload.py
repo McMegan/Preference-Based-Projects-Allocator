@@ -140,7 +140,7 @@ def upload_students_list(unit_id, manager_id, file_bytes_base64_str, override_li
                 student_create_list,
                 unique_fields=['student_id', 'unit_id'],
                 update_conflicts=True,
-                update_fields=['user']
+                update_fields=['user', 'name']
             )
             models.Area.objects.bulk_create(
                 area_create_list, ignore_conflicts=True)

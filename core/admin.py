@@ -160,6 +160,7 @@ class UnitAdmin(admin.ModelAdmin):
     def task_completed(self, unit):
         return unit.task_ready()
     task_completed.short_description = 'Task Completed'
+    task_completed.boolean = True
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)

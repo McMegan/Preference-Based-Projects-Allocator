@@ -147,10 +147,8 @@ class Unit(models.Model):
     def task_ready(self):
         if self.task_id:
             if self.get_celery_task():
-                return self.get_celery_task()
-                # .status == 'SUCCESS'
+                return self.get_celery_task().status != 'PENDING'
             else:
-                # Task not in results bc its not completed
                 return False
         return True
 

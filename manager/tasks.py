@@ -6,6 +6,27 @@ from . import allocator
 from . import export
 from . import upload
 
+from celery import states
+from celery.signals import before_task_publish
+from django_celery_results.models import TaskResult
+
+
+@before_task_publish.connect
+def create_task_result_on_publish(sender=None, headers=None, body=None, **kwargs):
+    if "task" not in headers:
+        return
+
+    TaskResult.objects.store_result(
+        "application/json",
+        "utf-8",
+        headers["id"],
+        None,
+        states.PENDING,
+        task_name=headers["task"],
+        task_args=headers["argsrepr"],
+        task_kwargs=headers["kwargsrepr"],
+    )
+
 
 @shared_task(name=Unit.START_ALLOCATION_TASK_NAME)
 def start_allocation_task(unit_id, manager_id, results_url):

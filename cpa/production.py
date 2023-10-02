@@ -31,8 +31,6 @@ DATABASES = {
 REDIS_URL = os.environ['AZURE_REDIS_CONNECTIONSTRING']
 CELERY_BROKER_URL = REDIS_URL
 result_backend = REDIS_URL
-CELERY_RESULT_BACKEND = result_backend
-
 
 # EMAIL BACKEND
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

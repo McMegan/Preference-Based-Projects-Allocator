@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'django_bootstrap5',
 
     # 'celery',
+    'django_celery_results',
 
     'health_check',
     'health_check.db',                          # stock Django health checkers
@@ -154,6 +155,11 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 CELERY_TIMEZONE = 'Australia/Melbourne'
 DJANGO_CELERY_RESULTS_TASK_ID_MAX_LENGTH = 191
 BROKER_CONNECTION_RETRY = True
+
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_RESULT_EXTENDED = True
+
 
 # Tables
 DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5-responsive.html'

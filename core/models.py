@@ -9,6 +9,8 @@ from django.utils.translation import gettext_lazy as _
 
 from celery.result import AsyncResult
 
+from django_celery_results.models import TaskResult
+
 
 class User(AbstractUser):
     email = models.EmailField(_("email address"), unique=True)
@@ -136,12 +138,16 @@ class Unit(models.Model):
 
     def get_celery_task(self):
         if not hasattr(self, 'celery_task'):
-            self.celery_task = AsyncResult(self.task_id)
+            task = TaskResult.objects.filter(task_id=self.task_id)
+            if task.exists():
+                self.celery_task = task.first()
+            else:
+                self.celery_task = None
         return self.celery_task
 
     def task_ready(self):
         if self.task_id and self.get_celery_task():
-            return self.get_celery_task().ready()
+            return self.get_celery_task().status == 'SUCCESS'
         return True
 
     def preference_submission_set(self) -> bool:

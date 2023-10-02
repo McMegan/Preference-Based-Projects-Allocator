@@ -110,7 +110,7 @@ class UnitAdmin(admin.ModelAdmin):
     autocomplete_fields = ['manager']
     list_select_related = ['manager']
     list_display = ['code', 'name', 'year', 'semester', 'manager_link', 'students_count', 'projects_count', 'preference_submission_start',
-                    'preference_submission_end', 'minimum_preference_limit', 'maximum_preference_limit', 'is_active', 'limit_by_major', 'allocation_status']
+                    'preference_submission_end', 'minimum_preference_limit', 'maximum_preference_limit', 'is_active', 'limit_by_major', 'allocation_status', 'task_completed']
     list_filter = ['is_active', 'year', 'semester', 'preference_submission_start',
                    'preference_submission_end', 'allocation_status']
     search_fields = ['code', 'name']
@@ -157,6 +157,11 @@ class UnitAdmin(admin.ModelAdmin):
             }))
         return format_html('<a href="{}">{}</a>', url, unit.projects_count)
     projects_count.short_description = 'no. projects'
+
+    @admin.display()
+    def task_completed(self, unit):
+        return unit.task_ready()
+    task_completed.short_description = 'Task Completed'
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)

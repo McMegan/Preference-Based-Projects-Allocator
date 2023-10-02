@@ -53,7 +53,7 @@ class UnitKwargMixin:
 
         if self.unit and not self.disabled:
             self.disabled = False
-            if self.unit.task_id:
+            if self.unit.celery_task:
                 self.disabled = not self.unit.task_ready()
 
         super().__init__(*args, **kwargs)

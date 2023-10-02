@@ -145,11 +145,8 @@ class Unit(models.Model):
         return self.celery_task
 
     def task_ready(self):
-        if self.task_id:
-            if self.get_celery_task():
-                return self.get_celery_task().status != 'PENDING'
-            else:
-                return False
+        if self.task_id and self.get_celery_task():
+            return self.get_celery_task().status != 'PENDING'
         return True
 
     def preference_submission_set(self) -> bool:

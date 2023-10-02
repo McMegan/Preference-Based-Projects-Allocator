@@ -7,7 +7,6 @@ from django.utils import timezone
 
 from django.utils.translation import gettext_lazy as _
 
-from celery.result import AsyncResult
 
 from django_celery_results.models import TaskResult
 
@@ -146,8 +145,13 @@ class Unit(models.Model):
         return self.celery_task
 
     def task_ready(self):
-        if self.task_id and self.get_celery_task():
-            return self.get_celery_task().status == 'SUCCESS'
+        if self.task_id:
+            if self.get_celery_task():
+                return self.get_celery_task()
+                # .status == 'SUCCESS'
+            else:
+                # Task not in results bc its not completed
+                return False
         return True
 
     def preference_submission_set(self) -> bool:

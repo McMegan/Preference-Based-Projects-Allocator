@@ -5,8 +5,6 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import PasswordResetForm
 from django.db.models import Count, Q
-from django.db.models.query import QuerySet
-from django.http.request import HttpRequest
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html, urlencode

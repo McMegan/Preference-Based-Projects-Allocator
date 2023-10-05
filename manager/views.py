@@ -177,17 +177,48 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
         if not self.unit.task_ready():
             warning_message = ''
             if self.unit.celery_task.task_name == models.Unit.START_ALLOCATION_TASK_NAME:
-                warning_message = 'This unit is currently being allocated. You can not make changes to the unit while it is allocating. Please refresh the page to check if the allocation has been completed.'
+                warning_message = format_html(
+                    """
+                    <p class="fw-bold">Allocation In Progress</p>
+                    <p>You can not make changes to the unit while it is allocating.</p>
+                    <p>This may take a few minutes, please refresh the page to check if the allocation has been completed.</p>
+                    <p class="mb-0">You should recieve an email once the allocation is completed.</p>
+                """)
             elif self.unit.celery_task.task_name == models.Unit.EMAIL_ALLOCATION_RESULTS_TASK_NAME:
-                warning_message = 'The allocation results for this unit are currently being emailed. You can not make changes to the unit while this is happening. Please refresh the page to check if the email of the allocation results has been completed.'
+                warning_message = format_html(
+                    """
+                    <p class="fw-bold">Email of Allocation Results In Progress</p>
+                    <p>You can not make changes to the unit while this is happening.</p>
+                    <p class="mb-0">Please refresh the page to check if the email of the allocation results has been completed.</p>
+                """)
             elif self.unit.celery_task.task_name == models.Unit.EMAIL_PREFERENCES_TASK_NAME:
-                warning_message = 'The preference list for this unit is currently being emailed. You can not make changes to the unit while this is happening.  Please refresh the page to check if the email of the preference list has been completed.'
+                warning_message = format_html(
+                    """
+                    <p class="fw-bold">Email of Preference List In Progress</p>
+                    <p>You can not make changes to the unit while this is happening.</p>
+                    <p class="mb-0">Please refresh the page to check if the email of the preference list has been completed.</p>
+                """)
             elif self.unit.celery_task.task_name == models.Unit.UPLOAD_PROJECTS_TASK_NAME:
-                warning_message = 'The project list is currently being uploaded to this unit. You can not make changes to the unit while this is happening. Please refresh the page to check if the project list upload has been completed.'
+                warning_message = format_html(
+                    """
+                    <p class="fw-bold">Project List Upload In Progress</p>
+                    <p>You can not make changes to the unit while this is happening.</p>
+                    <p class="mb-0">This may take a few moments, please refresh the page to check if it has been completed.</p>
+                """)
             elif self.unit.celery_task.task_name == models.Unit.UPLOAD_STUDENTS_TASK_NAME:
-                warning_message = 'The student list is currently being uploaded to this unit. You can not make changes to the unit while this is happening. Please refresh the page to check if the student list upload has been completed.'
+                warning_message = format_html(
+                    """
+                    <p class="fw-bold">Student List Upload In Progress</p>
+                    <p>You can not make changes to the unit while this is happening.</p>
+                    <p class="mb-0">This may take a few moments, please refresh the page to check if it has been completed.</p>
+                """)
             elif self.unit.celery_task.task_name == models.Unit.UPLOAD_PREFERENCES_TASK_NAME:
-                warning_message = 'The preference list is currently being uploaded to this unit. You can not make changes to the unit while this is happening. Please refresh the page to check if the preference list upload has been completed.'
+                warning_message = format_html(
+                    """
+                    <p class="fw-bold">Preference List Upload In Progress</p>
+                    <p>You can not make changes to the unit while this is happening.</p>
+                    <p class="mb-0">This may take a few minutes, please refresh the page to check if it has been completed.</p>
+                """)
             self.warnings.append(
                 {'type': 'danger', 'content': warning_message})
         if not unit.is_active:
@@ -248,17 +279,17 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                     resolved = resolve(path)
                     match resolved.url_name:
                         case 'index':
-                            label = 'Units'
+                            label = 'Unit List'
                         case 'unit':
                             label = self.get_unit_object()
                         case 'unit_projects':
-                            label = 'Projects'
+                            label = 'Project List'
                         case'unit_students':
-                            label = 'Students'
+                            label = 'Student List'
                         case 'unit_areas':
-                            label = 'Areas'
+                            label = 'Area List'
                         case 'unit_preferences':
-                            label = 'Preferences'
+                            label = 'Preference List'
                         case 'unit_allocation':
                             label = 'Allocation'
                         case 'unit_preferences_distribution':
@@ -336,14 +367,6 @@ class UnitPageMixin(UnitMixin):
     model = models.Unit
     unit_id_arg = 'pk'
 
-    def get_page_actions(self):
-        return [
-            {'url': reverse('manager:unit_update',
-                            kwargs={'pk': self.kwargs['pk']}), 'label': 'Edit'},
-            {'url': reverse('manager:unit_delete', kwargs={'pk': self.kwargs['pk']}),
-             'label': 'Delete', 'classes': 'btn-danger'},
-        ]
-
     def get_page_title_url(self):
         return reverse('manager:unit', kwargs={'pk': self.kwargs['pk']})
 
@@ -385,7 +408,13 @@ class UnitPageMixin(UnitMixin):
 
 
 class UnitDetailView(UnitPageMixin, DetailView):
-    pass
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit_update',
+                            kwargs={'pk': self.kwargs['pk']}), 'label': 'Edit'},
+            {'url': reverse('manager:unit_delete', kwargs={'pk': self.kwargs['pk']}),
+             'label': 'Delete', 'classes': 'btn-danger'},
+        ]
 
 
 class UnitUpdateView(UnitPageMixin, UpdateView):
@@ -420,16 +449,6 @@ class UnitDeleteView(UnitPageMixin, DeleteView):
 class StudentsListMixin(UnitMixin):
     model = models.Student
     page_title = 'Student List'
-
-    def get_page_actions(self):
-        return [
-            {'url': reverse('manager:unit_students_new_list',
-                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Student List'},
-            {'url': reverse('manager:unit_students_new',
-                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Student'},
-            {'url': reverse('manager:unit_students_delete_all',
-                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Students', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().students.exists()},
-        ]
 
     def get_page_info(self):
         unit = self.get_unit_object()
@@ -472,6 +491,16 @@ class StudentsListView(StudentsListMixin, FilteredTableView):
     """
         List of students in unit
     """
+
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit_students_new_list',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Student List'},
+            {'url': reverse('manager:unit_students_new',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Student'},
+            {'url': reverse('manager:unit_students_delete_all',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Students', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().students.exists()},
+        ]
 
     def get_filter_formhelper_class(self):
         return filters.StudentAllocatedFilterFormHelper if self.get_unit_object().successfully_allocated() else filters.StudentFilterFormHelper
@@ -576,14 +605,6 @@ class StudentPageMixin(UnitMixin):
     """
     model = models.Student
 
-    def get_page_actions(self):
-        return [
-            {'url': reverse('manager:unit_student_update', kwargs={'pk': self.kwargs.get(
-                'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
-            {'url': reverse('manager:unit_student_delete', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
-             'label': 'Remove', 'classes': 'btn-danger'},
-        ]
-
     def get_page_info(self):
         student = self.get_object()
         allocated_info = []
@@ -628,6 +649,14 @@ class StudentDetailView(StudentPageMixin, SingleTableMixin, DetailView):
         View a single student in a unit
     """
     table_class = tables.StudentPreferencesTable
+
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit_student_update', kwargs={'pk': self.kwargs.get(
+                'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
+            {'url': reverse('manager:unit_student_delete', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
+             'label': 'Remove', 'classes': 'btn-danger'},
+        ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -678,16 +707,6 @@ class ProjectsListMixin(UnitMixin):
     model = models.Project
     page_title = 'Project List'
 
-    def get_page_actions(self):
-        return [
-            {'url': reverse('manager:unit_projects_new_list',
-                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Project List'},
-            {'url': reverse('manager:unit_projects_new',
-                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Project'},
-            {'url': reverse('manager:unit_projects_delete_all',
-                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Projects', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().projects.exists()},
-        ]
-
     def get_page_info(self):
         unit = self.get_unit_object()
         allocated_info = []
@@ -727,6 +746,16 @@ class ProjectsListView(ProjectsListMixin, FilteredTableView):
     """
         List of projects in unit
     """
+
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit_projects_new_list',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Project List'},
+            {'url': reverse('manager:unit_projects_new',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Project'},
+            {'url': reverse('manager:unit_projects_delete_all',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Projects', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().projects.exists()},
+        ]
 
     def get_filter_formhelper_class(self):
         return filters.ProjectAllocatedFilterFormHelper if self.get_unit_object().successfully_allocated() else filters.ProjectFilterFormHelper
@@ -820,14 +849,6 @@ class ProjectPageMixin(UnitMixin):
     """
     model = models.Project
 
-    def get_page_actions(self):
-        return [
-            {'url': reverse('manager:unit_project_update', kwargs={'pk': self.kwargs.get(
-                'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
-            {'url': reverse('manager:unit_project_delete', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
-             'label': 'Remove', 'classes': 'btn-danger'},
-        ]
-
     page_info_column = True
 
     def get_page_info(self):
@@ -882,6 +903,14 @@ class ProjectDetailView(ProjectPageMixin, MultiTableMixin, DetailView):
     """
         View a project in a unit
     """
+
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit_project_update', kwargs={'pk': self.kwargs.get(
+                'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
+            {'url': reverse('manager:unit_project_delete', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
+             'label': 'Remove', 'classes': 'btn-danger'},
+        ]
 
     def get_tables(self):
         project_tables = []
@@ -962,14 +991,6 @@ class AreasListMixin(UnitMixin):
     model = models.Area
     page_title = 'Area List'
 
-    def get_page_actions(self):
-        return [
-            {'url': reverse('manager:unit_areas_new',
-                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Area'},
-            {'url': reverse('manager:unit_areas_delete_all', kwargs={'pk_unit': self.kwargs['pk_unit']}),
-             'label': 'Remove All Areas', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().areas.exists()},
-        ]
-
     def get_page_info(self):
         unit = self.get_unit_object()
         return [
@@ -999,6 +1020,14 @@ class AreasListView(AreasListMixin, FilteredTableView):
     table_class = tables.AreasTable
     filterset_class = filters.AreaFilter
     filter_formhelper_class = filters.AreaFilterFormHelper
+
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit_areas_new',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Area'},
+            {'url': reverse('manager:unit_areas_delete_all', kwargs={'pk_unit': self.kwargs['pk_unit']}),
+             'label': 'Remove All Areas', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().areas.exists()},
+        ]
 
 
 class AreaCreateView(AreasListMixin, FormMixin, TemplateView):
@@ -1043,14 +1072,6 @@ class AreaPageMixin(UnitMixin):
     """
     model = models.Area
 
-    def get_page_actions(self):
-        return [
-            {'url': reverse('manager:unit_area_update', kwargs={'pk': self.kwargs.get(
-                'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
-            {'url': reverse('manager:unit_area_delete', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
-             'label': 'Remove', 'classes': 'btn-danger'},
-        ]
-
     def get_page_info(self):
         area = self.get_object()
         return [
@@ -1078,6 +1099,14 @@ class AreaDetailView(AreaPageMixin, MultiTableMixin, DetailView):
     """
         View a area in a unit
     """
+
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit_area_update', kwargs={'pk': self.kwargs.get(
+                'pk'), 'pk_unit': self.kwargs.get('pk_unit')}), 'label': 'Edit'},
+            {'url': reverse('manager:unit_area_delete', kwargs={'pk': self.kwargs.get('pk'), 'pk_unit': self.kwargs.get('pk_unit')}),
+             'label': 'Remove', 'classes': 'btn-danger'},
+        ]
 
     def get_tables(self):
         area_tables = []
@@ -1134,13 +1163,7 @@ Preference Views
 
 
 class PreferencesMixin(UnitMixin):
-    page_title = 'Preferences'
-
-    def get_page_actions(self):
-        return [
-            {'url': reverse('manager:unit_preferences_new_list',
-                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Preference List'},
-        ]
+    page_title = 'Preference List'
 
     def get_page_info(self):
         unit = self.get_unit_object()
@@ -1176,11 +1199,16 @@ class PreferencesView(PreferencesMixin, FilteredTableView):
     """
     model = models.ProjectPreference
     template_name = 'manager/preferences.html'
-    page_title = 'Preferences'
 
     table_class = tables.PreferencesTable
     filterset_class = filters.PreferenceFilter
     filter_formhelper_class = filters.PreferenceFilterFormHelper
+
+    def get_page_actions(self):
+        return [
+            {'url': reverse('manager:unit_preferences_new_list',
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Upload Preference List'},
+        ]
 
     def get_queryset(self):
         return super().get_queryset().filter(project__unit_id=self.kwargs['pk_unit']).prefetch_related('project').prefetch_related('student')
@@ -1324,11 +1352,11 @@ class AllocationView(UnitMixin, TemplateView):
                 {'label': 'Allocation Status',
                  'content': unit.get_allocation_descriptive(), 'classes': 'align-items-center', 'content_classes': f'rounded bg-{"success" if unit.successfully_allocated() else "danger"}-subtle border border-{"success" if unit.successfully_allocated() else "danger"}-subtle p-1 px-2'},
                 {'label': 'Average Allocated Preference',
-                    'content': unit.avg_allocated_pref_rounded},
+                    'content': unit.avg_allocated_pref_rounded if unit.avg_allocated_pref_rounded else '—'},
                 {'label': 'Best Allocated Preference',
-                    'content': unit.min_allocated_pref},
+                    'content': unit.min_allocated_pref if unit.min_allocated_pref else '—'},
                 {'label': 'Worst Allocated Preference',
-                    'content': unit.max_allocated_pref},
+                    'content': unit.max_allocated_pref if unit.max_allocated_pref else '—'},
             ]
 
         students_list = models.Student.objects.filter(

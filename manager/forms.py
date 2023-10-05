@@ -202,10 +202,10 @@ class UnitUpdateForm(UnitKwargMixin, UnitCreateForm):
             'minimum_preference_limit')
         maximum_preference_limit = self.cleaned_data.get(
             'maximum_preference_limit')
-        if minimum_preference_limit < 0:
+        if minimum_preference_limit and minimum_preference_limit < 0:
             raise forms.ValidationError(
                 {'minimum_preference_limit': 'The minimum preference limit must not be negative.'})
-        if maximum_preference_limit < 0:
+        if maximum_preference_limit and maximum_preference_limit < 0:
             raise forms.ValidationError(
                 {'maximum_preference_limit': 'The maximum preference limit must not be negative.'})
         if minimum_preference_limit and minimum_preference_limit > num_projects:

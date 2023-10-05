@@ -1,11 +1,6 @@
 {% extends 'manager/base.html' %}
 
 {% block after_content %}
-    {% if unit.is_allocating %}
-        <div class="alert alert-secondary" role="alert">
-            <p>The unit is currently allocating students to projects. Feel free to refresh or leave the page.</p><p class="mb-0">You should recieve an email once the allocation is completed.</p>
-        </div>    
-    {% endif %}
     {% if allocation_warnings %}
         <div class="alert alert-danger" role="alert">
             <ul class="mb-0">              
@@ -21,16 +16,45 @@
             <a href="{% url 'manager:unit_projects' unit.id %}" class="btn btn-secondary">View Allocation Results by Project</a>
         </div>
     {% endif %}
-    <form class="my-4" method="post" enctype="multipart/form-data">{% csrf_token %}
+    <form class="my-4" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
         {% if unit.successfully_allocated %}
-        <div class="mb-3 d-flex flex-wrap gap-2">
-            <button type="submit" name="download_results" class="btn btn-primary" {% if unit.is_allocating %}disabled{% endif %}><i class="bi bi-download"></i><span class="ms-1">Download Allocation Results as CSV</span></button>
-            <button type="submit" name="email_results" class="btn btn-primary" {% if unit.is_allocating %}disabled{% endif %}><i class="bi bi-envelope-at"></i><span class="ms-1">Email Allocation Results as CSV</span></button>
-        </div>
+            <div class="mb-3 d-flex flex-wrap gap-2">
+                <button type="submit" name="download_results" class="btn btn-primary" {% if unit.is_allocating %}disabled{% endif %}><i class="bi bi-download"></i><span class="ms-1">Download Allocation Results as CSV</span></button>
+                <button type="submit" name="email_results" class="btn btn-primary" {% if unit.is_allocating %}disabled{% endif %}><i class="bi bi-envelope-at"></i><span class="ms-1">Email Allocation Results as CSV</span></button>
+            </div>
         {% endif %}
-        <input type="submit" name="start_allocation" value="{% if unit.is_allocated %}Override Allocation{% else %}Start Allocation{% endif %}" class="btn btn-{% if unit.is_allocated %}danger{% else %}primary{% endif %}" {% if not unit.task_ready or not can_start_allocation %}disabled{% endif %}>
     </form>
-    {% if unit.is_allocated %}
-        <div class="alert alert-danger">This unit has already been allocated, allocating again will override the current allocation.<br>If this allocation fails, the previous successful allocation will be retained.</div>
+
+    {% if unit.successfully_allocated %}
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#overrideAllocationModal" {% if unit.is_allocating %}disabled{% endif %}>Override Allocation</button>
+        
+        <!-- Modal -->
+        <div class="modal fade" id="overrideAllocationModal" tabindex="-1" aria-labelledby="overrideAllocationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="overrideAllocationModalLabel">Are you sure you want to override the current allocation?</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>This unit has already been allocated, allocating again will override the current allocation.</p>
+                        <p class="mb-0">If this allocation fails, the previous successful allocation will be retained.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="submit" name="start_allocation" value="Yes, Override Allocation" class="btn btn-danger" {% if not unit.task_ready or not can_start_allocation %}disabled{% endif %}>
+                        </form>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <form class="my-4" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="submit" name="start_allocation" value="Start Allocation" class="btn btn-primary" {% if not unit.task_ready or not can_start_allocation %}disabled{% endif %}>
+        </form>
     {% endif %}
 {% endblock %}

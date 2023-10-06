@@ -1,7 +1,9 @@
+from typing import Any
 from django.db import models
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.forms import formset_factory
 from django.db.models import Q, Count
+from django.forms.forms import BaseForm
 from django.views.generic import ListView
 from django.views.generic.edit import FormMixin
 
@@ -46,6 +48,9 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
         max_preference_limit = self.get_unit_object().maximum_preference_limit
         return formset_factory(formset=forms.PreferenceFormSet, form=forms.PreferenceForm, extra=0, min_num=min_preference_limit if min_preference_limit else 0, validate_min=True if min_preference_limit else False, max_num=max_preference_limit if max_preference_limit else 0, validate_max=True if max_preference_limit else False)
 
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'unit': self.get_unit_object()}
+
     def get_initial(self):
         return [{'rank': preference.rank, 'project': preference.project, 'project_id': preference.project.id}
                 for preference in self.get_students_preferences()]
@@ -62,49 +67,51 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
             for preference in students_preferences.all()[formset.total_form_count():]:
                 preference.delete()
 
-            for index, form in enumerate(formset):
+            for form in formset:
                 # Set the project for this form instance
-                form.instance.project = models.Project.objects.get(
+                project = models.Project.objects.filter(
                     id=form.cleaned_data.get('project_id'))
+                if project.exists():
+                    form.instance.project = project.first()
 
-                # Don't re-save existing records
-                preference_exists = students_preferences.filter(
-                    rank=form.instance.rank, project=form.instance.project)
+                    # Don't re-save existing records
+                    preference_exists = students_preferences.filter(
+                        rank=form.instance.rank, project=form.instance.project)
 
-                if not preference_exists.exists():
-                    preference_at_current_rank = students_preferences.filter(
-                        rank=form.instance.rank)
-                    preference_with_current_project = students_preferences.filter(
-                        project=form.instance.project)
+                    if not preference_exists.exists():
+                        preference_at_current_rank = students_preferences.filter(
+                            rank=form.instance.rank)
+                        preference_with_current_project = students_preferences.filter(
+                            project=form.instance.project)
 
-                    if preference_at_current_rank.exists() and preference_with_current_project.exists():
-                        preference_at_current_rank = preference_at_current_rank.first()
-                        preference_with_current_project = preference_with_current_project.first()
-                        if preference_at_current_rank.project != form.instance.project and preference_with_current_project.rank != form.instance.rank:
-                            # Swap these records
-                            preference_at_current_rank.rank = 0
+                        if preference_at_current_rank.exists() and preference_with_current_project.exists():
+                            preference_at_current_rank = preference_at_current_rank.first()
+                            preference_with_current_project = preference_with_current_project.first()
+                            if preference_at_current_rank.project != form.instance.project and preference_with_current_project.rank != form.instance.rank:
+                                # Swap these records
+                                preference_at_current_rank.rank = 0
+                                preference_at_current_rank.save()
+
+                                temp = preference_with_current_project.rank
+                                preference_with_current_project.rank = form.instance.rank
+                                preference_with_current_project.save()
+
+                                preference_at_current_rank.rank = temp
+                                preference_at_current_rank.save()
+                        elif preference_at_current_rank.exists():
+                            preference_at_current_rank = preference_at_current_rank.first()
+                            # Replace preference at current rank with this project
+                            preference_at_current_rank.project = form.instance.project
                             preference_at_current_rank.save()
-
-                            temp = preference_with_current_project.rank
+                        elif preference_with_current_project.exists():
+                            preference_with_current_project = preference_with_current_project.first()
+                            # Replace preference with current project with new rank
                             preference_with_current_project.rank = form.instance.rank
-                            preference_with_current_project.save()
-
-                            preference_at_current_rank.rank = temp
                             preference_at_current_rank.save()
-                    elif preference_at_current_rank.exists():
-                        preference_at_current_rank = preference_at_current_rank.first()
-                        # Replace preference at current rank with this project
-                        preference_at_current_rank.project = form.instance.project
-                        preference_at_current_rank.save()
-                    elif preference_with_current_project.exists():
-                        preference_with_current_project = preference_with_current_project.first()
-                        # Replace preference with current project with new rank
-                        preference_with_current_project.rank = form.instance.rank
-                        preference_at_current_rank.save()
-                    else:
-                        # Create new record
-                        form.instance.student = self.get_student_object()
-                        form.instance.save()
+                        else:
+                            # Create new record
+                            form.instance.student = self.get_student_object()
+                            form.instance.save()
 
             return self.form_valid(formset)
         else:
@@ -116,17 +123,19 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
         helper = forms.PreferenceFormSetHelper()
 
         formset = kwargs.get('form')
-        preference_from_form = []
+        preference_from_form = None
         if formset:
+            preference_from_form = []
             # Reload with form values
             for form in formset:
-                form.instance.project = models.Project.objects.get(
+                project = models.Project.objects.filter(
                     id=form.cleaned_data.get('project_id'))
-                form.instance.student = self.get_student_object()
-                preference_from_form.append(form.instance)
+                if project.exists():
+                    form.instance.project = project.first()
+                    form.instance.student = self.get_student_object()
+                    preference_from_form.append(form.instance)
 
-        preferences = preference_from_form if len(
-            preference_from_form) else preference_querset
+        preferences = preference_from_form if preference_from_form != None else preference_querset
         preferred_projects = [
             preference.project for preference in preferences]
 

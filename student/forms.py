@@ -1,3 +1,4 @@
+from typing import Any
 from django import forms
 from django.forms import BaseFormSet
 
@@ -34,6 +35,11 @@ class PreferenceForm(forms.ModelForm):
 
 
 class PreferenceFormSet(BaseFormSet):
+    def __init__(self, *args, **kwargs):
+        self.unit = kwargs.pop('unit')
+
+        super().__init__(*args, **kwargs)
+
     def full_clean(self):
         super().full_clean()
         for error in self._non_form_errors.as_data():
@@ -56,6 +62,9 @@ class PreferenceFormSet(BaseFormSet):
             if project_id in projects:
                 raise forms.ValidationError(
                     'You can only choose each project once.')
+            if not self.unit.projects.filter(id=project_id).exists():
+                raise forms.ValidationError(
+                    f'A project with the ID of {project_id} does not exist in this unit.')
             projects.append(project_id)
             """ Validate ranks """
             rank = form.cleaned_data.get('rank')

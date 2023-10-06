@@ -230,9 +230,7 @@ window.onload = () => {
 		$(elem).on('keyup', (event) => {
 			var search = $(elem).val().toLowerCase();
 			$(`#project_table > tbody > tr .project_${field}`).filter((index, elem) => {
-				$(elem)
-					.closest('tr')
-					.toggle($(elem).text().toLowerCase().indexOf(search) > -1);
+				$(`#project_table > tbody > tr[data-project-id="${$(elem).closest('tr').data('projectId')}"]`).toggle($(elem).text().toLowerCase().indexOf(search) > -1);
 			});
 			fix_striped_tables();
 		});

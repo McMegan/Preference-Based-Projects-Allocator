@@ -45,6 +45,10 @@
                     </div>
                 {% endif %}
                 <form class="preference-submission-form" method="post">
+                    <div class="my-3">
+                        <input type="submit" name="submit" value="Save Preferences" class="btn btn-primary" id="submit-id-submit">
+                        <a class="btn btn-secondary" href="{{request.path}}">Cancel</a>
+                    </div>
                     {% crispy form helper %}
                 </form>
             </div>

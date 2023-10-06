@@ -3,7 +3,7 @@ from django import forms
 from django.forms import BaseFormSet
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Fieldset, Submit
+from crispy_forms.layout import Layout, Fieldset
 
 from core import models
 
@@ -64,7 +64,7 @@ class PreferenceFormSet(BaseFormSet):
                     'You can only choose each project once.')
             if not self.unit.projects.filter(id=project_id).exists():
                 raise forms.ValidationError(
-                    f'A project with the ID of {project_id} does not exist in this unit.')
+                    f'A project with the ID of {project_id} does not exist in this unit. Please hit cancel and try again.')
             projects.append(project_id)
             """ Validate ranks """
             rank = form.cleaned_data.get('rank')
@@ -86,5 +86,4 @@ class PreferenceFormSetHelper(FormHelper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.form_method = 'post'
-        self.add_input(Submit('submit', 'Save Preferences'))
         self.template = 'bootstrap5/table_inline_formset.html'

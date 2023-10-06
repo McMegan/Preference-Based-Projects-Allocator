@@ -36,7 +36,7 @@ class UserAdmin(BaseUserAdmin):
         ('User type', {'fields': ('is_manager', 'is_student')}),
     )
 
-    list_display = ('username', 'email', 'is_staff',
+    list_display = ('id', 'username', 'email', 'is_staff',
                     'is_manager', 'managed_unit_count', 'is_student', 'enrolled_unit_count')
     list_filter = BaseUserAdmin.list_filter + ('is_manager', 'is_student')
 
@@ -107,7 +107,7 @@ Unit admin
 class UnitAdmin(admin.ModelAdmin):
     autocomplete_fields = ['manager']
     list_select_related = ['manager']
-    list_display = ['code', 'name', 'year', 'semester', 'manager_link', 'students_count', 'projects_count', 'preference_submission_start',
+    list_display = ['id', 'code', 'name', 'year', 'semester', 'manager_link', 'students_count', 'projects_count', 'preference_submission_start',
                     'preference_submission_end', 'minimum_preference_limit', 'maximum_preference_limit', 'is_active', 'limit_by_major', 'allocation_status', 'task_completed']
     list_filter = ['is_active', 'year', 'semester', 'preference_submission_start',
                    'preference_submission_end', 'allocation_status']
@@ -207,7 +207,7 @@ class PreferencesFilter(SimpleListFilter):
 @admin.register(models.Student)
 class StudentAdmin(admin.ModelAdmin):
     list_select_related = ['user', 'unit']
-    list_display = ['student_id', 'name', 'is_registered',
+    list_display = ['id', 'student_id', 'name', 'is_registered',
                     'user_link', 'unit_link', 'submitted_preferences', 'preferences_count', 'allocated_project_link', 'allocated_preference_rank']
     list_filter = [RegisteredFilter, PreferencesFilter]
     search_fields = ['student_id']
@@ -353,7 +353,7 @@ class ProjectStudentInlineModelAdmin(admin.TabularInline):
 
 @admin.register(models.Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['identifier', 'name', 'unit_link']
+    list_display = ['id', 'identifier', 'name', 'unit_link']
     search_fields = ['name', 'identifier']
 
     fields = ('unit', 'identifier', 'name', 'description',
@@ -386,7 +386,7 @@ Preferences admin
 @admin.register(models.ProjectPreference)
 class ProjectPreferenceAdmin(admin.ModelAdmin):
     list_select_related = ['student', 'project', 'student__unit']
-    list_display = ['unit_link',  'student_link', 'rank', 'project_link']
+    list_display = ['id', 'unit_link',  'student_link', 'rank', 'project_link']
     search_fields = ['student__student_id',
                      'project__identifier', 'project__name']
 
@@ -420,7 +420,7 @@ class ProjectPreferenceAdmin(admin.ModelAdmin):
             reverse('admin:core_project_changelist')
             + '?'
             + urlencode({
-                'id': str(projectpreference.id)
+                'id': str(projectpreference.project.id)
             }))
         return format_html('<a href="{}">{}: {}</a>', url, projectpreference.project.identifier, projectpreference.project.name)
     project_link.short_description = 'project'
@@ -442,7 +442,7 @@ Area admin
 @admin.register(models.Area)
 class AreaAdmin(admin.ModelAdmin):
     list_select_related = ['unit']
-    list_display = ['name', 'unit_link']
+    list_display = ['id', 'name', 'unit_link']
     search_fields = ['unit_link', 'name']
 
     ordering = ['unit', 'name']

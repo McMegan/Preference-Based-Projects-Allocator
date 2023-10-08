@@ -21,6 +21,7 @@ celery = "*"
 django-health-check = "*"
 psycopg2-binary = "*"
 django-celery-results = "*"
+django-browser-reload = "*"
 
 [dev-packages]
 

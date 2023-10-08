@@ -230,7 +230,8 @@ class PreferencesTable(Table):
 
 
 class PreferencesDistributionTable(Table):
-    identifier = tables.Column(verbose_name='Project')
+    identifier = tables.Column(verbose_name='Project ID')
+    name = tables.Column(verbose_name='Project Name')
     popularity = tables.Column(verbose_name='Project Popularity')
 
     class Meta(Table.Meta):
@@ -238,7 +239,7 @@ class PreferencesDistributionTable(Table):
         fields = ['identifier']
 
     def render_identifier(self, value, record):
-        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_project_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}: {record.name}</a>""")
+        return format_html(f"""<a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" href="{reverse('manager:unit_project_detail', kwargs={'pk_unit': record.unit_id, 'pk': record.id})}">{record.identifier}</a>""")
 
 
 """

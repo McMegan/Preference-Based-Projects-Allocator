@@ -3,7 +3,7 @@ import base64
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
 from django.db.models import Count, Sum, F, Avg, Min, Max
-from django.db.models.functions import Round
+from django.db.models.functions import Round, Coalesce
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy, Resolver404, resolve
 from django.utils.html import format_html
@@ -1238,7 +1238,11 @@ class PreferencesDistributionView(PreferencesMixin, FilteredTableView):
 
     def get_page_info(self):
         return super().get_page_info() + [
-            {'label': 'Project Popularity', 'content': 'The popularity of a project is calculated by summing the of number of students who preferred a project multiplied by the rank at which they preferred the project. Projects with a higher popularity index were more popular.', 'wide': True},
+            {'label': 'Project Popularity', 'content': format_html(
+                """<p>The popularity of a project is calculated by summing the of number of students who preferred a project multiplied by the total number of projects minus the rank at which they preferred the project.</p>
+                <p class="my-4">Project Popularity = <span id="project_pop_formula"><span id="project_pop_sum">&sum;</span><span> N_Proj - rank for preference i</span></span></p>
+                <p>Where N_Pref is the total number of preferences submitted for a particular project, and N_Proj is the total number of projects in the unit.</p>
+                <p>Projects with a higher popularity index were more popular.</p>"""), 'wide': True},
         ]
 
     def get_queryset(self):
@@ -1247,8 +1251,8 @@ class PreferencesDistributionView(PreferencesMixin, FilteredTableView):
                 unit_id=self.kwargs['pk_unit']).prefetch_related(
                 'student_preferences')
             total_projects = project_queryset.count()
-            self.queryset = project_queryset.annotate(popularity=Sum(
-                total_projects - F('student_preferences__rank'))).order_by('identifier', 'name')
+            self.queryset = project_queryset.annotate(popularity=Coalesce(Sum(
+                total_projects - F('student_preferences__rank')), 0)).order_by('identifier', 'name')
         return self.queryset
 
 

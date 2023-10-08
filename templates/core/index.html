@@ -3,7 +3,7 @@
     {% url 'manager:index' as manager_index_url %}
     {% url 'student:index' as student_index_url %}
 
-    {% if user.is_student %}
+    {% if user.is_student and request.path == student_index_url %}
         <p class="my-4">If you don't see your unit here, please contact your unit coordinator.</p>
     {% endif %}
     {% if user.is_manager and request.path == manager_index_url %}
@@ -28,8 +28,11 @@
         {% for unit in object_list %}
             <div class="col">
                 <div class="card">
-                    {% if not unit.is_active %}
-                    <div class="card-header bg-secondary-subtle text-center text-uppercase" style="font-size: 0.75rem;">This unit is inactive.</div>
+                    {% if user.is_manager and request.path == manager_index_url and not unit.is_active %}
+                        <div class="card-header bg-secondary-subtle text-center text-uppercase" style="font-size: 0.75rem;">This unit is inactive.</div>
+                    {% endif %}
+                    {% if user.is_student and request.path == student_index_url and unit.preference_submission_open %}
+                        <div class="card-header bg-success-subtle text-center text-uppercase" style="font-size: 0.75rem;">Preference Submission Open</div>
                     {% endif %}
                     <div class="card-body">
                         <h4 class="card-title mb-0">

@@ -14,7 +14,7 @@
     <td><button type="button" onclick="toggle_info({{ project.id }})" class="project_info_toggle_button btn btn-sm"><i class="bi bi-chevron-down"></i></button></td>
 
     <td>
-        <div class="d-flex gap-1">
+        <div class="d-flex gap-1 justify-content-center">
             <button type="button" title="Remove from preferences" onclick="remove_project_from_prefs({{ project.id }})" class="remove_project_from_prefs btn btn-sm p-1 {% if not project in preferred_projects %}disabled d-none{% endif %}" {% if not project in preferred_projects %}aria-disabled="true"{% endif %}><i class="bi bi-x-lg"></i></button>
             <button type="button" title="Add to preferences" class="add_project_to_prefs border-0 btn btn-sm p-1 {% if project in preferred_projects %}disabled d-none{% endif %}"{% if project in preferred_projects %}aria-disabled="true"{% endif %} title="Add to Preferences" onclick="add_project_to_prefs({{ project.id }})"><i class="bi bi-plus-lg"></i></button>
         </div>

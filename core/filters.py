@@ -1,11 +1,11 @@
 from django import forms
 
-import django_filters
-
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.layout import Layout, Fieldset, Submit, HTML, Div
 from crispy_bootstrap5.bootstrap5 import FloatingField
+
+import django_filters
 
 from . import models
 

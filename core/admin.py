@@ -1,4 +1,3 @@
-from typing import Any
 from django.contrib.admin import SimpleListFilter
 from django.contrib import admin
 from django.contrib.auth.models import Group

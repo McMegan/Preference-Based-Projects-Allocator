@@ -1,11 +1,10 @@
-from typing import Any
 from django.contrib.auth import login
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import models
-from django.forms.forms import BaseForm
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import TemplateView, UpdateView
+from django.views.generic import TemplateView
 from django.views.generic.edit import FormMixin
 
 from django_filters.views import FilterView
@@ -56,6 +55,32 @@ class IndexView(LoginRequiredMixin, UserPassesTestMixin, FilterView):
         return self.request.user.is_manager or self.request.user.is_student
 
 
+"""
+
+Registration Views
+
+"""
+
+
+class AccountUpdateView(LoginRequiredMixin, FormMixin, TemplateView):
+    template_name = 'registration/account_update.html'
+    form_class = forms.AccountUpdateForm
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'user': self.request.user}
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            form.save()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        return reverse('index')
+
+
 class StudentRegistrationView(FormMixin, TemplateView):
     form_class = forms.StudentUserRegistrationForm
     model = models.User
@@ -85,20 +110,17 @@ class StudentRegistrationView(FormMixin, TemplateView):
             return self.form_invalid(form)
 
 
-class AccountUpdateView(LoginRequiredMixin, FormMixin, TemplateView):
-    template_name = 'registration/account_update.html'
-    form_class = forms.AccountUpdateForm
+class LoginView(auth_views.LoginView):
+    template_name = 'registration/login.html'
+    authentication_form = forms.UserLoginForm
 
-    def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), 'user': self.request.user}
 
-    def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        if form.is_valid():
-            form.save()
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
+class PasswordChangeView(auth_views.PasswordChangeView):
+    template_name = 'registration/password_change.html'
+    form_class = forms.UserPasswordChangeForm
 
-    def get_success_url(self):
-        return reverse('index')
+class PasswordResetView(auth_views.PasswordResetView):
+    form_class=forms.UserPasswordResetForm
+
+class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+    form_class=forms.UserPasswordSetForm

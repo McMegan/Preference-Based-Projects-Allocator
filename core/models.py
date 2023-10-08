@@ -5,14 +5,12 @@ from django.db import models
 from django.db.models import Count, Q, F
 from django.utils import timezone
 
-from django.utils.translation import gettext_lazy as _
-
 
 from django_celery_results.models import TaskResult
 
 
 class User(AbstractUser):
-    email = models.EmailField(_("email address"), unique=True)
+    email = models.EmailField('email address', unique=True)
 
     is_manager = models.BooleanField(default=False)
     is_student = models.BooleanField(default=False)
@@ -266,7 +264,7 @@ class Project(models.Model):
 
 class Student(models.Model):
     student_id = models.CharField(max_length=15)
-    name = models.CharField(_("name"), max_length=150, blank=True)
+    name = models.CharField('name', max_length=150, blank=True)
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='enrollments', limit_choices_to={'is_student': True}, null=True, blank=True)
     unit = models.ForeignKey(

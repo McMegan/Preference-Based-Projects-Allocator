@@ -1,15 +1,10 @@
-from collections.abc import Mapping
-from typing import Any
-from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, UserCreationForm, SetPasswordForm
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm, UserCreationForm, SetPasswordForm
 
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Fieldset, Submit, HTML
+from crispy_forms.layout import Layout, Submit, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
-from django.core.files.base import File
-from django.db.models.base import Model
-from django.forms.utils import ErrorList
 
 from . import models
 

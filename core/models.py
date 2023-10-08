@@ -266,19 +266,18 @@ class Project(models.Model):
 
 class Student(models.Model):
     student_id = models.CharField(max_length=15)
+    name = models.CharField(_("name"), max_length=150, blank=True)
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='enrollments', limit_choices_to={'is_student': True}, null=True, blank=True)
     unit = models.ForeignKey(
         Unit, on_delete=models.CASCADE, related_name='students')
 
+    area = models.ManyToManyField(to=Area, related_name='students', blank=True)
+
     allocated_project = models.ForeignKey(
         Project, on_delete=models.SET_NULL, null=True, related_name='allocated_students', blank=True)
     allocated_preference_rank = models.PositiveIntegerField(
         null=True, blank=True)
-
-    area = models.ManyToManyField(to=Area, related_name='students', blank=True)
-
-    name = models.CharField(_("name"), max_length=150, blank=True)
 
     def __str__(self):
         return self.student_id

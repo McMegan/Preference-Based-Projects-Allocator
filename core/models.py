@@ -97,11 +97,6 @@ class Unit(models.Model):
             raise ValidationError(errors)
         return super().clean()
 
-    def task_ready(self):
-        if self.celery_task:
-            return self.celery_task.status != 'PENDING'
-        return True
-
     def preference_submission_set(self) -> bool:
         return self.preference_submission_start != None and self.preference_submission_end != None
 
@@ -119,6 +114,11 @@ class Unit(models.Model):
 
     def get_preference_submission_end(self):
         return self.preference_submission_end.strftime('%a %d %b %Y, %I:%M%p')
+
+    def task_ready(self):
+        if self.celery_task:
+            return self.celery_task.status != 'PENDING'
+        return True
 
     def is_allocating(self):
         if not hasattr(self, 'allocating'):
@@ -144,9 +144,6 @@ class Unit(models.Model):
             self.allocated_student_count = self.students.filter(
                 allocated_project__isnull=False).count()
         return self.allocated_student_count
-
-    def get_unallocated_student_count(self):
-        return self.students.count() - self.get_allocated_student_count()
 
     def calculate_project_spaces(self):
         self.too_few_students = None

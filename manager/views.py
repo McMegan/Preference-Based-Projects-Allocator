@@ -81,19 +81,29 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
     unit_id_arg = 'pk_unit'
     template_name = 'manager/base.html'
 
+    def test_func(self):
+        unit = self.get_unit_object()
+        return self.get_unit_queryset().exists() and user_is_manager(self.request.user) and unit.manager_id == self.request.user.id
+
     def get_unit_queryset(self):
         unit_pk = self.kwargs[self.unit_id_arg]
         if not hasattr(self, 'unit_queryset'):
-            self.unit_queryset = models.Unit.objects.filter(pk=unit_pk).annotate(students_count=Count(
-                'students', distinct=True)).annotate(projects_count=Count('projects', distinct=True)).annotate(
-                preference_count=Count('students__project_preferences')).annotate(
-                areas_count=Count('areas', distinct=True))
+            self.unit_queryset = models.Unit.objects.filter(pk=unit_pk).select_related('celery_task').annotate(students_count=Count('students', distinct=True)).annotate(
+                projects_count=Count('projects', distinct=True)).annotate(areas_count=Count('areas', distinct=True))
         return self.unit_queryset
 
     def get_unit_object(self):
         if not hasattr(self, 'unit'):
             self.unit = self.get_unit_queryset().first()
         return self.unit
+
+    def get_object(self, queryset=None):
+        if not hasattr(self, 'object'):
+            self.object = super().get_object(queryset)
+        return self.object
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'unit': self.get_unit_object(), 'cancel_url': self.get_success_url()}
 
     def save_task_to_unit(self, task):
         task = TaskResult.objects.filter(task_id=task.id)
@@ -102,67 +112,18 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
             self.get_unit_object().celery_task = task
             self.get_unit_object().save()
 
-    def make_sidebar_nav(self):
-        unit = self.get_unit_object()
-        return {
-            'nav_items': [
-                {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
-                 'classes': f'fs-6'},
-                {
-                    'url': reverse('manager:unit_projects', kwargs={'pk_unit': unit.pk}),
-                    'label': f'Project List ({unit.projects_count})',
-                    'nested_items': [
-                        {'url': reverse('manager:unit_projects_new_list', kwargs={'pk_unit': unit.pk}),
-                         'label': 'Upload Project List'},
-                        {'url': reverse('manager:unit_projects_new', kwargs={'pk_unit': unit.pk}),
-                         'label': 'Add a Project'},
-                    ]
-                },
-                {
-                    'url': reverse('manager:unit_students', kwargs={'pk_unit': unit.pk}),
-                    'label': f'Student List ({unit.students_count})', 'classes': 'text-body-emphasis',
-                    'nested_items': [
-                        {'url': reverse('manager:unit_students_new_list', kwargs={'pk_unit': unit.pk}),
-                         'label': 'Upload Student List'},
-                        {'url': reverse('manager:unit_students_new', kwargs={'pk_unit': unit.pk}),
-                         'label': 'Add a Student'},
-                    ]
-                },
-                {
-                    'url': reverse('manager:unit_areas', kwargs={'pk_unit': unit.pk}),
-                    'label': f'Area List ({unit.areas_count})',
-                    'nested_items': [
-                        {'url': reverse('manager:unit_areas_new', kwargs={'pk_unit': unit.pk}),
-                         'label': 'Add an Area'},
-                    ]
-                },
-                {
-                    'url': reverse('manager:unit_preferences', kwargs={'pk_unit': unit.pk}),
-                    'label': 'Preference List',
-                    'nested_items': [
-                        {'url': reverse('manager:unit_preferences_distribution', kwargs={'pk_unit': unit.pk}),
-                         'label': 'Project Popularity'},
-                        {'url': reverse('manager:unit_preferences_new_list', kwargs={'pk_unit': unit.pk}),
-                         'label': 'Upload Preference List'},
-                    ]
-                },
-                {'url': reverse('manager:unit_allocation', kwargs={'pk_unit': unit.pk}),
-                 'label': 'Allocation'}
-            ]
-        }
-
     def get_page_title(self):
         if not hasattr(self, 'page_title'):
             self.page_title = self.get_unit_object()
         return self.page_title
 
+    def get_page_title_url(self):
+        return self.request.path
+
     def get_page_subtitle(self):
         if not hasattr(self, 'page_subtitle'):
             return None
         return self.page_subtitle
-
-    def get_page_title_url(self):
-        return self.request.path
 
     def get_page_info(self):
         if not hasattr(self, 'page_info'):
@@ -227,13 +188,15 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
         if unit.minimum_preference_limit and unit.minimum_preference_limit > unit.projects_count:
             self.warnings.append(
                 {'type': 'danger', 'content': 'The minimum preference limit is greater than the total number of projects in the unit. Please change this or else students will not be able to submit any preferences.'})
-        if unit.completed_allocation() and unit.get_unallocated_student_count() > 0:
+        unallocated_student_count = unit.students_count - \
+            unit.get_allocated_student_count()
+        if unit.completed_allocation() and unallocated_student_count > 0:
             self.warnings.append({'type': 'warning', 'content': format_html(f"""
-            <p>There {'are' if unit.get_unallocated_student_count() > 1 else 'is'} {unit.get_unallocated_student_count()} student{'s' if unit.get_unallocated_student_count() > 1 else ''} who {'are' if unit.get_unallocated_student_count() > 1 else 'is'} not allocated to a project.</p>
+            <p>There {'are' if unallocated_student_count > 1 else 'is'} {unallocated_student_count} student{'s' if unallocated_student_count > 1 else ''} who {'are' if unallocated_student_count > 1 else 'is'} not allocated to a project.</p>
             <p class="mb-0">To fix this:</p>
             <ul class="my-0">
                 <li>run the allocator again (this may change the project allocation if existing students), or</li>
-                <li>manually add the unallocated student{'s' if unit.get_unallocated_student_count() > 1 else ''} to a project.</li>
+                <li>manually add the unallocated student{'s' if unallocated_student_count > 1 else ''} to a project.</li>
             </ul>
         """)})
         if unit.projects_count == 0 and unit.preference_submission_started() and not unit.preference_submission_ended():
@@ -249,26 +212,54 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
             return None
         return self.page_actions
 
-    def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **
-                self.make_sidebar_nav(), 'unit': self.get_unit_object(), 'page_title': self.get_page_title(), 'page_subtitle': self.get_page_subtitle(), 'page_title_url': self.get_page_title_url(), 'page_info': self.get_page_info(), 'page_info_column': self.page_info_column if hasattr(self, 'page_info_column') else False, 'page_warnings': self.get_page_warnings(), 'page_actions': self.get_page_actions(), 'breadcrumbs': self.make_breadcrumbs()}
-
-    def unit_managed_by_user(self):
+    def get_page_sidebar_items(self):
         unit = self.get_unit_object()
-        return unit.manager_id == self.request.user.id
+        return [
+            {'url': reverse('manager:unit', kwargs={'pk': unit.pk}), 'label': unit,
+             'classes': f'fs-6'},
+            {
+                'url': reverse('manager:unit_projects', kwargs={'pk_unit': unit.pk}),
+                'label': f'Project List ({unit.projects_count})',
+                'nested_items': [
+                    {'url': reverse('manager:unit_projects_new_list', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Upload Project List'},
+                    {'url': reverse('manager:unit_projects_new', kwargs={'pk_unit': unit.pk}),
+                     'label': 'Add a Project'},
+                ]
+            },
+            {
+                'url': reverse('manager:unit_students', kwargs={'pk_unit': unit.pk}),
+                'label': f'Student List ({unit.students_count})', 'classes': 'text-body-emphasis',
+                'nested_items': [
+                    {'url': reverse('manager:unit_students_new_list', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Upload Student List'},
+                    {'url': reverse('manager:unit_students_new', kwargs={'pk_unit': unit.pk}),
+                     'label': 'Add a Student'},
+                ]
+            },
+            {
+                'url': reverse('manager:unit_areas', kwargs={'pk_unit': unit.pk}),
+                'label': f'Area List ({unit.areas_count})',
+                'nested_items': [
+                    {'url': reverse('manager:unit_areas_new', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Add an Area'},
+                ]
+            },
+            {
+                'url': reverse('manager:unit_preferences', kwargs={'pk_unit': unit.pk}),
+                'label': 'Preference List',
+                'nested_items': [
+                    {'url': reverse('manager:unit_preferences_distribution', kwargs={'pk_unit': unit.pk}),
+                         'label': 'Project Popularity'},
+                    {'url': reverse('manager:unit_preferences_new_list', kwargs={'pk_unit': unit.pk}),
+                     'label': 'Upload Preference List'},
+                ]
+            },
+            {'url': reverse('manager:unit_allocation', kwargs={'pk_unit': unit.pk}),
+             'label': 'Allocation'}
+        ]
 
-    def test_func(self):
-        return self.get_unit_queryset().exists() and user_is_manager(self.request.user) and self.unit_managed_by_user()
-
-    def get_object(self, queryset=None):
-        if not hasattr(self, 'object'):
-            self.object = super().get_object(queryset)
-        return self.object
-
-    def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), 'unit': self.get_unit_object(), 'cancel_url': self.get_success_url()}
-
-    def make_breadcrumbs(self):
+    def get_page_breadcrumbs(self):
         breadcrumbs = []
         path_split = self.request.path[:-1].split('/')
         path = ''
@@ -318,6 +309,21 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
                     """Skip segment of path"""
         return breadcrumbs
 
+    def get_context_data(self, **kwargs):
+        return {
+            **super().get_context_data(**kwargs),
+            'unit': self.get_unit_object(),
+            'page_sidebar_items': self.get_page_sidebar_items(),
+            'page_title': self.get_page_title(),
+            'page_title_url': self.get_page_title_url(),
+            'page_subtitle': self.get_page_subtitle(),
+            'page_info': self.get_page_info(),
+            'page_info_column': self.page_info_column if hasattr(self, 'page_info_column') else False,
+            'page_warnings': self.get_page_warnings(),
+            'page_actions': self.get_page_actions(),
+            'page_breadcrumbs': self.get_page_breadcrumbs()
+        }
+
 
 """
 
@@ -327,14 +333,14 @@ Index view
 
 
 class IndexView(IndexView):
+    def test_func(self):
+        return super().test_func() and user_is_manager(self.request.user)
+
     def get_queryset(self):
         qs = models.Unit.objects
         if hasattr(super(), 'get_queryset'):
             qs = super().get_queryset()
         return qs.filter(manager=self.request.user).order_by('-is_active', 'year', 'code', 'name')
-
-    def test_func(self):
-        return super().test_func() and user_is_manager(self.request.user)
 
 
 """
@@ -349,6 +355,9 @@ class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     template_name = 'manager/unit_new.html'
     success_url = reverse_lazy('manager:index')
 
+    def test_func(self):
+        return user_is_manager(self.request.user)
+
     def post(self, request, *args, **kwargs):
         self.object = None
         form = self.get_form()
@@ -359,18 +368,14 @@ class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         else:
             return self.form_invalid(form)
 
-    def test_func(self):
-        return user_is_manager(self.request.user)
-
 
 class UnitPageMixin(UnitMixin):
     model = models.Unit
     unit_id_arg = 'pk'
+    page_info_column = True
 
     def get_page_title_url(self):
         return reverse('manager:unit', kwargs={'pk': self.kwargs['pk']})
-
-    page_info_column = True
 
     def get_page_info(self):
         unit = self.get_object()
@@ -450,6 +455,18 @@ class StudentsListMixin(UnitMixin):
     model = models.Student
     page_title = 'Student List'
 
+    def get_queryset(self):
+        qs = models.Student.objects
+        if hasattr(super(), 'get_queryset'):
+            qs = super().get_queryset()
+        return qs.filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('allocated_project').prefetch_related('area').order_by('student_id')
+
+    def get_success_url(self):
+        return reverse('manager:unit_students', kwargs={'pk_unit': self.kwargs['pk_unit']})
+
+    def get_page_title_url(self):
+        return self.get_success_url()
+
     def get_page_info(self):
         unit = self.get_unit_object()
         allocated_info = []
@@ -458,40 +475,14 @@ class StudentsListMixin(UnitMixin):
                 {'label': 'No. Allocated Students',
                     'content': unit.get_allocated_student_count()},
                 {'label': 'No. Unallocated Students',
-                    'content': unit.students.count() - unit.get_allocated_student_count()},
+                    'content': unit.students_count - unit.get_allocated_student_count()},
             ]
         return [
             {'label': 'Total No. Students', 'content': unit.students_count},
         ] + allocated_info
 
-    def get_queryset(self):
-        qs = models.Student.objects
-        if hasattr(super(), 'get_queryset'):
-            qs = super().get_queryset()
-        return qs.filter(unit=self.kwargs['pk_unit']).select_related('user').prefetch_related('project_preferences').select_related('allocated_project').prefetch_related('area').order_by('student_id')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.get_unit_object().is_allocated():
-            allocated_student_count = self.get_unit_object().students.filter(
-                allocated_project__isnull=False).count()
-            context['allocated_student_count'] = allocated_student_count
-            context['unallocated_student_count'] = self.get_unit_object(
-            ).students.count()-allocated_student_count
-        return context
-
-    def get_page_title_url(self):
-        return reverse('manager:unit_students', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
-
-    def get_success_url(self):
-        return reverse('manager:unit_students', kwargs={'pk_unit': self.kwargs['pk_unit']})
-
 
 class StudentsListView(StudentsListMixin, FilteredTableView):
-    """
-        List of students in unit
-    """
-
     def get_page_actions(self):
         return [
             {'url': reverse('manager:unit_students_new_list',
@@ -499,7 +490,7 @@ class StudentsListView(StudentsListMixin, FilteredTableView):
             {'url': reverse('manager:unit_students_new',
                             kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Student'},
             {'url': reverse('manager:unit_students_delete_all',
-                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Students', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().students.exists()},
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Students', 'classes': 'btn-danger', 'disabled': not self.get_queryset().exists()},
         ]
 
     def get_filter_formhelper_class(self):
@@ -513,9 +504,6 @@ class StudentsListView(StudentsListMixin, FilteredTableView):
 
 
 class StudentCreateView(StudentsListMixin, FormMixin, TemplateView):
-    """
-        Add a single student to the unit's student list
-    """
     form_class = forms.StudentForm
     page_subtitle = 'Add Student'
 
@@ -539,9 +527,6 @@ class StudentCreateView(StudentsListMixin, FormMixin, TemplateView):
 
 
 class StudentsUploadListView(StudentsListMixin, FormMixin, TemplateView):
-    """
-        Upload list of students to a unit
-    """
     form_class = forms.StudentListForm
     page_subtitle = 'Upload Student List'
 
@@ -576,9 +561,6 @@ class StudentsUploadListView(StudentsListMixin, FormMixin, TemplateView):
 
 
 class StudentsClearView(StudentsListMixin, FormMixin, TemplateView):
-    """
-        Clear the student list of a unit
-    """
     model = models.Student
     page_subtitle = 'Remove All Students'
 
@@ -599,9 +581,6 @@ class StudentsClearView(StudentsListMixin, FormMixin, TemplateView):
 
 
 class StudentPageMixin(UnitMixin):
-    """
-    Mixin for student pages
-    """
     model = models.Student
 
     def get_page_info(self):
@@ -622,7 +601,7 @@ class StudentPageMixin(UnitMixin):
             {'label': 'Registered', 'content': render_exists_badge(
                 student.get_is_registered())},
             {'label': 'Submitted Preferences', 'content': render_exists_badge(
-                student.preferences_count)},
+                student.project_preferences.exists())},
             {'label': 'Area', 'content': render_area_list(
                 student.area) if student.area.count() else '-'},
 
@@ -632,7 +611,7 @@ class StudentPageMixin(UnitMixin):
         qs = models.Student.objects
         if hasattr(super(), 'get_queryset'):
             qs = super().get_queryset()
-        return qs.select_related('user').prefetch_related('project_preferences').annotate(preferences_count=Count('project_preferences', distinct=True))
+        return qs.select_related('user').select_related('allocated_project').prefetch_related('project_preferences')
 
     def get_page_title(self):
         if not hasattr(self, 'page_title'):
@@ -644,9 +623,6 @@ class StudentPageMixin(UnitMixin):
 
 
 class StudentDetailView(StudentPageMixin, SingleTableMixin, DetailView):
-    """
-        View a single student in a unit
-    """
     table_class = tables.StudentPreferencesTable
 
     def get_page_actions(self):
@@ -667,9 +643,6 @@ class StudentDetailView(StudentPageMixin, SingleTableMixin, DetailView):
 
 
 class StudentUpdateView(StudentPageMixin, UpdateView):
-    """
-        Update a single student in a unit
-    """
     page_subtitle = 'Edit Student'
 
     def get_form_class(self):
@@ -680,9 +653,6 @@ class StudentUpdateView(StudentPageMixin, UpdateView):
 
 
 class StudentDeleteView(StudentPageMixin, DeleteView):
-    """
-        Remove a single student from a unit
-    """
     page_subtitle = 'Remove Student'
 
     def get_form(self):
@@ -724,16 +694,6 @@ class ProjectsListMixin(UnitMixin):
             qs = super().get_queryset()
         return qs.filter(unit=self.kwargs['pk_unit']).prefetch_related('unit').prefetch_related('area').prefetch_related('allocated_students').annotate(allocated_students_count=Count('allocated_students', distinct=True)).annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank')).order_by('identifier')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.get_unit_object().is_allocated():
-            allocated_student_count = self.get_unit_object().students.filter(
-                allocated_project__isnull=False).count()
-            context['allocated_student_count'] = allocated_student_count
-            context['unallocated_student_count'] = self.get_unit_object(
-            ).students.count()-allocated_student_count
-        return context
-
     def get_page_title_url(self):
         return reverse('manager:unit_projects', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
 
@@ -742,10 +702,6 @@ class ProjectsListMixin(UnitMixin):
 
 
 class ProjectsListView(ProjectsListMixin, FilteredTableView):
-    """
-        List of projects in unit
-    """
-
     def get_page_actions(self):
         return [
             {'url': reverse('manager:unit_projects_new_list',
@@ -753,7 +709,7 @@ class ProjectsListView(ProjectsListMixin, FilteredTableView):
             {'url': reverse('manager:unit_projects_new',
                             kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Add Project'},
             {'url': reverse('manager:unit_projects_delete_all',
-                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Projects', 'classes': 'btn-danger', 'disabled': not self.get_unit_object().projects.exists()},
+                            kwargs={'pk_unit': self.kwargs['pk_unit']}), 'label': 'Remove All Projects', 'classes': 'btn-danger', 'disabled': not self.get_queryset().exists()},
         ]
 
     def get_filter_formhelper_class(self):
@@ -782,9 +738,6 @@ class ProjectCreateView(ProjectsListMixin, FormMixin, TemplateView):
 
 
 class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
-    """
-        Upload list of projects
-    """
     form_class = forms.ProjectListForm
     page_subtitle = 'Upload Project List'
 
@@ -820,9 +773,6 @@ class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
 
 
 class ProjectsClearView(ProjectsListMixin, FormMixin, TemplateView):
-    """
-        Clear the project list of a unit
-    """
     page_subtitle = 'Remove All Projects'
 
     def get_form(self):
@@ -842,11 +792,7 @@ class ProjectsClearView(ProjectsListMixin, FormMixin, TemplateView):
 
 
 class ProjectPageMixin(UnitMixin):
-    """
-        Mixin for project pages
-    """
     model = models.Project
-
     page_info_column = True
 
     def get_page_info(self):
@@ -863,13 +809,8 @@ class ProjectPageMixin(UnitMixin):
             ]
         description_info = []
         if project.description:
-            description_info = [
-                {
-                    'label': 'Description',
-                    'content': project.description,
-                    'wide': True
-                }
-            ]
+            description_info = [{'label': 'Description',
+                                 'content': project.description, 'wide': True}]
 
         return [
             {'label': 'ID', 'content': project.identifier},
@@ -885,7 +826,7 @@ class ProjectPageMixin(UnitMixin):
         qs = models.Project.objects
         if hasattr(super(), 'get_queryset'):
             qs = super().get_queryset()
-        return qs.prefetch_related('allocated_students').annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank')).prefetch_related('area')
+        return qs.prefetch_related('allocated_students').prefetch_related('area').annotate(avg_allocated_pref=Avg('allocated_students__allocated_preference_rank'))
 
     def get_page_title(self):
         if not hasattr(self, 'page_title'):
@@ -898,10 +839,6 @@ class ProjectPageMixin(UnitMixin):
 
 
 class ProjectDetailView(ProjectPageMixin, MultiTableMixin, DetailView):
-    """
-        View a project in a unit
-    """
-
     def get_page_actions(self):
         return [
             {'url': reverse('manager:unit_project_update', kwargs={'pk': self.kwargs.get(
@@ -933,9 +870,6 @@ class ProjectDetailView(ProjectPageMixin, MultiTableMixin, DetailView):
 
 
 class ProjectUpdateView(ProjectPageMixin, UpdateView):
-    """
-        Update a project in a unit
-    """
     page_subtitle = 'Edit Project'
 
     def get_form_class(self):
@@ -949,9 +883,6 @@ class ProjectUpdateView(ProjectPageMixin, UpdateView):
 
 
 class ProjectDeleteView(ProjectPageMixin, DeleteView):
-    """
-        Remove a single project from a unit
-    """
     page_subtitle = 'Remove Project'
 
     def get_form(self):
@@ -985,7 +916,17 @@ Area views
 """
 
 
-class AreasListMixin(UnitMixin):
+class AreasMixin(UnitMixin):
+    model = models.Area
+
+    def get_queryset(self):
+        qs = models.Area.objects
+        if hasattr(super(), 'get_queryset'):
+            qs = super().get_queryset()
+        return qs.filter(unit=self.kwargs['pk_unit']).prefetch_related('students').prefetch_related('projects').order_by('name')
+
+
+class AreasListMixin(AreasMixin):
     model = models.Area
     page_title = 'Area List'
 
@@ -996,12 +937,6 @@ class AreasListMixin(UnitMixin):
                 'content': render_exists_badge(unit.limit_by_major)},
         ]
 
-    def get_queryset(self):
-        qs = models.Area.objects
-        if hasattr(super(), 'get_queryset'):
-            qs = super().get_queryset()
-        return qs.filter(unit=self.kwargs['pk_unit']).prefetch_related('students').prefetch_related('projects').order_by('name')
-
     def get_page_title_url(self):
         return reverse('manager:unit_areas', kwargs={'pk_unit': self.kwargs.get('pk_unit')})
 
@@ -1010,9 +945,6 @@ class AreasListMixin(UnitMixin):
 
 
 class AreasListView(AreasListMixin, FilteredTableView):
-    """
-        List of areas in unit
-    """
     model = models.Area
 
     table_class = tables.AreasTable
@@ -1029,9 +961,6 @@ class AreasListView(AreasListMixin, FilteredTableView):
 
 
 class AreaCreateView(AreasListMixin, FormMixin, TemplateView):
-    """
-        Add a single area to the unit
-    """
     form_class = forms.AreaForm
     page_subtitle = 'Add Area'
 
@@ -1046,9 +975,6 @@ class AreaCreateView(AreasListMixin, FormMixin, TemplateView):
 
 
 class AreasClearView(AreasListMixin, FormMixin, TemplateView):
-    """
-        Clear all areas from unit
-    """
     page_subtitle = 'Remove All Areas'
 
     def get_form(self):
@@ -1064,10 +990,7 @@ class AreasClearView(AreasListMixin, FormMixin, TemplateView):
             return self.form_invalid(form)
 
 
-class AreaPageMixin(UnitMixin):
-    """
-    Mixin for area pages
-    """
+class AreaPageMixin(AreasMixin):
     model = models.Area
 
     def get_page_info(self):
@@ -1076,12 +999,6 @@ class AreaPageMixin(UnitMixin):
             {'label': 'No. Projects', 'content': area.projects.count()},
             {'label': 'No. Students', 'content': area.students.count()},
         ]
-
-    def get_queryset(self):
-        qs = models.Area.objects
-        if hasattr(super(), 'get_queryset'):
-            qs = super().get_queryset()
-        return qs.prefetch_related('projects').prefetch_related('students')
 
     def get_page_title(self):
         if not hasattr(self, 'page_title'):
@@ -1094,10 +1011,6 @@ class AreaPageMixin(UnitMixin):
 
 
 class AreaDetailView(AreaPageMixin, MultiTableMixin, DetailView):
-    """
-        View a area in a unit
-    """
-
     def get_page_actions(self):
         return [
             {'url': reverse('manager:unit_area_update', kwargs={'pk': self.kwargs.get(
@@ -1126,11 +1039,7 @@ class AreaDetailView(AreaPageMixin, MultiTableMixin, DetailView):
 
 
 class AreaUpdateView(AreaPageMixin, UpdateView):
-    """
-        Update a area in a unit
-    """
     page_subtitle = 'Edit Area'
-
     form_class = forms.AreaUpdateForm
 
     def get_success_url(self):
@@ -1138,13 +1047,10 @@ class AreaUpdateView(AreaPageMixin, UpdateView):
 
 
 class AreaDeleteView(AreaPageMixin, DeleteView):
-    """
-        Remove a single area from a unit
-    """
     page_subtitle = 'Remove Area'
 
     def get_form(self):
-        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Area from Unit', form_message='<p>Are you sure you want to remove this project?</p><p>Any projects and students with this area will be retained.</p>')
+        return forms.DeleteForm(**self.get_form_kwargs(), submit_label='Yes, Remove Area from Unit', form_message='<p>Are you sure you want to remove this area?</p><p>Any projects and students with this area will be retained.</p>')
 
     def get_success_url(self):
         return reverse('manager:unit_areas', kwargs={'pk_unit': self.kwargs['pk_unit']})
@@ -1192,9 +1098,6 @@ class PreferencesMixin(UnitMixin):
 
 
 class PreferencesView(PreferencesMixin, FilteredTableView):
-    """
-        Show a list of all submitted preferences by students for projects in a unit
-    """
     model = models.ProjectPreference
     template_name = 'manager/preferences.html'
 
@@ -1221,11 +1124,11 @@ class PreferencesView(PreferencesMixin, FilteredTableView):
             return HttpResponseRedirect(self.request.path)
         return export.download_preferences_csv(unit_id=self.kwargs['pk_unit'])
 
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), 'preferences_exist': self.get_queryset().exists()}
+
 
 class PreferencesDistributionView(PreferencesMixin, FilteredTableView):
-    """
-        Show the distribution of preferences for projects in unit
-    """
     model = models.Project
     page_subtitle = 'Project Popularity'
 
@@ -1254,9 +1157,6 @@ class PreferencesDistributionView(PreferencesMixin, FilteredTableView):
 
 
 class PreferencesUploadListView(PreferencesMixin, FormMixin, TemplateView):
-    """
-        Upload a list of preferences
-    """
     model = models.ProjectPreference
     form_class = forms.PreferenceListForm
     page_subtitle = 'Upload Preference List'
@@ -1295,9 +1195,6 @@ Allocation Views
 
 
 class AllocationView(UnitMixin, TemplateView):
-    """
-        View for starting/viewing allocation
-    """
     template_name = 'manager/allocation.html'
     page_title = 'Allocation'
 

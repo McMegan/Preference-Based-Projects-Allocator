@@ -1,7 +1,7 @@
 {% extends 'manager/base.html' %}
 
 {% block before_content %}
-    {% if object_list.count > 0 %}
+    {% if preferences_exist %}
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="my-3 d-flex gap-2 flex-wrap">

@@ -6,7 +6,6 @@ from django import forms
 from django.db.models import Q, ExpressionWrapper, BooleanField
 from django.templatetags.static import static
 
-
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Submit, Div, HTML

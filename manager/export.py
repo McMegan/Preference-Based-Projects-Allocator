@@ -5,7 +5,6 @@ from io import StringIO
 from django.core.mail import EmailMessage
 from django.http import HttpResponse
 
-
 from core import models
 
 """

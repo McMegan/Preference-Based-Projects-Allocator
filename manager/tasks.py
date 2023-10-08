@@ -2,13 +2,13 @@ from celery import shared_task
 
 from core.models import Unit
 
-from . import allocator
-from . import export
-from . import upload
-
 from celery import states
 from celery.signals import before_task_publish
 from django_celery_results.models import TaskResult
+
+from . import allocator
+from . import export
+from . import upload
 
 
 @before_task_publish.connect

@@ -95,7 +95,7 @@ class UnitMixin(LoginRequiredMixin, UserPassesTestMixin):
             self.unit = self.get_unit_queryset().first()
         return self.unit
 
-    def save_task_to_unit(self, task, task_name):
+    def save_task_to_unit(self, task):
         task = TaskResult.objects.filter(task_id=task.id)
         if task.exists():
             task = task.first()
@@ -568,8 +568,7 @@ class StudentsUploadListView(StudentsListMixin, FormMixin, TemplateView):
                 area_column=form.cleaned_data.get(
                     'area_column')
             )
-            self.save_task_to_unit(
-                task=task, task_name=models.Unit.UPLOAD_STUDENTS_TASK_NAME)
+            self.save_task_to_unit(task=task)
 
             return self.form_valid(form)
         else:
@@ -813,8 +812,7 @@ class ProjectsUploadListView(ProjectsListMixin, FormMixin, TemplateView):
                 description_column=form.cleaned_data.get('description_column'),
                 area_column=form.cleaned_data.get('area_column')
             )
-            self.save_task_to_unit(
-                task=task, task_name=models.Unit.UPLOAD_PROJECTS_TASK_NAME)
+            self.save_task_to_unit(task=task)
 
             return self.form_valid(form)
         else:
@@ -1219,8 +1217,7 @@ class PreferencesView(PreferencesMixin, FilteredTableView):
         if email_results:
             task = tasks.email_preferences_csv_task.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
-            self.save_task_to_unit(
-                task=task, task_name=models.Unit.EMAIL_PREFERENCES_TASK_NAME)
+            self.save_task_to_unit(task=task)
             return HttpResponseRedirect(self.request.path)
         return export.download_preferences_csv(unit_id=self.kwargs['pk_unit'])
 
@@ -1284,8 +1281,7 @@ class PreferencesUploadListView(PreferencesMixin, FormMixin, TemplateView):
                 project_identifier_column=form.cleaned_data.get(
                     'project_identifier_column')
             )
-            self.save_task_to_unit(
-                task=task, task_name=models.Unit.UPLOAD_PREFERENCES_TASK_NAME)
+            self.save_task_to_unit(task=task)
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -1393,15 +1389,13 @@ class AllocationView(UnitMixin, TemplateView):
         if 'start_allocation' in request.POST:
             task = tasks.start_allocation_task.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id, results_url=request.build_absolute_uri(reverse('manager:unit_allocation', kwargs={'pk_unit': self.kwargs['pk_unit']})))
-            self.save_task_to_unit(
-                task=task, task_name=models.Unit.START_ALLOCATION_TASK_NAME)
+            self.save_task_to_unit(task=task)
             return HttpResponseRedirect(self.request.path)
         from . import export
         if 'email_results' in request.POST:
             task = tasks.email_allocation_results_csv_task.delay(
                 unit_id=self.kwargs['pk_unit'], manager_id=self.request.user.id)
-            self.save_task_to_unit(
-                task=task, task_name=models.Unit.EMAIL_ALLOCATION_RESULTS_TASK_NAME)
+            self.save_task_to_unit(task=task)
             return HttpResponseRedirect(self.request.path)
         if 'download_results' in request.POST:
             return export.download_allocation_results_csv(unit_id=self.kwargs['pk_unit'])

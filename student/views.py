@@ -1,9 +1,7 @@
-from typing import Any
 from django.db import models
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.forms import formset_factory
 from django.db.models import Q, Count
-from django.forms.forms import BaseForm
+from django.forms import formset_factory
 from django.views.generic import ListView
 from django.views.generic.edit import FormMixin
 

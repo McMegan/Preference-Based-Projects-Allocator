@@ -1,1 +1,1 @@
-# Capstone Projects Allocator
+# Preference-Based Projects Allocator

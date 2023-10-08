@@ -5,8 +5,8 @@ from django.urls import path, include
 
 from .healthcheck import HealthCheckView
 
-admin.site.site_header = 'Capstone Projects Allocator - Admin'
-admin.site.site_title = 'Capstone Projects Allocator - Admin'
+admin.site.site_header = 'Preference-Based Projects Allocator - Admin'
+admin.site.site_title = 'Preference-Based Projects Allocator - Admin'
 admin.site.index_title = 'Site Administration'
 
 

@@ -1,10 +1,10 @@
 {% if not unit.preference_submission_started %}
-    <div class="p-5 text-danger text-center fw-bold">
+    <div class="alert alert-danger text-center">
         The preference submission timeframe will start on {{ unit.preference_submission_start }}
     </div>
 {% endif %}
 {% if unit.preference_submission_ended %}
-    <div class="p-5 text-danger text-center fw-bold">
+    <div class="alert alert-danger text-center">
         The preference submission timeframe ended on {{ unit.preference_submission_end }}
     </div>
     {% if preferences %}

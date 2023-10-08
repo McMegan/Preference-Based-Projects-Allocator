@@ -51,6 +51,13 @@
                     </div>
                     {% crispy form helper %}
                 </form>
+                {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                    <div class="alert alert-secondary{% if message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %} alert-success text-center{% endif %}{% if message.tags %} {{ message.tags }}{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -59,7 +66,7 @@
             <h3 class="mb-4">Projects</h3>
             {% if unit.limit_by_major %}
                 <p>Your project selection has been limited by project area.</p>
-                <p>If you cannot see the projects you expected to see, please contact your supervisor.</p>
+                <p>If you cannot see the projects you expected to see, please contact your unit coordinator.</p>
             {% endif %}
             <div class="my-3">
                 <h4 class="fs-5">Search</h4>

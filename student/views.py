@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q, Count
 from django.forms import formset_factory
@@ -11,28 +12,37 @@ from . import forms
 
 
 class IndexView(IndexView):
+    def test_func(self):
+        return super().test_func() and self.request.user.is_student
 
     def get_queryset(self):
         return super().get_queryset().filter(students__user__id=self.request.user.id).filter(is_active=True).order_by('year', 'code', 'name')
 
-    def test_func(self):
-        return super().test_func() and self.request.user.is_student
 
-
-class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListView):
+class UnitDetailView(SuccessMessageMixin, LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListView):
     model = models.Project
     template_name = "student/unit_detail.html"
+    success_message = 'Preferences Saved Successfully'
+
+    def test_func(self):
+        return self.request.user.is_student and self.get_student_object()
 
     def get_unit_object(self):
         if not hasattr(self, 'unit'):
-            self.unit = models.Unit.objects.filter(
-                pk=self.kwargs['pk']).prefetch_related('areas').first()
+            self.unit = None
+            unit_qs = models.Unit.objects.filter(
+                pk=self.kwargs['pk']).prefetch_related('areas')
+            if unit_qs.exists():
+                self.unit = unit_qs.first()
         return self.unit
 
     def get_student_object(self):
         if not hasattr(self, 'student_object'):
-            self.student_object = self.request.user.enrollments.filter(
-                unit_id=self.kwargs['pk']).prefetch_related('area').first()
+            self.student_object = None
+            student_qs = self.request.user.enrollments.filter(
+                unit_id=self.kwargs['pk']).prefetch_related('area')
+            if student_qs.exists():
+                self.student_object = student_qs.first()
         return self.student_object
 
     def get_students_preferences(self):
@@ -146,6 +156,3 @@ class UnitDetailView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, ListVie
             qs = qs.annotate(area_count=Count('area')).filter(Q(area__in=self.get_student_object(
             ).area.all()) | Q(area_count=0)).distinct()
         return qs.order_by('identifier')
-
-    def test_func(self):
-        return self.request.user.is_student and self.get_student_object()

@@ -10,7 +10,7 @@ from django.utils.html import format_html
 from django.views.generic import TemplateView, DetailView, CreateView, DeleteView, UpdateView
 from django.views.generic.edit import FormMixin
 
-from django_filters.views import FilterView, FilterMixin
+from django_filters.views import FilterView
 from django_tables2 import SingleTableMixin, MultiTableMixin
 
 from core import models
@@ -58,10 +58,6 @@ class FilteredTableBase(SingleTableMixin):
         self.table_data = f.qs
         return {**super().get_context_data(**kwargs), 'filter': f, 'has_filter': any(
             field in self.request.GET for field in set(f.get_fields()))}
-
-
-class FilteredTableMixin(FilteredTableBase, FilterMixin):
-    pass
 
 
 class FilteredTableView(FilteredTableBase, FilterView):

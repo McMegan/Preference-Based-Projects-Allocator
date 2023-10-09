@@ -187,6 +187,13 @@ class Unit(models.Model):
             self.calculate_project_spaces()
         return self.max_project_spaces
 
+    def save_task(self, task):
+        task = TaskResult.objects.filter(task_id=task.id)
+        if task.exists():
+            task = task.first()
+            self.celery_task = task
+            self.save()
+
     class Meta:
         ordering = ['code', 'name']
         constraints = [

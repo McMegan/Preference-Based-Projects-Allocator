@@ -60,10 +60,6 @@ class FilteredTableBase(SingleTableMixin):
             field in self.request.GET for field in set(f.get_fields()))}
 
 
-class FilteredTableView(FilteredTableBase, FilterView):
-    pass
-
-
 """
 
 Unit pages mixin
@@ -469,7 +465,7 @@ class StudentsListMixin(UnitMixin):
         ] + allocated_info
 
 
-class StudentsListView(StudentsListMixin, FilteredTableView):
+class StudentsListView(StudentsListMixin, FilteredTableBase, FilterView):
     def get_page_actions(self):
         return [
             {'url': reverse('manager:unit_students_new_list',
@@ -688,7 +684,7 @@ class ProjectsListMixin(UnitMixin):
         return reverse('manager:unit_projects', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
 
-class ProjectsListView(ProjectsListMixin, FilteredTableView):
+class ProjectsListView(ProjectsListMixin, FilteredTableBase, FilterView):
     def get_page_actions(self):
         return [
             {'url': reverse('manager:unit_projects_new_list',
@@ -931,7 +927,7 @@ class AreasListMixin(AreasMixin):
         return reverse('manager:unit_areas', kwargs={'pk_unit': self.kwargs['pk_unit']})
 
 
-class AreasListView(AreasListMixin, FilteredTableView):
+class AreasListView(AreasListMixin, FilteredTableBase, FilterView):
     model = models.Area
 
     table_class = tables.AreasTable
@@ -1084,7 +1080,7 @@ class PreferencesMixin(UnitMixin):
         return reverse('manager:unit_preferences', kwargs={'pk_unit': self.get_unit_object().pk})
 
 
-class PreferencesView(PreferencesMixin, FilteredTableView):
+class PreferencesView(PreferencesMixin, FilteredTableBase, FilterView):
     model = models.ProjectPreference
     template_name = 'manager/preferences.html'
 
@@ -1115,7 +1111,7 @@ class PreferencesView(PreferencesMixin, FilteredTableView):
         return {**super().get_context_data(**kwargs), 'preferences_exist': self.get_queryset().exists()}
 
 
-class PreferencesDistributionView(PreferencesMixin, FilteredTableView):
+class PreferencesDistributionView(PreferencesMixin, FilteredTableBase, FilterView):
     model = models.Project
     page_subtitle = 'Project Popularity'
 

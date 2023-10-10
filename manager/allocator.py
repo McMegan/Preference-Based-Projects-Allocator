@@ -33,8 +33,6 @@ def start_allocation(unit_id, manager_id, results_url):
 
 class Allocator:
     def __init__(self, unit: models.Unit):
-        previous_allocation_status = unit.allocation_status
-
         self.solver = pywraplp.Solver.CreateSolver('SCIP')
 
         self.unit = unit
@@ -53,7 +51,7 @@ class Allocator:
 
         # Solve
         status = self.solver.Solve()
-
+        # Expand the result
         result = {
             pywraplp.Solver.OPTIMAL: models.Unit.OPTIMAL,
             pywraplp.Solver.FEASIBLE: models.Unit.FEASIBLE,
@@ -63,11 +61,14 @@ class Allocator:
             pywraplp.Solver.MODEL_INVALID: models.Unit.MODEL_INVALID,
             pywraplp.Solver.NOT_SOLVED: models.Unit.NOT_SOLVED,
         }[status]
-
+        # Determine whether the allocation was successful and whether the previous allocation was sucessful
         allocation_successful = result == models.Unit.OPTIMAL or result == models.Unit.FEASIBLE
+        previous_allocation_status = unit.allocation_status
         previous_allocation_successful = previous_allocation_status == models.Unit.OPTIMAL or previous_allocation_status == models.Unit.FEASIBLE
+        # Save the allocation if it was successful
         if allocation_successful:
             self.save_allocation()
+        # Update the allocation status -> only if this allocation was sucessful or there was no successful previous allocation
         unit.allocation_status = result if allocation_successful or not previous_allocation_successful else previous_allocation_status
         unit.save()
 

@@ -83,7 +83,7 @@ class Unit(models.Model):
     UPLOAD_STUDENTS_TASK_NAME = 'Upload Students List'
     UPLOAD_PREFERENCES_TASK_NAME = 'Upload Preferences List'
     celery_task = models.OneToOneField(
-        TaskResult, on_delete=models.CASCADE, null=True, related_name='unit')
+        TaskResult, on_delete=models.SET_NULL, null=True, related_name='unit')
 
     def __str__(self):
         return f'{self.code}: {self.name}'

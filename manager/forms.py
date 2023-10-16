@@ -14,21 +14,47 @@ from crispy_bootstrap5.bootstrap5 import FloatingField
 from core import models
 
 
-def valid_csv_file(file):
-    if os.path.splitext(file.name)[1].casefold() != '.csv'.casefold():
-        raise forms.ValidationError({'file': 'File must be CSV.'})
+class ListForm(forms.Form):
+    def clean(self):
+        file = self.cleaned_data.get('file')
 
+        # Check if CSV file
+        if os.path.splitext(file.name)[1].casefold() != '.csv'.casefold():
+            raise forms.ValidationError({'file': 'File must be CSV.'})
 
-def column_exists_in_csv(file, field_name, column_name):
-    file.seek(0)
-    file = file.read().decode('utf-8-sig')
-    csv_data = csv.DictReader(StringIO(file), delimiter=',')
+        # Check if CSV file has rows
+        file.seek(0)
+        csv_data = csv.DictReader(
+            StringIO(file.read().decode('utf-8-sig')), delimiter=',')
+        csv_len = sum(1 for row in csv_data)
+        if csv_len == 0:
+            raise forms.ValidationError(
+                {'file': 'The uploaded file must have at least one row, other than the header row.'})
 
-    try:
-        next(csv_data)[column_name]
-    except KeyError:
-        raise forms.ValidationError(
-            {field_name: 'Please enter a valid column name for this file.'})
+        # Make a dictionary of all the columns to be checked
+        columns_to_check = {}
+        if hasattr(self, 'columns_required'):
+            for column in self.columns_required:
+                columns_to_check[column] = self.cleaned_data.get(column)
+        if hasattr(self, 'columns_optional'):
+            for column in self.columns_optional:
+                if self.cleaned_data.get(column) != '':
+                    columns_to_check[column] = self.cleaned_data.get(column)
+
+        # Check that the columns exist in the CSV file
+        file.seek(0)
+        csv_data = csv.DictReader(
+            StringIO(file.read().decode('utf-8-sig')), delimiter=',')
+        csv_row = next(csv_data)
+
+        for field_name in columns_to_check:
+            try:
+                csv_row[columns_to_check[field_name]]
+            except KeyError:
+                raise forms.ValidationError(
+                    {field_name: 'Please enter a valid column name for this file.'})
+
+        return super().clean()
 
 
 class SplitDateTimeWidget(forms.SplitDateTimeWidget):
@@ -298,7 +324,7 @@ class StudentAllocatedUpdateForm(StudentUpdateForm):
         fields = ['name', 'allocated_project', 'area']
 
 
-class StudentListForm(UnitKwargMixin, forms.Form):
+class StudentListForm(UnitKwargMixin, ListForm):
     """
         Form for uploading a list of students
     """
@@ -328,21 +354,14 @@ class StudentListForm(UnitKwargMixin, forms.Form):
     area_column = forms.CharField(
         label='Project Area Column Name', help_text='Leave blank if none. Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
 
+    columns_required = ['student_id_column']
+    columns_optional = ['student_name_column', 'area_column']
+
     def init_fields(self):
         self.fields['student_id_column'].initial = 'user_id'
 
     def clean(self):
-        valid_csv_file(self.cleaned_data.get('file'))
-        column_exists_in_csv(self.cleaned_data.get('file'), 'student_id_column',
-                             self.cleaned_data.get('student_id_column'))
-
-        if self.cleaned_data.get('student_name_column') != '':
-            column_exists_in_csv(self.cleaned_data.get('file'), 'student_name_column',
-                                 self.cleaned_data.get('student_name_column'))
-
-        if self.cleaned_data.get('area_column') != '':
-            column_exists_in_csv(self.cleaned_data.get('file'), 'area_column',
-                                 self.cleaned_data.get('area_column'))
+        cleaned = super().clean()
 
         file = self.cleaned_data.get(
             'file')
@@ -394,7 +413,7 @@ class StudentListForm(UnitKwargMixin, forms.Form):
 
         if errors != []:
             raise forms.ValidationError(errors)
-        return super().clean()
+        return cleaned
 
 
 """
@@ -490,7 +509,7 @@ class ProjectAllocatedUpdateForm(ProjectUpdateForm):
         return super().save(commit)
 
 
-class ProjectListForm(UnitKwargMixin, forms.Form):
+class ProjectListForm(UnitKwargMixin, ListForm):
     """
         Form for uploading a list of projects
     """
@@ -536,24 +555,12 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
     area_column = forms.CharField(
         label='Project Area Column Name', help_text='Leave blank if none. Multiple areas for a single project should be seperated using a semi-colon (;).', required=False)
 
+    columns_required = ['identifier_column', 'name_column',
+                        'min_students_column', 'max_students_column',]
+    columns_optional = ['description_column', 'area_column']
+
     def clean(self):
-        valid_csv_file(self.cleaned_data.get('file'))
-        column_exists_in_csv(self.cleaned_data.get('file'), 'identifier_column',
-                             self.cleaned_data.get('identifier_column'))
-        column_exists_in_csv(self.cleaned_data.get('file'), 'name_column',
-                             self.cleaned_data.get('name_column'))
-        column_exists_in_csv(self.cleaned_data.get('file'), 'min_students_column',
-                             self.cleaned_data.get('min_students_column'))
-        column_exists_in_csv(self.cleaned_data.get('file'), 'max_students_column',
-                             self.cleaned_data.get('max_students_column'))
-
-        if self.cleaned_data.get('description_column') != '':
-            column_exists_in_csv(self.cleaned_data.get('file'), 'description_column',
-                                 self.cleaned_data.get('description_column'))
-
-        if self.cleaned_data.get('area_column') != '':
-            column_exists_in_csv(self.cleaned_data.get('file'), 'area_column',
-                                 self.cleaned_data.get('area_column'))
+        cleaned = super().clean()
 
         file = self.cleaned_data.get(
             'file')
@@ -611,7 +618,7 @@ class ProjectListForm(UnitKwargMixin, forms.Form):
                                 f'The row with the Project ID "{project.identifier}" in the uploaded file produced the following error: {error}' if project.identifier != '' else f'A row without an ID in the uploaded file produced the following error: {error}'))
         if errors != []:
             raise forms.ValidationError(errors)
-        return super().clean()
+        return cleaned
 
 
 """
@@ -674,7 +681,7 @@ Preferences form
 """
 
 
-class PreferenceListForm(UnitKwargMixin, forms.Form):
+class PreferenceListForm(UnitKwargMixin, ListForm):
     """
         Form for uploading a list of preferences
     """
@@ -713,15 +720,8 @@ class PreferenceListForm(UnitKwargMixin, forms.Form):
     project_identifier_column = forms.CharField(
         label='Project ID Column Name')
 
-    def clean(self):
-        valid_csv_file(self.cleaned_data.get('file'))
-        column_exists_in_csv(self.cleaned_data.get('file'), 'preference_rank_column',
-                             self.cleaned_data.get('preference_rank_column'))
-        column_exists_in_csv(self.cleaned_data.get('file'), 'student_id_column',
-                             self.cleaned_data.get('student_id_column'))
-        column_exists_in_csv(self.cleaned_data.get('file'), 'project_identifier_column',
-                             self.cleaned_data.get('project_identifier_column'))
-        return super().clean()
+    columns_required = ['preference_rank_column',
+                        'student_id_column', 'project_identifier_column']
 
 
 """

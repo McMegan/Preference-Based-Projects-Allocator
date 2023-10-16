@@ -41,7 +41,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter = BaseUserAdmin.list_filter + ('is_manager', 'is_student')
 
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(managed_unit_count=Count('managed_units')).annotate(enrolled_unit_count=Count('enrollments'))
+        return super().get_queryset(request).annotate(managed_unit_count=Count('managed_units', distinct=True)).annotate(enrolled_unit_count=Count('enrollments', distinct=True))
 
     @admin.display(ordering='managed_unit_count')
     def managed_unit_count(self, user: models.User):

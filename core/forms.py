@@ -153,7 +153,7 @@ class AccountUpdateForm(forms.ModelForm):
             FloatingField('email'),
             FloatingField('password'),
             HTML(
-                """<a href="{% url 'password_change' %}" class="btn btn-sm btn-outline-primary mb-3">Change Password</a>"""),
+                """<div class="mb-3"><a href="{% url 'password_change' %}" class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">Change Password</a></div>"""),
             FormActions(
                 Submit('submit', 'Save',
                        css_class='btn btn-primary'),

@@ -141,7 +141,7 @@ unit_form_layout_main = Layout(
 
 class UnitCreateForm(forms.ModelForm):
     is_active = forms.BooleanField(
-        label='Unit is current/active', required=False, help_text='If this is un-checked students will be unabled to access the unit.')
+        label='Unit is current/active', required=False, help_text='Students will only be able to see the unit if this is checked.')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -139,26 +139,17 @@ unit_form_layout_main = Layout(
 )
 
 
-class BaseUnitForm(forms.ModelForm):
+class UnitCreateForm(forms.ModelForm):
     is_active = forms.BooleanField(
         label='Unit is current/active', required=False, help_text='Students will only be able to see the unit if this is checked.')
 
     def __init__(self, *args, **kwargs):
+        self.manager = kwargs.pop('manager')
+
         super().__init__(*args, **kwargs)
 
         self.fields['code'].label = 'Unit Code'
         self.fields['name'].label = 'Unit Name'
-
-    class Meta:
-        model = models.Unit
-        fields = ['code', 'name', 'year', 'semester', 'is_active']
-
-
-class UnitCreateForm(BaseUnitForm):
-    def __init__(self, *args, **kwargs):
-        self.manager = kwargs.pop('manager')
-
-        super().__init__(*args, **kwargs)
 
         self.helper = FormHelper()
         self.helper.layout = Layout(
@@ -170,16 +161,21 @@ class UnitCreateForm(BaseUnitForm):
 
     def clean(self):
         cleaned = super().clean()
-        # Validate that the unit is unique for this manager
-        unit_match = self.manager.managed_units.filter(
-            code=self.cleaned_data.get('code'), year=self.cleaned_data.get('year'), semester=self.cleaned_data.get('semester'))
-        if unit_match.exists():
-            raise forms.ValidationError(
-                {'code': 'A unit with that code already exists for this semester and year.'})
+        # Validate unit uniqueness if values have changed
+        if 'code' in self.changed_data or 'year' in self.changed_data or 'semester' in self.changed_data:
+            # Validate that the unit is unique for this manager
+            if self.manager.managed_units.filter(
+                    code=self.cleaned_data.get('code'), year=self.cleaned_data.get('year'), semester=self.cleaned_data.get('semester')).exists():
+                raise forms.ValidationError(
+                    {'code': 'A unit with that code already exists for this semester and year.'})
         return cleaned
 
+    class Meta:
+        model = models.Unit
+        fields = ['code', 'name', 'year', 'semester', 'is_active']
 
-class UnitUpdateForm(UnitKwargMixin, BaseUnitForm):
+
+class UnitUpdateForm(UnitKwargMixin, UnitCreateForm):
     """
         Form for updating a unit
     """
@@ -256,9 +252,10 @@ class UnitUpdateForm(UnitKwargMixin, BaseUnitForm):
         if maximum_preference_limit and maximum_preference_limit > num_projects:
             raise forms.ValidationError(
                 {'maximum_preference_limit': 'The maximum preference limit must be less than or equal to the total number of projects in the unit.'})
+
         return super().clean()
 
-    class Meta(BaseUnitForm.Meta):
+    class Meta(UnitCreateForm.Meta):
         fields = ['code', 'name', 'year', 'semester', 'preference_submission_start',
                   'preference_submission_end', 'minimum_preference_limit', 'maximum_preference_limit', 'is_active', 'limit_by_major']
 

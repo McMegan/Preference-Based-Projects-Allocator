@@ -415,6 +415,9 @@ class UnitUpdateView(UnitPageMixin, UpdateView):
     def get_page_info(self):
         return None
 
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'manager': self.request.user}
+
     def get_success_url(self):
         return reverse('manager:unit', kwargs={'pk': self.kwargs['pk']})
 

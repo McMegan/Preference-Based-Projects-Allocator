@@ -341,11 +341,14 @@ class UnitCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     def test_func(self):
         return user_is_manager(self.request.user)
 
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), 'manager': self.request.user}
+
     def post(self, request, *args, **kwargs):
         self.object = None
         form = self.get_form()
         if form.is_valid():
-            form.instance.manager_id = request.user.id
+            form.instance.manager = request.user
             form.instance.save()
             return self.form_valid(form)
         else:

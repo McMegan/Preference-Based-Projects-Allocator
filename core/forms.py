@@ -190,6 +190,12 @@ class AdminUserRegistrationForm(UserCreationForm):
         self.fields['password1'].required = False
         self.fields['password2'].required = False
 
+        # Change user type text
+        self.fields['is_superuser'].help_text = None
+        self.fields['is_superuser'].label = 'Superuser'
+        self.fields['is_manager'].label = 'Manager'
+        self.fields['is_student'].label = 'Student'
+
     def clean(self):
         # Make sure email is included if no password is specified
         if not bool(self.cleaned_data.get('password1')) and not bool(self.cleaned_data.get('password2')) and not bool(self.cleaned_data.get('email')):

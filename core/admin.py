@@ -32,7 +32,8 @@ class UserAdmin(BaseUserAdmin):
         (None, {'fields': ('username', 'email')}),
         ('Password', {'fields': ('password1', 'password2'),
          'classes': ('collapse', 'collapse-closed'), }),
-        ('User type', {'fields': ('is_manager', 'is_student')}),
+        ('User type', {
+         'fields': (('is_superuser', 'is_manager', 'is_student'),)}),
     )
 
     list_display = ('id', 'username', 'email', 'is_staff',

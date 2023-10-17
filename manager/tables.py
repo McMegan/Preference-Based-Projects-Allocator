@@ -182,7 +182,7 @@ class StudentsAllocatedTable(StudentsTable):
         empty_values=(), verbose_name='Allocated Preference')
 
     class Meta(StudentsTable.Meta):
-        sequence = ('student_id', 'name', 'registered', 'area', 'preferences', 'allocated_project',
+        sequence = ('student_id', 'name', 'registered', 'preferences', 'area', 'allocated_project',
                     'allocated_preference_rank')
 
     def render_allocated_project(self, value, record):

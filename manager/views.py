@@ -857,7 +857,7 @@ class ProjectUpdateView(ProjectPageMixin, UpdateView):
         return reverse('manager:unit_project_detail', kwargs={'pk': self.kwargs['pk'], 'pk_unit': self.kwargs['pk_unit']})
 
     def get_page_info(self):
-        return []
+        return None
 
 
 class ProjectDeleteView(ProjectPageMixin, DeleteView):
@@ -1136,6 +1136,9 @@ class PreferencesUploadListView(PreferencesMixin, FormMixin, TemplateView):
     model = models.ProjectPreference
     form_class = forms.PreferenceListForm
     page_subtitle = 'Upload Preference List'
+
+    def get_page_info(self):
+        return None
 
     def post(self, request, *args, **kwargs):
         form = forms.PreferenceListForm(

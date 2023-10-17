@@ -470,7 +470,7 @@ class StudentsListMixin(StudentsMixin):
                     'content': unit.students_count - unit.get_allocated_student_count()},
             ]
         return [
-            {'label': 'Total No. Students', 'content': unit.students_count},
+            {'label': 'No. Students', 'content': unit.students_count},
         ] + allocated_info
 
 
@@ -1065,7 +1065,7 @@ class PreferencesMixin(UnitMixin):
             ]
 
         return [
-            {'label': 'Total No. Students', 'content': unit.students_count}
+            {'label': 'No. Students', 'content': unit.students_count}
         ] + students_exist_info
 
     def get_page_title_url(self):
@@ -1237,7 +1237,7 @@ class AllocationView(UnitMixin, TemplateView):
         students_count = students_list.count()
         if students_count == 0:
             return [
-                {'label': 'Total No. Students', 'content': unit.students_count}]
+                {'label': 'No. Students', 'content': unit.students_count}]
 
         submitted_prefs_count = students_list.annotate(project_preference_count=Count(
             'project_preferences')).filter(project_preference_count__gt=0).count()
@@ -1245,7 +1245,7 @@ class AllocationView(UnitMixin, TemplateView):
             (submitted_prefs_count/students_count)*100, 1)
 
         return [
-            {'label': 'Total No. Students', 'content': unit.students_count},
+            {'label': 'No. Students', 'content': unit.students_count},
             {'label': 'Percentage of Students who have Submitted Preferences',
                 'content': f'{ submitted_prefs_perc }% ({ submitted_prefs_count } Students)'},
         ] + allocated_info

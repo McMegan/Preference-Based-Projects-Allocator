@@ -479,7 +479,7 @@ admin.site.unregister(TaskResult)
 @admin.register(TaskResult)
 class TaskResultAdmin(BaseTaskResultAdmin):
     list_display = ('task_id', 'task_name', 'unit_link', 'date_done', 'status')
-    list_filter = ('status', 'date_done', 'task_name', 'unit')
+    list_filter = ('status', 'date_done', 'task_name')
 
     fieldsets = (
         (None, {

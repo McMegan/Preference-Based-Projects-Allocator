@@ -115,6 +115,16 @@ class Unit(models.Model):
     def get_preference_submission_end(self):
         return self.preference_submission_end.strftime('%a %d %b %Y, %I:%M%p')
 
+    def save_task(self, task):
+        task = TaskResult.objects.filter(task_id=task.id)
+        if task.exists():
+            task = task.first()
+            if self.celery_task:
+                # Delete old celery task
+                self.celery_task.delete()
+            self.celery_task = task
+            self.save()
+
     def task_ready(self):
         if self.celery_task:
             return self.celery_task.status != 'PENDING'
@@ -186,13 +196,6 @@ class Unit(models.Model):
         if not hasattr(self, 'max_project_spaces'):
             self.calculate_project_spaces()
         return self.max_project_spaces
-
-    def save_task(self, task):
-        task = TaskResult.objects.filter(task_id=task.id)
-        if task.exists():
-            task = task.first()
-            self.celery_task = task
-            self.save()
 
     class Meta:
         ordering = ['code', 'name']

@@ -1,14 +1,20 @@
+from typing import Any
 from django.contrib.admin import SimpleListFilter
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import PasswordResetForm
 from django.db.models import Count, Q
+from django.db.models.query import QuerySet
+from django.http.request import HttpRequest
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.utils.html import format_html, urlencode
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
+
+from django_celery_results.models import TaskResult, GroupResult
+from django_celery_results.admin import TaskResultAdmin as BaseTaskResultAdmin
 
 
 from . import models
@@ -456,4 +462,62 @@ class AreaAdmin(admin.ModelAdmin):
                 'id': str(area.unit_id)
             }))
         return format_html('<a href="{}">{}</a>', url, area.unit)
+    unit_link.short_description = 'unit'
+
+
+"""
+
+Task Admin
+
+"""
+
+# Unregister existing admin
+admin.site.unregister(GroupResult)
+admin.site.unregister(TaskResult)
+
+
+@admin.register(TaskResult)
+class TaskResultAdmin(BaseTaskResultAdmin):
+    list_display = ('task_id', 'task_name', 'unit_link', 'date_done', 'status')
+    list_filter = ('status', 'date_done', 'task_name', 'unit')
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'task_id',
+                'task_name',
+                'status',
+                'worker'
+            ),
+            'classes': ('extrapretty', 'wide')
+        }),
+        (_('Parameters'), {
+            'fields': (
+                'task_args',
+                'task_kwargs',
+            ),
+            'classes': ('extrapretty', 'wide')
+        }),
+        (_('Result'), {
+            'fields': (
+                'result',
+                'date_created',
+                'date_done'
+            ),
+            'classes': ('extrapretty', 'wide')
+        }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('unit')
+
+    @admin.display(ordering='unit')
+    def unit_link(self, task):
+        url = (
+            reverse('admin:core_unit_changelist')
+            + '?'
+            + urlencode({
+                'id': str(task.unit.id)
+            }))
+        return format_html('<a href="{}">{}</a>', url, task.unit)
     unit_link.short_description = 'unit'
